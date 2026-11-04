@@ -41,6 +41,26 @@ private let now = Date(timeIntervalSince1970: 1_793_800_000)
         #expect(ClaudeProfile.label(from: Data(#"{"account":{"email":"x@y.z","full_name":"X"}}"#.utf8)) == "x@y.z")
     }
 
+    @Test func parsesAntigravityQuotasAndGroupsSharedOnes() throws {
+        let json = #"{"userStatus":{"email":"me@example.com","userTier":{"name":"Starter"},"cascadeModelConfigData":{"clientModelConfigs":[{"label":"Gemini Flash (High)","quotaInfo":{"remainingFraction":1,"resetTime":"2026-11-11T16:00:27Z"}},{"label":"Gemini Flash (Low)","quotaInfo":{"remainingFraction":1,"resetTime":"2026-11-11T16:00:27Z"}},{"label":"Claude Sonnet","quotaInfo":{"remainingFraction":0.25,"resetTime":"2026-11-05T01:00:00Z"}},{"label":"Preview model","quotaInfo":{}}]}}}"#
+        let usage = try #require(UsageParsers.antigravity(json: Data(json.utf8), now: now))
+        #expect(usage.accountLabel == "me@example.com")
+        #expect(usage.plan == "Starter")
+        #expect(usage.accountID == "antigravity:me@example.com")
+        #expect(usage.windows.count == 2)
+        #expect(usage.windows[0].id == "Gemini Flash (High) +1")
+        #expect(usage.windows[0].usedPercent == 0)
+        #expect(usage.windows[1].usedPercent == 75)
+        #expect(UsageParsers.antigravity(json: Data(#"{"userStatus":{}}"#.utf8), now: now) == nil)
+    }
+
+    @Test func readsTheEmailFromALoginJWT() {
+        let payload = Data(#"{"email":"a@b.co","sub":"1"}"#.utf8).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
+        #expect(UsageParsers.jwtEmail("x.\(payload).y") == "a@b.co")
+        #expect(UsageParsers.jwtEmail("garbage") == nil)
+    }
+
     @Test func aWindowPastItsResetCountsAsEmpty() {
         let w = UsageWindow(id: "5h", usedPercent: 90, resetsAt: now.addingTimeInterval(-60))
         #expect(w.isExpired(at: now))

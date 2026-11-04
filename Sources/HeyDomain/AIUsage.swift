@@ -1,18 +1,19 @@
 import Foundation
 
 public enum AIProvider: String, CaseIterable, Codable, Sendable, Identifiable {
-    case claude, codex
+    case claude, codex, antigravity
     public var id: String { rawValue }
     public var label: String {
         switch self {
         case .claude: "Claude"
         case .codex: "Codex (ChatGPT)"
+        case .antigravity: "Antigravity"
         }
     }
 }
 
 /// One quota window of a subscription, e.g. "5 hours" or "7 days".
-public struct UsageWindow: Equatable, Sendable, Identifiable {
+public struct UsageWindow: Equatable, Sendable, Identifiable, Codable {
     public var id: String                 // "5h", "7d", ...
     public var usedPercent: Double
     public var resetsAt: Date?
@@ -38,7 +39,7 @@ public struct UsageWindow: Equatable, Sendable, Identifiable {
 }
 
 /// What a provider last told us about the plan.
-public struct ProviderUsage: Equatable, Sendable {
+public struct ProviderUsage: Equatable, Sendable, Codable {
     public var provider: AIProvider
     /// Which account the reading belongs to (a provider can have several, e.g. two Claude logins).
     public var accountID: String
@@ -62,6 +63,43 @@ public struct ProviderUsage: Equatable, Sendable {
 }
 
 public enum UsageParsers {
+    /// The email in the (unverified) payload of a login JWT, e.g. Codex's `auth.json` `id_token`.
+    public static func jwtEmail(_ jwt: String) -> String? {
+        let parts = jwt.split(separator: ".")
+        guard parts.count >= 2 else { return nil }
+        var b64 = String(parts[1]).replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        while b64.count % 4 != 0 { b64 += "=" }
+        guard let data = Data(base64Encoded: b64), let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        if let email = root["email"] as? String { return email }
+        return (root["https://api.openai.com/profile"] as? [String: Any])?["email"] as? String
+    }
+
+    /// The answer of Antigravity's local `GetUserStatus`: one quota per model. Models that share the same remaining share and reset time
+    /// are one line ("Gemini 3.8 Flash (High) +5").
+    public static func antigravity(json data: Data, accountID: String? = nil, now: Date) -> ProviderUsage? {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let user = root["userStatus"] as? [String: Any] else { return nil }
+        let configs = ((user["cascadeModelConfigData"] as? [String: Any])?["clientModelConfigs"] as? [[String: Any]]) ?? []
+        struct Bucket { var names: [String]; var remaining: Double; var reset: Date? }
+        var buckets: [Bucket] = []
+        for config in configs {
+            guard let quota = config["quotaInfo"] as? [String: Any], let remaining = (quota["remainingFraction"] as? NSNumber)?.doubleValue,
+                  let name = config["label"] as? String else { continue }
+            let reset = (quota["resetTime"] as? String).flatMap(parseISO)
+            if let i = buckets.firstIndex(where: { $0.remaining == remaining && $0.reset == reset }) { buckets[i].names.append(name) }
+            else { buckets.append(Bucket(names: [name], remaining: remaining, reset: reset)) }
+        }
+        guard !buckets.isEmpty else { return nil }
+        let windows = buckets.map { b in
+            UsageWindow(id: b.names.count > 1 ? "\(b.names[0]) +\(b.names.count - 1)" : b.names[0],
+                        usedPercent: (1 - min(max(b.remaining, 0), 1)) * 100, resetsAt: b.reset)
+        }
+        let email = user["email"] as? String
+        let plan = ((user["userTier"] as? [String: Any])?["name"] as? String)
+        return ProviderUsage(provider: .antigravity, accountID: accountID ?? email.map { "antigravity:\($0)" }, accountLabel: email, plan: plan,
+                             windows: windows, asOf: now)
+    }
+
     private static func window(id: String, minutes: Int?) -> String {
         switch minutes {
         case 300: "5h"
