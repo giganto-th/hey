@@ -1,0 +1,4 @@
+"NSCameraUsageDescription" = "Hey! uses the camera only when you ask it to take a photo or record a video, and keeps the files on this Mac.";
+"NSMicrophoneUsageDescription" = "Hey! uses the microphone only when you turn on recording sound with a video.";
+"NSAppleEventsUsageDescription" = "Hey! reads only the URL and title of the front browser tab, to offer adding a YouTube video to a playlist (only when you turn it on).";
+"NSCalendarsFullAccessUsageDescription" = "Hey! reads the title and time of appointments in the next 30 minutes to remind you in time. It never edits your calendar and stores nothing (only when you turn it on).";

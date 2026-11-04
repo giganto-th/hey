@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
+    <key>CFBundleLocalizations</key><array><string>en</string><string>th</string></array>
     <key>CFBundleIdentifier</key><string>com.cdimac.hey</string>
     <key>CFBundleName</key><string>Hey!</string>
     <key>CFBundleDisplayName</key><string>Hey!</string>
@@ -14,17 +16,17 @@
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSCameraUsageDescription</key>
-    <string>Hey! ใช้กล้องเมื่อคุณสั่งถ่ายรูปหรืออัดวิดีโอเท่านั้น และเก็บไฟล์ไว้ในเครื่อง</string>
+    <string>Hey! uses the camera only when you ask it to take a photo or record a video, and keeps the files on this Mac.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Hey! ใช้ไมโครโฟนเมื่อคุณเปิดตัวเลือกอัดเสียงพร้อมวิดีโอเท่านั้น</string>
+    <string>Hey! uses the microphone only when you turn on recording sound with a video.</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Hey! อ่านเฉพาะ URL และชื่อของแท็บหน้าสุดในเบราว์เซอร์ เพื่อเสนอเพิ่มวิดีโอ YouTube เข้าเพลย์ลิสต์ (เปิดใช้เมื่อคุณเลือกเท่านั้น)</string>
+    <string>Hey! reads only the URL and title of the front browser tab, to offer adding a YouTube video to a playlist (only when you turn it on).</string>
     <key>CFBundleURLTypes</key>
     <array><dict>
         <key>CFBundleURLName</key><string>Hey! commands</string>
         <key>CFBundleURLSchemes</key><array><string>hey</string></array>
     </dict></array>
     <key>NSCalendarsFullAccessUsageDescription</key>
-    <string>Hey! อ่านชื่อและเวลานัดหมายใน 30 นาทีข้างหน้าเพื่อเตือนก่อนถึงเวลา ไม่แก้ไขปฏิทินและไม่เก็บข้อมูล (เปิดใช้เมื่อคุณเลือกเท่านั้น)</string>
+    <string>Hey! reads the title and time of appointments in the next 30 minutes to remind you in time. It never edits your calendar and stores nothing (only when you turn it on).</string>
 </dict>
 </plist>

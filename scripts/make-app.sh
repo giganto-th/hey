@@ -25,6 +25,7 @@ cp "$(swift build -c release --show-bin-path)/libheynp.dylib" "$app/Contents/Fra
 [ -d Resources/Icons ] && rsync -a Resources/Icons/ "$app/Contents/Resources/Icons/"
 [ -d Resources/Logo ] && rsync -a Resources/Logo/ "$app/Contents/Resources/Logo/"
 [ -d Resources/Localization ] && rsync -a Resources/Localization/ "$app/Contents/Resources/Localization/"
+[ -d Resources/Localized ] && rsync -a Resources/Localized/ "$app/Contents/Resources/"
 [ -d Resources/About ] && rsync -a Resources/About/ "$app/Contents/Resources/About/"
 # originals are the untouched generator output; the app only needs the processed art
 if [ -d Resources/Sprites ]; then rsync -a --exclude "_originals" Resources/Sprites/ "$app/Contents/Resources/Sprites/"; fi
