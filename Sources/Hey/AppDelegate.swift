@@ -304,6 +304,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if let id = env["HEY_DEV_FOOD"], let f = model.game.pet.balance.foods.first(where: { $0.id == id }) {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.food.dropForDev(f) }
             }
+            if let dir = env["HEY_DEV_MENU_PNG"] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
+                    MainActor.assumeIsolated { self?.writeMenuPreview(to: dir) }
+                }
+            }
+            if env["HEY_DEV_MENU_OPEN"] != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in self?.statusClicked() }
+            }
             if let path = env["HEY_DEV_ABOUT_PNG"] {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
                     MainActor.assumeIsolated { if let self { writeAboutPreview(model: self.model, to: path) } }
@@ -813,15 +821,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func statusClicked() {
         let event = NSApp.currentEvent
-        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.option) == true {
-            let menu = NSMenu()
+        if event?.modifierFlags.contains(.option) == true {
+            if userHidPet { toggleVisible() }          // Option-click keeps the round menu around the pet
+            openRadial()
+        } else {
+            let menu = NSMenu()                         // a click and a right-click both open the same menu
             menu.delegate = self
-            statusItem.menu = menu              // the classic menu, for when the fan isn't wanted
+            statusItem.menu = menu
             statusItem.button?.performClick(nil)
             statusItem.menu = nil
-        } else {
-            if userHidPet { toggleVisible() }
-            openRadial()
         }
     }
 
@@ -832,40 +840,54 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let game = model.game
         let s = game.pet.state
 
-        func info(_ text: String, symbol: String? = nil) {
-            let item = NSMenuItem(title: text, action: nil, keyEquivalent: "")
-            item.isEnabled = false
-            if let symbol { item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) }
+        func card<V: View>(_ view: V) {
+            let host = NSHostingView(rootView: view)
+            host.frame = NSRect(origin: .zero, size: host.fittingSize)
+            let item = NSMenuItem()
+            item.view = host
             menu.addItem(item)
         }
-        func action(_ title: String, _ sel: Selector, key: String = "") {
+        func section(_ title: String) {
+            menu.addItem(.separator())
+            menu.addItem(NSMenuItem.sectionHeader(title: title))
+        }
+        @discardableResult
+        func action(_ title: String, _ symbol: String? = nil, _ sel: Selector, key: String = "", control: Bool = true) -> NSMenuItem {
             let item = NSMenuItem(title: title, action: sel, keyEquivalent: key)
             item.target = self
+            if !key.isEmpty { item.keyEquivalentModifierMask = control ? [.control, .option] : [.command] }
+            if let symbol { item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) }
             menu.addItem(item)
+            return item
         }
 
-        if s.stage == .egg {
-            info(tr("ไข่ — อุ่นแล้ว {0}/{1}", Int(s.hatchProgress), Int(game.pet.balance.hatchNeeded)), symbol: "oval.fill")
-            info(tr("คลิกไข่หรือเปิดแอปทิ้งไว้เพื่ออุ่น"))
-        } else {
-            let xp = game.pet.balance.xpToLeave(s.stage).map { "XP \(Int(s.xp))/\(Int($0))" } ?? "XP \(Int(s.xp))"
-            info("\(s.name) — \(s.stage.displayName) · \(xp)")
-            info(tr("อิ่ม {0}   อารมณ์ {1}", Int(s.hunger), Int(s.mood)), symbol: "fork.knife")
-            info(tr("พลัง {0}   ผูกพัน {1}", Int(s.energy), Int(s.bond)), symbol: "bolt.fill")
+        // 1. the pet at a glance
+        let xpNeeded = game.pet.balance.xpToLeave(s.stage)
+        card(PetMenuCard(data: PetCardData(
+            name: s.name, stage: s.stage.displayName, isEgg: s.stage == .egg,
+            hatch: (s.hatchProgress, game.pet.balance.hatchNeeded), xp: (s.xp, xpNeeded),
+            hunger: s.hunger, mood: s.mood, energy: s.energy, coins: game.coins, streak: game.streak.current,
+            questsDone: game.quests.filter(\.done).count, questsTotal: game.quests.count,
+            reminders: game.reminders.filter(\.isActive).count,
+            mode: tr("โหมด{0}{1}", power.decision.tier.label, power.decision.reason.isEmpty ? "" : " · \(power.decision.reason)"),
+            nowPlaying: music.nowPlaying.map { String($0.title.prefix(40)) })))
+
+        // 2. AI quota, one row per account
+        let accounts = AIProvider.allCases.flatMap { aiUsage.rows(for: $0) }.compactMap { row -> AIUsageCardData.Item? in
+            guard let usage = row.usage else { return nil }
+            let now = Date()
+            let windows = usage.windows.prefix(2).map { (label: $0.id.count <= 3 ? $0.id : String($0.id.prefix(10)), percent: $0.effectivePercent(at: now)) }
+            return AIUsageCardData.Item(id: row.id, provider: row.provider, name: row.name, windows: Array(windows))
         }
-        info(tr("เหรียญ {0}   ต่อเนื่อง {1} วัน", game.coins, game.streak.current), symbol: "circle.hexagongrid.fill")
-        let done = game.quests.filter(\.done).count
-        if !game.quests.isEmpty { info(tr("ภารกิจวันนี้ {0}/{1}", done, game.quests.count)) }
-        if !game.vault.isEmpty { info(tr("vault {0} ชิ้น", game.vault.count), symbol: "tray.full.fill") }
-        info(tr("โหมด{0}{1}", power.decision.tier.label, power.decision.reason.isEmpty ? "" : " · \(power.decision.reason)"), symbol: "leaf.fill")
-        let waiting = game.reminders.filter(\.isActive).count
-        if waiting > 0 { info(tr("เตือนที่รออยู่ {0}", waiting), symbol: "bell.fill") }
-        for line in aiUsage.summaryLines() { info(line, symbol: "gauge.with.dots.needle.67percent") }
-        menu.addItem(.separator())
+        if !accounts.isEmpty {
+            section(tr("เครดิต AI"))
+            card(AIUsageMenuCard(data: AIUsageCardData(items: accounts)))
+        }
 
-        action(tr("เปิด Hub…   ⌃⌥H"), #selector(openHub))
-
+        // 3. the pet
+        section(tr("สัตว์เลี้ยง"))
         let feedItem = NSMenuItem(title: tr("ให้อาหาร"), action: nil, keyEquivalent: "")
+        feedItem.image = NSImage(systemSymbolName: "fork.knife", accessibilityDescription: nil)
         let feedMenu = NSMenu()
         for food in game.pet.balance.foods {
             let stock = game.stock(of: food)
@@ -880,42 +902,60 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         feedItem.submenu = feedMenu
         menu.addItem(feedItem)
+        action(tr("เป่าฟองสบู่"), "bubbles.and.sparkles", #selector(blowBubbles))
+        action(game.shelf.isEmpty ? tr("ถาดพักไฟล์ (ว่าง)") : tr("ถาดพักไฟล์ ({0})", game.shelf.count), "suitcase.fill", #selector(toggleTray))
+        action(tr("ซ่อน/แสดงสัตว์เลี้ยง"), "eye.slash", #selector(toggleVisible))
 
-        menu.addItem(.separator())
+        // 4. tools
+        section(tr("เครื่องมือ"))
+        action(tr("เปิด Hub…"), "square.grid.2x2.fill", #selector(openHub), key: "h")
+        action(tr("เช็คเครดิต AI"), "gauge.with.dots.needle.67percent", #selector(showAIUsage))
+        action(tr("ตั้งเตือนด่วน…"), "bell.fill", #selector(quickReminder), key: "r")
+        action(tr("โน้ตด่วน"), "note.text", #selector(quickNote), key: "n")
         let shoot = NSMenuItem(title: tr("ถ่าย/อัด"), action: nil, keyEquivalent: "")
+        shoot.image = NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: nil)
         let shootMenu = NSMenu()
-        for (title, sel) in [(tr("ภาพทั้งจอ (นับถอยหลัง)"), #selector(captureFull)), (tr("เลือกพื้นที่   ⌃⌥S"), #selector(captureRegion)),
-                             (capture.isRecording ? tr("หยุดอัดหน้าจอ   ⌃⌥V") : tr("อัดหน้าจอ   ⌃⌥V"), #selector(toggleRecording)),
-                             (tr("เปิดกล้อง…"), #selector(openCamera))] {
-            let item = NSMenuItem(title: title, action: sel, keyEquivalent: "")
+        for (title, sel, key) in [(tr("ภาพทั้งจอ (นับถอยหลัง)"), #selector(captureFull), ""), (tr("เลือกพื้นที่"), #selector(captureRegion), "s"),
+                                  (capture.isRecording ? tr("หยุดอัดหน้าจอ") : tr("อัดหน้าจอ"), #selector(toggleRecording), "v"),
+                                  (tr("เปิดกล้อง…"), #selector(openCamera), "")] {
+            let item = NSMenuItem(title: title, action: sel, keyEquivalent: key)
             item.target = self
+            if !key.isEmpty { item.keyEquivalentModifierMask = [.control, .option] }
             shootMenu.addItem(item)
         }
         shoot.submenu = shootMenu
         menu.addItem(shoot)
-        action(game.shelf.isEmpty ? tr("ถาดพักไฟล์ (ว่าง)") : tr("ถาดพักไฟล์ ({0})", game.shelf.count), #selector(toggleTray))
-        action(tr("เป่าฟองสบู่"), #selector(blowBubbles))
-        action(tr("เช็คเครดิต AI"), #selector(showAIUsage))
-        action(tr("ตั้งเตือนด่วน…   ⌃⌥R"), #selector(quickReminder))
-        action(tr("โน้ตด่วน   ⌃⌥N"), #selector(quickNote))
-        if let playing = music.nowPlaying { info("\(playing.title.prefix(32))", symbol: "music.note") }
-        action(music.isPlaying ? tr("หยุดเพลง   ⌃⌥M") : tr("เล่นเพลง   ⌃⌥M"), #selector(toggleMusic))
-        action(tr("เพลงถัดไป   ⌃⌥]"), #selector(nextTrack))
+
+        // 5. music and focus
+        section(tr("เพลงและโฟกัส"))
+        action(music.isPlaying ? tr("หยุดเพลง") : tr("เล่นเพลง"), music.isPlaying ? "pause.fill" : "play.fill", #selector(toggleMusic), key: "m")
+        action(tr("เพลงถัดไป"), "forward.fill", #selector(nextTrack), key: "]")
         let t = pomodoro.timer
-        action(t.isRunning ? tr("หยุด Pomodoro ({0})   ⌃⌥P", pomodoro.remainingText) : tr("เริ่ม Pomodoro   ⌃⌥P"),
-               #selector(togglePomodoro))
+        action(t.isRunning ? tr("หยุด Pomodoro ({0})", pomodoro.remainingText) : tr("เริ่ม Pomodoro"), "timer", #selector(togglePomodoro), key: "p")
 
         if devMode {
-            menu.addItem(.separator())
-            action(tr("Dev: อุ่นไข่ +50"), #selector(devWarm))
-            action("Dev: +100 XP", #selector(devXP))
-            action(tr("Dev: +100 เหรียญ"), #selector(devCoins))
-            action(tr("Dev: เตือนใน 5 วินาที"), #selector(devReminder))
+            section("Dev")
+            action(tr("Dev: อุ่นไข่ +50"), nil, #selector(devWarm))
+            action("Dev: +100 XP", nil, #selector(devXP))
+            action(tr("Dev: +100 เหรียญ"), nil, #selector(devCoins))
+            action(tr("Dev: เตือนใน 5 วินาที"), nil, #selector(devReminder))
         }
 
         menu.addItem(.separator())
-        action(tr("ซ่อน/แสดงสัตว์เลี้ยง"), #selector(toggleVisible))
-        action(tr("ออกจาก Hey!"), #selector(quit), key: "q")
+        action(tr("ออกจาก Hey!"), nil, #selector(quit), key: "q", control: false)
+    }
+
+    /// Dev hook: draw the status menu's cards into PNGs (a menu itself cannot be captured by window).
+    private func writeMenuPreview(to dir: String) {
+        let menu = NSMenu()
+        fill(menu)
+        for (i, item) in menu.items.enumerated() {
+            guard let view = item.view else { continue }
+            let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds)
+            if let rep { view.cacheDisplay(in: view.bounds, to: rep)
+                try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: dir + "/card\(i).png")) }
+        }
+        print("[menu] items:", menu.items.map { $0.isSeparatorItem ? "—" : ($0.view != nil ? "<card>" : $0.title) })
     }
 
     private func showHub(section: HubSection) {
