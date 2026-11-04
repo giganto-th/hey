@@ -104,3 +104,15 @@ import Foundation
     let stats = try JSONDecoder().decode(LifetimeStats.self, from: old)
     #expect(stats.feeds == 7 && stats.pets == 3 && stats.bubblesPopped == 0)
 }
+
+@Test func bubblesSinkToTheFloorAndOnlyLandedOnesCanBePecked() {
+    var field = BubbleField(rng: FixedRandom(value: 0.5))
+    field.spawn(2, minX: 0, maxX: 1000)
+    #expect(field.nearestGrounded(toX: 500) == nil)               // all still floating
+    #expect(!field.bubbles[0].isGrounded)
+
+    for _ in 0..<(20 * 5) { field.step(dt: 0.2, minX: 0, maxX: 1000) }      // 20 s: past the float time and the sink
+    #expect(field.bubbles.allSatisfy { $0.isGrounded })
+    #expect(field.bubbles.allSatisfy { abs($0.height - $0.radius) < 0.01 })   // resting right on the floor
+    #expect(field.nearestGrounded(toX: 500) != nil)
+}

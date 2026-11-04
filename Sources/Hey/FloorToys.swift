@@ -238,7 +238,7 @@ final class BubbleController {
         }
         if field.isEmpty { popped = 0; startedAt = Date() }
         field.spawn(8, minX: area.minX + 40, maxX: area.maxX - 40)
-        scene.announce("ฟองสบู่! จิ๊กให้หมดเลย", symbol: "bubbles.and.sparkles")
+        scene.announce("ฟองสบู่! รอมันลงถึงพื้นแล้วจิ๊กเลย", symbol: "bubbles.and.sparkles")
         last = Date()
         guard timer == nil else { return }
         let t = Timer(timeInterval: 1 / 30, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.tick() } }
@@ -255,7 +255,7 @@ final class BubbleController {
     }
 
     func target() -> PetScene.SeekTarget? {
-        guard let x = scene?.petCenterX, let b = field.nearest(toX: Double(x)) else { return nil }
+        guard let x = scene?.petCenterX, let b = field.nearestGrounded(toX: Double(x)) else { return nil }
         let id = b.id
         return PetScene.SeekTarget(x: CGFloat(b.x), reach: 26) { [weak self] in self?.pop(id) }
     }

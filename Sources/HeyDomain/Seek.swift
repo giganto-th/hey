@@ -20,6 +20,11 @@ public struct Bubble: Identifiable, Equatable, Sendable {
     public var vx: Double
     public var radius: Double
     public var phase: Double
+    /// Seconds left before it starts to sink toward the floor.
+    public var floatTime: Double
+
+    /// Resting on the floor: the only state in which the pet can peck it.
+    public var isGrounded: Bool { baseHeight <= radius + 0.5 }
 }
 
 /// Bubbles that float around while the pet chases and pops them. Pure movement; drawing is the app's job.
@@ -47,20 +52,28 @@ public struct BubbleField: Sendable {
                 baseHeight: base, height: base,
                 vx: rng.next(in: 0...1) < 0.5 ? -speed : speed,
                 radius: rng.next(in: 16...30),
-                phase: rng.next(in: 0...(2 * Double.pi))))
+                phase: rng.next(in: 0...(2 * Double.pi)),
+                floatTime: rng.next(in: 4...12)))
             nextID += 1
         }
     }
 
-    /// Drift sideways, bob up and down, and bounce off the edges.
+    public static let sinkSpeed = 45.0
+
+    /// Drift sideways, bob up and down and bounce off the edges; after a while each bubble sinks to the floor and rolls slowly there.
     public mutating func step(dt: Double, minX: Double, maxX: Double) {
         for i in bubbles.indices {
             var b = bubbles[i]
-            b.x += b.vx * dt
+            let sinking = b.floatTime <= 0
+            b.floatTime -= dt
+            if sinking { b.baseHeight = max(b.radius, b.baseHeight - Self.sinkSpeed * dt) }
+            let speedFactor = b.isGrounded ? 0.25 : 1
+            b.x += b.vx * speedFactor * dt
             if b.x < minX { b.x = minX; b.vx = abs(b.vx) }
             if b.x > maxX { b.x = maxX; b.vx = -abs(b.vx) }
             b.phase += dt * 1.6
-            b.height = b.baseHeight + 14 * sin(b.phase)
+            let bob = 14 * sin(b.phase) * min(max((b.baseHeight - b.radius) / 40, 0), 1)       // the bob dies away as it lands
+            b.height = max(b.radius, b.baseHeight + bob)
             bubbles[i] = b
         }
     }
@@ -68,6 +81,11 @@ public struct BubbleField: Sendable {
     /// The bubble closest to `x` along the floor.
     public func nearest(toX x: Double) -> Bubble? {
         bubbles.min { abs($0.x - x) < abs($1.x - x) }
+    }
+
+    /// The closest bubble that has landed; one still in the air cannot be pecked.
+    public func nearestGrounded(toX x: Double) -> Bubble? {
+        bubbles.filter(\.isGrounded).min { abs($0.x - x) < abs($1.x - x) }
     }
 
     @discardableResult
