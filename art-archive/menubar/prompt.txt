@@ -1,0 +1,5 @@
+Use the built-in image generation tool. Personal-use app icon art. Reference: /tmp/art6/ref_mark_white.png (the app's black-and-white rooster head mark; the transparent parts are shown white).
+TASK: redraw EXACTLY the same mark (same silhouette, same comb, same two big white eyes with black pupils, same beak and wattles, solid black fill, same pose and proportions) but as a sticker-style icon for a DARK menu bar: add a clean, even, bold white outline (border) all the way around the outside of the black silhouette (about 4 percent of the image width), with smooth rounded corners. Do not add shading, gradients, textures, shadows, or any colour. Only black, white (the existing eyes and the new outline) and the flat background.
+Layout: the mark centred and filling about 85 percent of a square 1024x1024 image, with even margin all around so the white outline is not cut off.
+Background: perfectly flat pure chroma green #00FF00 everywhere outside the white outline (no gradient, no shadow, no ground, no text).
+Save as /tmp/art6/mark_dark.png and print the path when done.
