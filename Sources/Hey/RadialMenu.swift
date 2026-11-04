@@ -23,7 +23,7 @@ enum RadialIcon: ExpressibleByStringLiteral {
     init(stringLiteral value: String) { self = .symbol(value) }
 }
 
-enum RadialPage: Hashable { case main, food, group(RadialGroup) }
+enum RadialPage: Hashable { case main, food, folder(String) }
 
 @MainActor @Observable
 final class RadialModel {
@@ -44,7 +44,7 @@ final class RadialModel {
 @MainActor
 final class RadialMenuController {
     /// Every page the menu can show; the layout is planned once for the busiest of them.
-    static var allPages: [RadialPage] { [.main, .food] + RadialGroup.allCases.map(RadialPage.group) }
+    var pages: () -> [RadialPage] = { [.main, .food] }
     static let headerSize = CGSize(width: 280, height: 84)
 
     let model = RadialModel()
@@ -79,7 +79,7 @@ final class RadialMenuController {
     func open(around petCenter: NSPoint, petRadius: CGFloat) {
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(petCenter) }) ?? NSScreen.main else { return }
         var input = RadialLayoutPlanner.Input(petCenter: petCenter, petRadius: Double(petRadius),
-                                              screen: screen.visibleFrame, maxItems: Self.allPages.map { items($0).count }.max() ?? 1)
+                                              screen: screen.visibleFrame, maxItems: pages().map { items($0).count }.max() ?? 1)
         input.headerSize = Self.headerSize
         let layout = RadialLayoutPlanner.plan(input)
 

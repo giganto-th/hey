@@ -1509,9 +1509,7 @@ private struct SettingsTab: View {
             Section("การเคลื่อนไหวของ \(game.pet.state.name)") {
                 MotionSettingsControls(model: model, game: game)
             }
-            Section("เมนูรอบสัตว์เลี้ยง") {
-                RadialMenuEditor(model: model, game: game)
-            }
+            RadialMenuEditor(model: model, game: game)
             Section("ปฏิกิริยาต่อสิ่งที่เกิดบนเครื่อง") {
                 let r = game.reactions
                 Toggle("เปิดปฏิกิริยา", isOn: Binding(
@@ -1700,8 +1698,6 @@ private struct AboutSection: View {
                 }
             }
         }
-        Text("ข้อมูลทั้งหมด (สัตว์เลี้ยง โน้ต ไฟล์ที่ฝาก) เก็บในเครื่องนี้เท่านั้น ไม่ส่งออกไปไหน ตัวละคร Hei Hei เป็นแฟนอาร์ตจากภาพยนตร์ Moana ของ Disney ทำไว้ใช้ส่วนตัว")
-            .font(.caption2).foregroundStyle(.secondary)
     }
 }
 
@@ -1712,42 +1708,107 @@ private struct RadialMenuEditor: View {
 
     var body: some View {
         let menu = game.radialMenu
-        Text("เลือก \(RadialMenuSettings.minPinned)–\(RadialMenuSettings.maxPinned) คำสั่งที่อยากให้อยู่บนวงแรก ที่เหลือจะรวมอยู่ในโฟลเดอร์ จับภาพ / จดและเตือน / อื่น ๆ")
-            .font(.caption).foregroundStyle(.secondary)
-        ForEach(menu.pinned, id: \.self) { action in
+        Section("เมนูรอบสัตว์เลี้ยง") {
+            Text("จัดว่าปุ่มไหนอยู่บนวงแรก ปุ่มไหนอยู่ในโฟลเดอร์ หรือซ่อนไว้ ลากแถวเพื่อเรียงลำดับ หรือใช้ปุ่ม ย้ายไป… ได้ วงแรกมีได้สูงสุด \(RadialMenuSettings.maxRing) ช่อง และ Hub อยู่บนวงแรกเสมอ")
+                .font(.caption).foregroundStyle(.secondary)
             HStack {
-                Image(systemName: action.symbol).frame(width: 22).foregroundStyle(.tint)
-                Text(action.label)
+                Button("เพิ่มโฟลเดอร์") { change { _ = $0.addFolder(named: "โฟลเดอร์ใหม่") } }
+                    .disabled(menu.ring.count >= RadialMenuSettings.maxRing)
+                Button("คืนค่าเริ่มต้น") { change { $0.reset() } }
                 Spacer()
-                Button { change { $0.move(action, by: -1) } } label: { Image(systemName: "chevron.up") }
-                    .disabled(menu.pinned.first == action)
-                Button { change { $0.move(action, by: 1) } } label: { Image(systemName: "chevron.down") }
-                    .disabled(menu.pinned.last == action)
-                Button { change { $0.setPinned(action, false) } } label: { Image(systemName: "minus.circle") }
-                    .disabled(action == .hub || menu.pinned.count <= RadialMenuSettings.minPinned)
-                    .help("ย้ายเข้าโฟลเดอร์")
+                Text("วงแรก \(menu.ring.count)/\(RadialMenuSettings.maxRing)").font(.caption).foregroundStyle(.secondary)
             }
-            .buttonStyle(.borderless)
         }
-        if !menu.rest.isEmpty {
-            Text("อยู่ในโฟลเดอร์").font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 4)
-            ForEach(menu.rest, id: \.self) { action in
-                HStack {
-                    Image(systemName: action.symbol).frame(width: 22).foregroundStyle(.secondary)
-                    Text(action.label)
-                    Spacer()
-                    Button { change { $0.setPinned(action, true) } } label: { Image(systemName: "plus.circle") }
-                        .disabled(menu.pinned.count >= RadialMenuSettings.maxPinned)
-                        .help("ย้ายขึ้นวงแรก")
+        Section("วงแรก") {
+            ForEach(Array(menu.ring.enumerated()), id: \.offset) { _, entry in
+                switch entry {
+                case .action(let action):
+                    ActionRow(action: action, menu: menu, change: change)
+                case .folder(let folder):
+                    HStack {
+                        Image(systemName: folder.symbol).frame(width: 22).foregroundStyle(.tint)
+                        FolderNameField(folder: folder, change: change)
+                        Text("\(folder.actions.count) ปุ่ม").font(.caption).foregroundStyle(.secondary)
+                        Button(role: .destructive) { change { $0.deleteFolder(folder.id) } } label: { Image(systemName: "trash") }
+                            .buttonStyle(.borderless).help("ลบโฟลเดอร์ (ปุ่มข้างในจะถูกซ่อน)")
+                    }
                 }
-                .buttonStyle(.borderless)
+            }
+            .onMove { from, to in change { $0.moveEntries(from: from, to: to) } }
+        }
+        ForEach(menu.folders) { folder in
+            Section {
+                ForEach(folder.actions, id: \.self) { action in
+                    ActionRow(action: action, menu: menu, change: change)
+                }
+                .onMove { from, to in change { $0.moveActions(in: folder.id, from: from, to: to) } }
+                if folder.actions.isEmpty { Text("ว่างอยู่ — เพิ่มปุ่มจากรายการ ซ่อนอยู่ หรือย้ายมาจากวงแรก").font(.caption).foregroundStyle(.secondary) }
+            } header: {
+                Label(folder.displayName, systemImage: folder.symbol)
             }
         }
-        Button("คืนค่าเริ่มต้น") { change { $0.reset() } }
+        if !menu.hidden.isEmpty {
+            Section("ซ่อนอยู่") {
+                ForEach(menu.hidden, id: \.self) { action in
+                    ActionRow(action: action, menu: menu, change: change)
+                }
+            }
+        }
     }
 
     private func change(_ edit: @escaping (inout RadialMenuSettings) -> Void) {
         model.perform { $0.setRadialMenu { edit(&$0) }; return [] }
+    }
+}
+
+/// One action in the editor, with a menu to send it to the ring, a folder, or out of sight.
+private struct ActionRow: View {
+    let action: RadialAction
+    let menu: RadialMenuSettings
+    let change: (@escaping (inout RadialMenuSettings) -> Void) -> Void
+
+    var body: some View {
+        let place = menu.place(of: action)
+        HStack {
+            Image(systemName: action.symbol).frame(width: 22)
+                .foregroundStyle(place == nil ? Color.secondary : Color.accentColor)
+            Text(action.label).foregroundStyle(place == nil ? Color.secondary : Color.primary)
+            Spacer()
+            Menu("ย้ายไป…") {
+                Button("วงแรก") { change { _ = $0.place(action, in: .ring) } }
+                    .disabled(place == .ring || menu.ring.count >= RadialMenuSettings.maxRing)
+                ForEach(menu.folders) { folder in
+                    Button("โฟลเดอร์ \(folder.displayName)") { change { _ = $0.place(action, in: .folder(folder.id)) } }
+                        .disabled(action == .hub || place == .folder(folder.id) || folder.actions.count >= RadialMenuSettings.maxFolderActions)
+                }
+                Divider()
+                Button("ซ่อน") { change { _ = $0.hide(action) } }
+                    .disabled(action == .hub || place == nil)
+            }
+            .menuStyle(.borderlessButton).fixedSize()
+        }
+    }
+}
+
+/// A folder's name, edited in place; the change is saved when you press Return or click away.
+private struct FolderNameField: View {
+    let folder: RadialFolder
+    let change: (@escaping (inout RadialMenuSettings) -> Void) -> Void
+    @State private var draft = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        TextField("ชื่อโฟลเดอร์", text: $draft, prompt: Text(folder.defaultName ?? "โฟลเดอร์"))
+            .textFieldStyle(.roundedBorder)
+            .focused($focused)
+            .onAppear { draft = folder.name ?? "" }
+            .onSubmit { commit() }
+            .onChange(of: focused) { _, isFocused in if !isFocused { commit() } }
+    }
+
+    private func commit() {
+        let id = folder.id, text = draft
+        change { $0.renameFolder(id, to: text) }
     }
 }
 

@@ -146,6 +146,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         radial = RadialMenuController()
         radial.items = { [weak self] page in self?.radialItems(page) ?? [] }
+        radial.pages = { [weak self] in [.main, .food] + (self?.model.game.radialMenu.folders.map { RadialPage.folder($0.id) } ?? []) }
         radial.header = { [weak self] in self?.radialHeader() ?? RadialHeaderInfo() }
         radial.onOpenChanged = { [weak self] open in self?.scene.setMenuOpen(open) }
 
@@ -265,7 +266,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                             self.openRadial()
                         }
                         if page != "main" {
-                            self.radial.go(page == "food" ? .food : (RadialGroup(rawValue: page).map(RadialPage.group) ?? .main))
+                            self.radial.go(page == "food" ? .food : .folder(page))
                         }
                         if let out = env["HEY_DEV_RADIAL_PNG"] {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
@@ -685,10 +686,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         switch page {
         case .main:
-            // the pinned buttons, then one folder per group that still holds something
-            return game.radialMenu.pinned.map(radialItem) + game.radialMenu.groups.map { group in
-                RadialItem(id: "group-\(group.rawValue)", icon: .symbol(group.symbol), title: group.label, closes: false) { [weak self] in
-                    self?.radial.go(.group(group))
+            return game.radialMenu.ring.compactMap { entry -> RadialItem? in
+                switch entry {
+                case .action(let action): return radialItem(action)
+                case .folder(let folder):
+                    return RadialItem(id: "folder-\(folder.id)", icon: .symbol(folder.symbol), title: folder.displayName, closes: false) { [weak self] in
+                        self?.radial.go(.folder(folder.id))
+                    }
                 }
             }
         case .food:
@@ -706,8 +710,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     self?.food.begin(food)
                 }
             }
-        case .group(let group):
-            return [back()] + game.radialMenu.members(of: group).map(radialItem)
+        case .folder(let id):
+            return [back()] + (game.radialMenu.folder(id)?.actions ?? []).map(radialItem)
         }
     }
 
