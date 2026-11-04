@@ -107,13 +107,12 @@ private struct AccountCard: View {
         HStack(alignment: .top, spacing: 12) {
             ProviderLogoView(provider: row.provider, size: 40)
             VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(row.name).fontWeight(.semibold).lineLimit(1)
-                        Text(row.provider.label).font(.caption).foregroundStyle(.secondary)
-                    }
+                HStack(spacing: 8) {
+                    Text(row.name).fontWeight(.semibold).lineLimit(1)
+                    Text(row.provider.label).font(.caption).padding(.horizontal, 7).padding(.vertical, 2).background(.quaternary, in: Capsule())
                     if let plan = row.usage?.plan {
-                        Text(plan.capitalized).font(.caption).padding(.horizontal, 7).padding(.vertical, 2).background(.quaternary, in: Capsule())
+                        Text(plan.capitalized).font(.caption.weight(.medium)).padding(.horizontal, 7).padding(.vertical, 2)
+                            .background(Color.accentColor.opacity(0.25), in: Capsule())
                     }
                     Spacer()
                     if row.removable {
