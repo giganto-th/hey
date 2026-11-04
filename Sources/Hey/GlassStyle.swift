@@ -24,6 +24,9 @@ enum HeyLook {
 
 /// The Hub's backdrop: a blue gradient with a few blurred bubbles drifting behind the glass.
 struct HubBackdrop: View {
+    /// 1 is the full deep blue; lower lets the desktop show through the window.
+    var opacity: Double = 1
+
     var body: some View {
         ZStack {
             LinearGradient(colors: [HeyLook.deep, HeyLook.sky], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -31,16 +34,16 @@ struct HubBackdrop: View {
             Circle().fill(HeyLook.glow.opacity(0.16)).frame(width: 260).blur(radius: 30).offset(x: -260, y: 240)
             Circle().fill(HeyLook.accent.opacity(0.18)).frame(width: 220).blur(radius: 36).offset(x: 300, y: 260)
         }
+        .opacity(opacity)
         .ignoresSafeArea()
     }
 }
 
 extension View {
-    /// A rounded frosted panel that holds a page's content.
+    /// A rounded Liquid Glass panel that holds a page's content.
     func heyPanel(cornerRadius: CGFloat = 24) -> some View {
-        background(.ultraThinMaterial.opacity(0.55), in: .rect(cornerRadius: cornerRadius))
-            .overlay(RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(.white.opacity(0.14), lineWidth: 1))
-            .clipShape(.rect(cornerRadius: cornerRadius))
+        clipShape(.rect(cornerRadius: cornerRadius))
+            .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
     }
 }
 

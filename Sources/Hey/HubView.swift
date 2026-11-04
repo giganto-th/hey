@@ -113,6 +113,7 @@ struct HubView: View {
     let gestureLog: GestureLog
     let detector: MusicDetector
     @Bindable var router: HubRouter
+    @AppStorage("hubOpacity") private var hubOpacity = 0.8
 
     var body: some View {
         let game = model.game
@@ -166,7 +167,7 @@ struct HubView: View {
             }
         }
         .padding(.top, 38).padding([.horizontal, .bottom], 16)
-        .background(HubBackdrop())
+        .background(HubBackdrop(opacity: hubOpacity))
         .preferredColorScheme(.dark)
         .tint(HeyLook.glow)
         .frame(minWidth: 760, minHeight: 560)
@@ -1484,6 +1485,7 @@ private struct SettingsTab: View {
     @State private var loginMessage = ""
     @State private var loginOn = LoginItem.isEnabled
     @State private var calendarOn = CalendarService.isEnabled
+    @AppStorage("hubOpacity") private var hubOpacity = 0.8
 
     var body: some View {
         List {
@@ -1514,6 +1516,16 @@ private struct SettingsTab: View {
                 }
                 .disabled(!r.enabled)
                 Text("นับแค่จำนวนครั้งที่กดแป้น ไม่เห็นว่ากดแป้นอะไร ไม่เก็บข้อมูล และไม่ต้องขอสิทธิ์ใดๆ · หลับเองเมื่อไม่ได้ใช้เครื่อง 3 นาที · ง่วงตอนดึก · ตื่นพร้อมหาวหลังเครื่องหลับ")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            Section("หน้าตา Hub") {
+                LabeledContent("ความทึบของพื้นหลัง") {
+                    HStack {
+                        Slider(value: $hubOpacity, in: 0.2...1)
+                        Text("\(Int(hubOpacity * 100))%").monospacedDigit().foregroundStyle(.secondary).frame(width: 44, alignment: .trailing)
+                    }.frame(maxWidth: 260)
+                }
+                Text("ลดลงเพื่อให้เห็นเดสก์ท็อปทะลุหน้าต่าง กระจกของแต่ละการ์ดยังคงอยู่")
                     .font(.caption2).foregroundStyle(.secondary)
             }
             Section("ปฏิทิน") {

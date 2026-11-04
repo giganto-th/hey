@@ -2,7 +2,7 @@ import Foundation
 
 /// Everything the pet's fan menu can hold.
 public enum RadialAction: String, CaseIterable, Codable, Sendable {
-    case music, files, focus, hub, feed, note, remind, shot, ocr, clip, rec, shelf, hide
+    case music, files, focus, hub, feed, note, remind, shot, ocr, clip, rec, shelf, dock, hide
 
     public var label: String {
         switch self {
@@ -18,6 +18,7 @@ public enum RadialAction: String, CaseIterable, Codable, Sendable {
         case .clip: "ประวัติคลิปบอร์ด"
         case .rec: "อัดจอ"
         case .shelf: "ถาดไฟล์"
+        case .dock: "Dock แอป"
         case .hide: "ซ่อนสัตว์เลี้ยง"
         }
     }
@@ -36,6 +37,7 @@ public enum RadialAction: String, CaseIterable, Codable, Sendable {
         case .clip: "doc.on.clipboard"
         case .rec: "record.circle"
         case .shelf: "suitcase.fill"
+        case .dock: "dock.rectangle"
         case .hide: "eye.slash.fill"
         }
     }
