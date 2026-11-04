@@ -892,9 +892,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if hubWindow == nil {
             let w = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 960, height: 680),
-                styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                 backing: .buffered, defer: false)
             w.title = "Hey! Hub"
+            w.titlebarAppearsTransparent = true
+            w.titleVisibility = .hidden
             w.minSize = NSSize(width: 780, height: 580)
             w.isReleasedWhenClosed = false
             w.contentView = NSHostingView(rootView: HubView(model: model, pomodoro: pomodoro, clipboard: clipboard, vault: vault, shelf: shelf, music: music, capture: capture, camera: camera, power: power, gestureLog: gestureLog, detector: detector, router: router))

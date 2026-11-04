@@ -19,7 +19,7 @@ struct TodayView: View {
                         Text("งานของคุณอยู่ตรงหน้า\nส่วนเพื่อนตัวป่วนอยู่ข้าง ๆ")
                             .foregroundStyle(.secondary)
                         Button("ดูแล \(game.pet.state.name)", systemImage: "heart") { router.section = .pet }
-                            .buttonStyle(.glassProminent)
+                            .buttonStyle(PillButtonStyle())
                     }
                     Spacer(minLength: 0)
                     CompanionPreview(stage: game.pet.state.stage, mode: previewMode, settings: game.motion, species: game.species)

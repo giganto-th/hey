@@ -113,78 +113,77 @@ struct HubView: View {
     let gestureLog: GestureLog
     let detector: MusicDetector
     @Bindable var router: HubRouter
-    @State private var selectedDestination: HubDestination? = .today
 
     var body: some View {
         let game = model.game
-        NavigationSplitView {
-            List(selection: $selectedDestination) {
-                Section("พื้นที่ของคุณ") {
-                    ForEach(HubDestination.allCases) { destination in
-                        Label(destination == .pet ? game.pet.state.name : destination.title, systemImage: destination.icon).tag(destination)
-                            .padding(.vertical, 5)
-                    }
+        let current = HubDestination.containing(router.section ?? .today)
+        HStack(spacing: 14) {
+            VStack(spacing: 10) {
+                ForEach(HubDestination.allCases.filter { $0 != .settings }) { destination in
+                    RailButton(symbol: destination.icon,
+                               title: destination == .pet ? game.pet.state.name : destination.title,
+                               selected: current == destination) { router.section = destination.sections.first }
                 }
+                Spacer()
+                RailButton(symbol: HubDestination.settings.icon, title: HubDestination.settings.title,
+                           selected: current == .settings) { router.section = HubDestination.settings.sections.first }
             }
-            .navigationTitle("Hey!")
-            .navigationSplitViewColumnWidth(min: 180, ideal: 194, max: 220)
-        } detail: {
+            .padding(.vertical, 14).padding(.horizontal, 10)
+            .frame(width: 66)
+            .heyPanel(cornerRadius: 33)
+
             VStack(spacing: 0) {
                 header(game)
-                let sections = HubDestination.containing(router.section ?? .today).sections
+                let sections = current.sections
                 if sections.count > 1 {
                     Picker("หน้า", selection: Binding<HubSection>(get: { router.section ?? .today }, set: { router.section = $0 })) {
                         ForEach(sections) { section in Text(section.title).tag(section) }
                     }
                     .pickerStyle(.segmented)
-                    .padding(.horizontal, 24).padding(.bottom, 16)
+                    .padding(.horizontal, 24).padding(.bottom, 14)
                 }
-                Divider()
-                switch router.section ?? .today {
-                case .today: TodayView(model: model, music: music, pomodoro: pomodoro, router: router)
-                case .quests: QuestsTab(game: game)
-                case .shop: ShopTab(model: model, game: game)
-                case .vault: FilesTab(model: model, game: game, vault: vault, shelf: shelf)
-                case .music: MusicTab(model: model, game: game, player: music)
-                case .capture: GalleryTab(model: model, game: game, capture: capture, camera: camera)
-                case .reminders: RemindersTab(model: model, game: game)
-                case .focus: PomodoroTab(pomodoro: pomodoro)
-                case .notes: NotesTab(model: model, game: game)
-                case .clipboard: ClipboardTab(service: clipboard)
-                case .game: MiniGameTab(model: model, game: game)
-                case .achievements: AchievementsTab(game: game)
-                case .gestures: GesturesTab(model: model, game: game, log: gestureLog)
-                case .pet: PetTab(model: model, game: game, router: router)
-                case .settings: SettingsTab(model: model, game: game, power: power, detector: detector)
+                Group {
+                    switch router.section ?? .today {
+                    case .today: TodayView(model: model, music: music, pomodoro: pomodoro, router: router)
+                    case .quests: QuestsTab(game: game)
+                    case .shop: ShopTab(model: model, game: game)
+                    case .vault: FilesTab(model: model, game: game, vault: vault, shelf: shelf)
+                    case .music: MusicTab(model: model, game: game, player: music)
+                    case .capture: GalleryTab(model: model, game: game, capture: capture, camera: camera)
+                    case .reminders: RemindersTab(model: model, game: game)
+                    case .focus: PomodoroTab(pomodoro: pomodoro)
+                    case .notes: NotesTab(model: model, game: game)
+                    case .clipboard: ClipboardTab(service: clipboard)
+                    case .game: MiniGameTab(model: model, game: game)
+                    case .achievements: AchievementsTab(game: game)
+                    case .gestures: GesturesTab(model: model, game: game, log: gestureLog)
+                    case .pet: PetTab(model: model, game: game, router: router)
+                    case .settings: SettingsTab(model: model, game: game, power: power, detector: detector)
+                    }
                 }
+                .scrollContentBackground(.hidden)
+                .heyPanel()
             }
         }
-        .tint(Color(red: 0.19, green: 0.52, blue: 0.43))
-        .onAppear { selectedDestination = HubDestination.containing(router.section ?? .today) }
-        .onChange(of: router.section) {
-            let destination = HubDestination.containing(router.section ?? .today)
-            if selectedDestination != destination { selectedDestination = destination }
-        }
-        .onChange(of: selectedDestination) {
-            if let destination = selectedDestination, HubDestination.containing(router.section ?? .today) != destination {
-                router.section = destination.sections.first
-            }
-        }
+        .padding(.top, 38).padding([.horizontal, .bottom], 16)
+        .background(HubBackdrop())
+        .preferredColorScheme(.dark)
+        .tint(HeyLook.glow)
         .frame(minWidth: 760, minHeight: 560)
     }
 
     private func header(_ game: Game) -> some View {
-        HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(HubDestination.containing(router.section ?? .today).title).font(.title2.weight(.medium))
-                Text("เพื่อนร่วมโต๊ะตัวป่วน").font(.caption).foregroundStyle(.secondary)
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(HubDestination.containing(router.section ?? .today).title).font(.system(size: 26, weight: .semibold, design: .rounded))
+                Text("เพื่อนร่วมโต๊ะตัวป่วน").font(.caption).foregroundStyle(.white.opacity(0.65))
             }
             Spacer()
-            Label("\(game.coins) เหรียญ", systemImage: "circle.hexagongrid.fill")
-            Label("\(game.streak.current) วัน", systemImage: "flame")
+            Label("\(game.coins) เหรียญ", systemImage: "circle.hexagongrid.fill").glassPill()
+            Label("\(game.streak.current) วัน", systemImage: "flame").glassPill()
         }
         .font(.callout)
-        .padding(24)
+        .padding(.horizontal, 8).padding(.bottom, 14).padding(.top, 4)
     }
 }
 
