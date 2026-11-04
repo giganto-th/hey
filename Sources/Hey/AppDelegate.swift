@@ -61,8 +61,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         food = FoodController(model: model, scene: scene)
         bubbles = BubbleController(scene: scene, model: model)
         aiUsage.onAlert = { [weak self] alert in
-            self?.scene.announce(tr("{0} ({1}) ใช้ไปแล้ว {2}% ของโควตา", alert.provider.label, alert.window.label, alert.level), symbol: "gauge.with.dots.needle.67percent")
+            let text = tr("{0} ({1}) ใช้ไปแล้ว {2}% ของโควตา", alert.provider.label, alert.window.label, alert.level)
+            self?.scene.announce(text, symbol: "gauge.with.dots.needle.67percent")
+            self?.aiUsage.postSystemNotification(text)
         }
+        aiUsage.onBadgeChange = { [weak self] in self?.updateStatusTitle() }
         aiUsage.start()
         scene.seekTarget = { [weak self] in self?.food.target() ?? self?.bubbles.target() }
         view.onEvent = { [weak scene] in scene?.send($0) }
@@ -550,7 +553,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             statusItem.button?.title = " \(pomodoro.remainingText)"
         } else {
             statusItem.button?.image = LogoArt.menuBarImage()
-            statusItem.button?.title = ""
+            if let badge = aiUsage.badge() {                // an AI quota is nearly used up
+                statusItem.button?.attributedTitle = NSAttributedString(string: " \(badge.percent)%", attributes: [
+                    .foregroundColor: badge.critical ? NSColor.systemRed : NSColor.systemOrange,
+                    .font: NSFont.menuBarFont(ofSize: 0)])
+            } else {
+                statusItem.button?.attributedTitle = NSAttributedString(string: "")
+                statusItem.button?.title = ""
+            }
         }
     }
 

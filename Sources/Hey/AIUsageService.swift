@@ -1,6 +1,7 @@
 import AppKit
 import Observation
 import Security
+import UserNotifications
 import HeyDomain
 
 /// Reads how much of your AI subscriptions is used up, per account.
@@ -12,6 +13,10 @@ import HeyDomain
 @MainActor @Observable
 final class AIUsageService {
     static let alertsKey = "aiUsageAlerts"
+    static let warnKey = "aiUsageWarn"
+    static let criticalKey = "aiUsageCritical"
+    static let systemNotifyKey = "aiUsageSystemNotify"
+    static let badgeKey = "aiUsageBadge"
     static let connectedKey = "aiUsageConnected"
     static let codexHomesKey = "aiUsageCodexHomes"
     static let antigravityCacheKey = "aiUsageAntigravityCache"
@@ -34,7 +39,8 @@ final class AIUsageService {
     private(set) var lastRefresh: Date?
 
     @ObservationIgnored var onAlert: ((UsageAlert) -> Void)?
-    @ObservationIgnored private var alerts = UsageAlerts()
+    @ObservationIgnored var onBadgeChange: (() -> Void)?
+    @ObservationIgnored private lazy var alerts = UsageAlerts(thresholds: thresholds)
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var labels: [String: String] = [:]          // Claude login id -> email, remembered for the session
 
@@ -73,6 +79,48 @@ final class AIUsageService {
         set { UserDefaults.standard.set(newValue, forKey: Self.alertsKey) }
     }
 
+    /// Where the pet starts warning, and where it warns again (percent of a quota window used).
+    var warnAt: Int {
+        get { UserDefaults.standard.object(forKey: Self.warnKey) as? Int ?? 80 }
+        set { UserDefaults.standard.set(newValue, forKey: Self.warnKey); alerts.thresholds = thresholds }
+    }
+    var criticalAt: Int {
+        get { UserDefaults.standard.object(forKey: Self.criticalKey) as? Int ?? 95 }
+        set { UserDefaults.standard.set(newValue, forKey: Self.criticalKey); alerts.thresholds = thresholds }
+    }
+    private var thresholds: [Int] { [warnAt, max(criticalAt, warnAt + 1)] }
+
+    /// Also post a macOS notification (not only the pet's bubble).
+    var systemNotify: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.systemNotifyKey) }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Self.systemNotifyKey)
+            if newValue { UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in } }
+        }
+    }
+
+    /// Show the highest used percentage next to the menu-bar icon once it passes the warning level.
+    var badgeEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: Self.badgeKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: Self.badgeKey); onBadgeChange?() }
+    }
+
+    /// The fullest quota across all accounts right now, if it is past the warning level.
+    func badge(now: Date = Date()) -> (percent: Int, critical: Bool)? {
+        guard badgeEnabled else { return nil }
+        let peak = AIProvider.allCases.flatMap { rows(for: $0) }.compactMap { $0.usage?.peakPercent(at: now) }.max() ?? 0
+        guard Int(peak) >= warnAt else { return nil }
+        return (Int(peak.rounded()), Int(peak) >= criticalAt)
+    }
+
+    func postSystemNotification(_ text: String) {
+        guard systemNotify else { return }
+        let content = UNMutableNotificationContent()
+        content.title = "Hey!"
+        content.body = text
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
+    }
+
     var connected: [ConnectedAccount] {
         get {
             guard let data = UserDefaults.standard.data(forKey: Self.connectedKey) else { return [] }
@@ -109,6 +157,7 @@ final class AIUsageService {
         if isEnabled(.codex) { rows[.codex] = await refreshCodex() }
         if isEnabled(.claude) { rows[.claude] = await refreshClaude() }
         if isEnabled(.antigravity) { rows[.antigravity] = await refreshAntigravity() }
+        onBadgeChange?()
     }
 
     private func notify(_ usage: ProviderUsage) {

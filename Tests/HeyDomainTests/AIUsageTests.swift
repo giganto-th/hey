@@ -85,6 +85,14 @@ private let now = Date(timeIntervalSince1970: 1_793_800_000)
         #expect(alerts.evaluate(usage(99, reset: now.addingTimeInterval(-5)), now: now).isEmpty) // expired windows never warn
     }
 
+    @Test func thresholdsCanBeChanged() {
+        var alerts = UsageAlerts(thresholds: [60, 90])
+        let usage = ProviderUsage(provider: .codex, windows: [UsageWindow(id: "5h", usedPercent: 65, resetsAt: now.addingTimeInterval(600))], asOf: now)
+        #expect(alerts.evaluate(usage, now: now).map(\.level) == [60])
+        #expect(usage.peakPercent(at: now) == 65)
+        #expect(usage.peakPercent(at: now.addingTimeInterval(700)) == 0)
+    }
+
     @Test func summaryUsesTheEffectivePercent() {
         let usage = ProviderUsage(provider: .claude, windows: [
             UsageWindow(id: "5h", usedPercent: 29.4, resetsAt: now.addingTimeInterval(100)),

@@ -87,6 +87,14 @@ struct UsageTab: View {
             Section(tr("การเตือน")) {
                 Toggle(tr("ให้สัตว์เลี้ยงเตือนเมื่อใช้โควตาไปแล้ว 80% และ 95%"), isOn: Binding(
                     get: { service.alertsEnabled }, set: { service.alertsEnabled = $0 }))
+                Stepper(tr("เตือนครั้งแรกเมื่อใช้ไป {0}%", service.warnAt), value: Binding(
+                    get: { service.warnAt }, set: { service.warnAt = $0 }), in: 50...95, step: 5)
+                Stepper(tr("เตือนอีกครั้งเมื่อใช้ไป {0}%", service.criticalAt), value: Binding(
+                    get: { service.criticalAt }, set: { service.criticalAt = $0 }), in: 60...100, step: 5)
+                Toggle(tr("แสดงเปอร์เซ็นต์ข้างไอคอนบนแถบเมนูเมื่อใกล้หมด"), isOn: Binding(
+                    get: { service.badgeEnabled }, set: { service.badgeEnabled = $0 }))
+                Toggle(tr("แจ้งเตือนผ่านศูนย์การแจ้งเตือนของ macOS ด้วย"), isOn: Binding(
+                    get: { service.systemNotify }, set: { service.systemNotify = $0 }))
                 Text(tr("เตือนครั้งเดียวต่อระดับในแต่ละช่วงโควตาของแต่ละบัญชี"))
                     .font(.caption2).foregroundStyle(.secondary)
             }

@@ -172,15 +172,16 @@ public struct UsageAlert: Equatable, Sendable {
 
 /// Says "heads up" once per threshold per quota period, so the pet does not nag.
 public struct UsageAlerts: Sendable {
-    public static let thresholds = [80, 95]
+    public static let defaultThresholds = [80, 95]
+    public var thresholds: [Int]
     private var seen: [String: Int] = [:]          // "provider.window.resetsAt" -> highest level already announced
 
-    public init() {}
+    public init(thresholds: [Int] = Self.defaultThresholds) { self.thresholds = thresholds.sorted() }
 
     public mutating func evaluate(_ usage: ProviderUsage, now: Date) -> [UsageAlert] {
         var alerts: [UsageAlert] = []
         for w in usage.windows where !w.isExpired(at: now) {
-            let level = Self.thresholds.filter { w.usedPercent >= Double($0) }.max() ?? 0
+            let level = thresholds.filter { w.usedPercent >= Double($0) }.max() ?? 0
             let key = "\(usage.accountID).\(w.id).\(Int(w.resetsAt?.timeIntervalSince1970 ?? 0))"
             if level > (seen[key] ?? 0) {
                 seen[key] = level
@@ -223,4 +224,9 @@ public enum ClaudeProfile {
               let account = root["account"] as? [String: Any] else { return nil }
         return (account["email"] as? String) ?? (account["full_name"] as? String) ?? (account["display_name"] as? String)
     }
+}
+
+extension ProviderUsage {
+    /// The fullest quota window of this account right now (an expired window counts as empty).
+    public func peakPercent(at now: Date) -> Double { windows.map { $0.effectivePercent(at: now) }.max() ?? 0 }
 }
