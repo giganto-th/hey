@@ -7,10 +7,10 @@ public enum MediaKind: String, Codable, CaseIterable, Sendable {
 
     public var label: String {
         switch self {
-        case .screenshot: "ภาพหน้าจอ"
-        case .screenRecording: "อัดหน้าจอ"
-        case .photo: "ภาพจากกล้อง"
-        case .video: "วิดีโอจากกล้อง"
+        case .screenshot: tr("ภาพหน้าจอ")
+        case .screenRecording: tr("อัดหน้าจอ")
+        case .photo: tr("ภาพจากกล้อง")
+        case .video: tr("วิดีโอจากกล้อง")
         }
     }
 }

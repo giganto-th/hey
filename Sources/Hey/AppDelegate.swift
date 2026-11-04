@@ -70,7 +70,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         suggestionToast = SuggestionToastController(detector: detector)
         detector.onChange = { [weak self] in self?.suggestionToast.sync() }
-        detector.onSuggest = { [weak scene] _ in scene?.announce("เจอเพลง YouTube!", symbol: "music.note") }
+        detector.onSuggest = { [weak scene] _ in scene?.announce(tr("เจอเพลง YouTube!"), symbol: "music.note") }
         capture = CaptureService(model: model)
         capture.onMessage = { [weak scene] in scene?.announce($0, symbol: $1) }
         capture.onChange = { [weak self] in self?.updateStatusTitle() }
@@ -93,7 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard let self else { return }
             self.route(payload, to: self.model.game.files.dropDefault)      // dropped straight on the pet
         }
-        view.onDragEnter = { [weak scene] in scene?.announce("วางเลย!", symbol: "tray.and.arrow.down.fill") }
+        view.onDragEnter = { [weak scene] in scene?.announce(tr("วางเลย!"), symbol: "tray.and.arrow.down.fill") }
         view.onGesture = { [weak self] in self?.gesture($0) }
         view.onPinch = { [weak self] factor, ended in self?.pinch(factor, ended: ended) }
         view.onContext = { [weak self] in self?.openRadial() }
@@ -166,7 +166,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self?.scene.setDropActive(active)
             self?.updateClickThrough()
         }
-        dropZones.onDragBegan = { [weak self] in self?.scene.announce("ปล่อยลงช่องไหนดี?", symbol: "hand.point.up.left.fill") }
+        dropZones.onDragBegan = { [weak self] in self?.scene.announce(tr("ปล่อยลงช่องไหนดี?"), symbol: "hand.point.up.left.fill") }
         dropZones.startWatching()
 
         toast = ReminderToastController(model: model)
@@ -218,8 +218,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
             if let path = env["HEY_DEV_LOCAL_TRACK"] {
                 // An isolated silent fixture exercises the real AVPlayer → scene callbacks.
-                if model.game.currentPlaylist == nil { model.perform { $0.createPlaylist("ทดสอบเพลง"); return [] } }
-                let track = Track(source: .file(path: path, bookmark: nil), title: "ทดสอบสถานะเพลง", addedAt: Date())
+                if model.game.currentPlaylist == nil { model.perform { $0.createPlaylist(tr("ทดสอบเพลง")); return [] } }
+                let track = Track(source: .file(path: path, bookmark: nil), title: tr("ทดสอบสถานะเพลง"), addedAt: Date())
                 music.setVolume(0)
                 if let id = model.game.currentPlaylist?.id {
                     model.perform { $0.addTrack(track, to: id) }
@@ -277,7 +277,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 }
             }
             if let path = env["HEY_DEV_SNAPSHOT"] {   // render the bubble layer to a PNG so it can be checked without a screen grab
-                scene.announce("ทดสอบฟองแก้ว ยาวหน่อยให้ขึ้นสองบรรทัด", symbol: "sparkles")
+                scene.announce(tr("ทดสอบฟองแก้ว ยาวหน่อยให้ขึ้นสองบรรทัด"), symbol: "sparkles")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
                     MainActor.assumeIsolated {
                         guard let host = self?.bubbleHost, let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { return }
@@ -359,7 +359,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let songs = urls.filter { YouTubeLink.videoID(from: $0.absoluteString) != nil }
         let others = urls.filter { YouTubeLink.videoID(from: $0.absoluteString) == nil }
         if !songs.isEmpty {
-            if model.game.currentPlaylist == nil { model.perform { $0.createPlaylist("เพลงของฉัน"); return [] } }
+            if model.game.currentPlaylist == nil { model.perform { $0.createPlaylist(tr("เพลงของฉัน")); return [] } }
             if let id = model.game.currentPlaylist?.id {
                 for url in songs { _ = music.addYouTube(url.absoluteString, to: id) }
             }
@@ -394,18 +394,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let main = NSMenu()
         let appItem = NSMenuItem(); main.addItem(appItem)
         let appMenu = NSMenu(); appItem.submenu = appMenu
-        appMenu.addItem(withTitle: "ซ่อน Hey!", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
-        appMenu.addItem(withTitle: "ปิดหน้าต่าง", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        appMenu.addItem(withTitle: tr("ซ่อน Hey!"), action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(withTitle: tr("ปิดหน้าต่าง"), action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
         let editItem = NSMenuItem(); main.addItem(editItem)
-        let edit = NSMenu(title: "แก้ไข"); editItem.submenu = edit
-        edit.addItem(withTitle: "เลิกทำ", action: Selector(("undo:")), keyEquivalent: "z")
-        let redo = edit.addItem(withTitle: "ทำซ้ำ", action: Selector(("redo:")), keyEquivalent: "z")
+        let edit = NSMenu(title: tr("แก้ไข")); editItem.submenu = edit
+        edit.addItem(withTitle: tr("เลิกทำ"), action: Selector(("undo:")), keyEquivalent: "z")
+        let redo = edit.addItem(withTitle: tr("ทำซ้ำ"), action: Selector(("redo:")), keyEquivalent: "z")
         redo.keyEquivalentModifierMask = [.command, .shift]
         edit.addItem(.separator())
-        edit.addItem(withTitle: "ตัด", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
-        edit.addItem(withTitle: "คัดลอก", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
-        edit.addItem(withTitle: "วาง", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
-        edit.addItem(withTitle: "เลือกทั้งหมด", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        edit.addItem(withTitle: tr("ตัด"), action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        edit.addItem(withTitle: tr("คัดลอก"), action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        edit.addItem(withTitle: tr("วาง"), action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        edit.addItem(withTitle: tr("เลือกทั้งหมด"), action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         NSApp.mainMenu = main
     }
 
@@ -422,18 +422,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         scene.setSleepy(context.isLateNight(hour: Calendar.current.component(.hour, from: now)))
         for cue in context.tick(now: now, idleSeconds: idle) {
             switch cue {
-            case .welcomeBack: scene.announce("กลับมาแล้ว! คิดถึงนะ", symbol: "hand.wave.fill")
-            case .lateNight: scene.announce("ดึกแล้วนะ พักผ่อนบ้างน้า", symbol: "moon.stars.fill")
-            case .takeBreak: scene.announce("นั่งมานานแล้ว พักสายตาหน่อย", symbol: "eye.fill")
+            case .welcomeBack: scene.announce(tr("กลับมาแล้ว! คิดถึงนะ"), symbol: "hand.wave.fill")
+            case .lateNight: scene.announce(tr("ดึกแล้วนะ พักผ่อนบ้างน้า"), symbol: "moon.stars.fill")
+            case .takeBreak: scene.announce(tr("นั่งมานานแล้ว พักสายตาหน่อย"), symbol: "eye.fill")
             }
         }
         let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
         let cue = appFocus.tick(now: now, frontBundleID: front, idleSeconds: idle)
         guard model.game.reactions.enabled, model.game.reactions.appStreaks else { return }
         switch cue {
-        case .codingStreak: scene.announce("เขียนโค้ดมานานแล้ว ยืดเส้นหน่อยไหม", symbol: "chevron.left.forwardslash.chevron.right")
-        case .readingStreak: scene.announce("อ่านมาตั้งนาน พักสายตานิดนึงนะ", symbol: "book.fill")
-        case .gamingStreak: scene.announce("เล่นมานานแล้ว ดื่มน้ำก่อนไหม", symbol: "gamecontroller.fill")
+        case .codingStreak: scene.announce(tr("เขียนโค้ดมานานแล้ว ยืดเส้นหน่อยไหม"), symbol: "chevron.left.forwardslash.chevron.right")
+        case .readingStreak: scene.announce(tr("อ่านมาตั้งนาน พักสายตานิดนึงนะ"), symbol: "book.fill")
+        case .gamingStreak: scene.announce(tr("เล่นมานานแล้ว ดื่มน้ำก่อนไหม"), symbol: "gamecontroller.fill")
         case nil: break
         }
     }
@@ -466,7 +466,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 return []
             }
             stickies.sync()
-            scene.announce("จดโน้ตให้แล้ว", symbol: "note.text")
+            scene.announce(tr("จดโน้ตให้แล้ว"), symbol: "note.text")
         case .copyClip(let n):
             let entries = clipboard.history.entries
             if n < entries.count { clipboard.copy(entries[n]) }
@@ -508,10 +508,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         switch event {
         case .focusFinished(let n):
             model.perform { $0.creditPomodoro(session: n) }
-            scene.announce("ครบ \(n) รอบ พักได้แล้ว", symbol: "timer")
+            scene.announce(tr("ครบ {0} รอบ พักได้แล้ว", n), symbol: "timer")
             scene.cheer()
         case .breakFinished:
-            scene.announce("กลับมาโฟกัสกัน", symbol: "target")
+            scene.announce(tr("กลับมาโฟกัสกัน"), symbol: "target")
             scene.cheer()
         }
     }
@@ -570,12 +570,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func quickReminder() {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
-        alert.messageText = "ตั้งเตือน"
-        alert.informativeText = "พิมพ์ข้อความพร้อมเวลา เช่น  “ประชุม อีก 20 นาที”  “พรุ่งนี้ 9 โมง ส่งงาน”  “กินยา 18:30”"
+        alert.messageText = tr("ตั้งเตือน")
+        alert.informativeText = tr("พิมพ์ข้อความพร้อมเวลา เช่น  “ประชุม อีก 20 นาที”  “พรุ่งนี้ 9 โมง ส่งงาน”  “กินยา 18:30”")
         let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
         alert.accessoryView = field
-        alert.addButton(withTitle: "ตั้งเตือน")
-        alert.addButton(withTitle: "ยกเลิก")
+        alert.addButton(withTitle: tr("ตั้งเตือน"))
+        alert.addButton(withTitle: tr("ยกเลิก"))
         alert.window.initialFirstResponder = field
         guard alert.runModal() == .alertFirstButtonReturn else { return }
 
@@ -583,13 +583,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard !input.isEmpty else { return }
         guard let parsed = ReminderParser.parse(input, now: Date()) else {
             let fail = NSAlert()
-            fail.messageText = "ไม่พบเวลาในข้อความ"
-            fail.informativeText = "ลองใส่เวลา เช่น “อีก 20 นาที”, “15:30”, “บ่าย 2 โมง”, “พรุ่งนี้ 9 โมง”"
+            fail.messageText = tr("ไม่พบเวลาในข้อความ")
+            fail.informativeText = tr("ลองใส่เวลา เช่น “อีก 20 นาที”, “15:30”, “บ่าย 2 โมง”, “พรุ่งนี้ 9 โมง”")
             fail.runModal()
             return
         }
         model.perform { $0.addReminder(parsed.text, at: parsed.fireAt, now: Date()) }
-        scene.announce("จดไว้แล้ว", symbol: "bell.fill")
+        scene.announce(tr("จดไว้แล้ว"), symbol: "bell.fill")
     }
 
     // MARK: click-through
@@ -636,7 +636,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         info.coins = game.coins
         info.streak = game.streak.current
         if s.stage == .egg {
-            info.progress = ("อุ่นไข่ \(Int(s.hatchProgress))/\(Int(game.pet.balance.hatchNeeded))", s.hatchProgress / game.pet.balance.hatchNeeded)
+            info.progress = (tr("อุ่นไข่ {0}/{1}", Int(s.hatchProgress), Int(game.pet.balance.hatchNeeded)), s.hatchProgress / game.pet.balance.hatchNeeded)
         } else {
             info.bars = [("fork.knife", s.hunger / 100, .orange), ("face.smiling", s.mood / 100, .pink), ("bolt.fill", s.energy / 100, .green)]
             if let need = game.pet.balance.xpToLeave(s.stage) { info.progress = ("XP \(Int(s.xp))/\(Int(need))", s.xp / need) }
@@ -650,31 +650,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         switch action {
         case .music:
             return RadialItem(id: "music", icon: music.isPlaying ? "pause.fill" : "music.note",
-                              title: music.isPlaying ? "หยุดเพลง" : "เล่นเพลง") { [weak self] in self?.music.toggle() }
+                              title: music.isPlaying ? tr("หยุดเพลง") : tr("เล่นเพลง")) { [weak self] in self?.music.toggle() }
         case .files:
-            return RadialItem(id: "files", icon: "tray.fill", title: "ฝากไฟล์",
+            return RadialItem(id: "files", icon: "tray.fill", title: tr("ฝากไฟล์"),
                               badge: game.vault.isEmpty ? nil : "\(game.vault.count)", badgeColor: .teal) { [weak self] in self?.showHub(section: .vault) }
         case .focus:
             return RadialItem(id: "focus", icon: pomodoro.timer.isRunning ? "pause.circle.fill" : "timer",
-                              title: pomodoro.timer.isRunning ? "หยุดโฟกัส" : "โฟกัส",
+                              title: pomodoro.timer.isRunning ? tr("หยุดโฟกัส") : tr("โฟกัส"),
                               badge: pomodoro.timer.isRunning ? pomodoro.remainingText : nil, badgeColor: .red) { [weak self] in self?.pomodoro.toggle() }
-        case .bubbles: return RadialItem(id: "bubbles", icon: "bubbles.and.sparkles", title: "ฟองสบู่") { [weak self] in self?.bubbles.start() }
+        case .bubbles: return RadialItem(id: "bubbles", icon: "bubbles.and.sparkles", title: tr("ฟองสบู่")) { [weak self] in self?.bubbles.start() }
         case .hub:
             let questsLeft = game.quests.filter { !$0.done }.count
             return RadialItem(id: "hub", icon: "square.grid.2x2.fill", title: "Hub",
                               badge: questsLeft > 0 ? "\(questsLeft)" : nil) { [weak self] in self?.openHub() }
         case .feed:
-            return RadialItem(id: "feed", icon: "fork.knife", title: "ให้อาหาร", closes: false) { [weak self] in self?.radial.go(.food) }
-        case .note: return RadialItem(id: "note", icon: "note.text", title: "โน้ต") { [weak self] in self?.quickNote() }
-        case .remind: return RadialItem(id: "remind", icon: "bell.fill", title: "ตั้งเตือน") { [weak self] in self?.quickReminder() }
-        case .shot: return RadialItem(id: "shot", icon: "camera.viewfinder", title: "แคปจอ") { [weak self] in self?.captureRegion() }
-        case .ocr: return RadialItem(id: "ocr", icon: "text.viewfinder", title: "อ่านข้อความ") { [weak self] in self?.readScreenText() }
-        case .clip: return RadialItem(id: "clip", icon: "doc.on.clipboard", title: "คลิปบอร์ด") { [weak self] in self?.router.section = .clipboard; self?.openHub() }
+            return RadialItem(id: "feed", icon: "fork.knife", title: tr("ให้อาหาร"), closes: false) { [weak self] in self?.radial.go(.food) }
+        case .note: return RadialItem(id: "note", icon: "note.text", title: tr("โน้ต")) { [weak self] in self?.quickNote() }
+        case .remind: return RadialItem(id: "remind", icon: "bell.fill", title: tr("ตั้งเตือน")) { [weak self] in self?.quickReminder() }
+        case .shot: return RadialItem(id: "shot", icon: "camera.viewfinder", title: tr("แคปจอ")) { [weak self] in self?.captureRegion() }
+        case .ocr: return RadialItem(id: "ocr", icon: "text.viewfinder", title: tr("อ่านข้อความ")) { [weak self] in self?.readScreenText() }
+        case .clip: return RadialItem(id: "clip", icon: "doc.on.clipboard", title: tr("คลิปบอร์ด")) { [weak self] in self?.router.section = .clipboard; self?.openHub() }
         case .rec:
             return RadialItem(id: "rec", icon: capture.isRecording ? "stop.circle.fill" : "record.circle",
-                              title: capture.isRecording ? "หยุดอัด" : "อัดจอ") { [weak self] in self?.capture.toggleRecording() }
+                              title: capture.isRecording ? tr("หยุดอัด") : tr("อัดจอ")) { [weak self] in self?.capture.toggleRecording() }
         case .shelf:
-            return RadialItem(id: "shelf", icon: "suitcase.fill", title: "ถาดไฟล์",
+            return RadialItem(id: "shelf", icon: "suitcase.fill", title: tr("ถาดไฟล์"),
                               badge: game.shelf.isEmpty ? nil : "\(game.shelf.count)", badgeColor: .teal) { [weak self] in self?.toggleTray() }
         }
     }
@@ -682,7 +682,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func radialItems(_ page: RadialPage) -> [RadialItem] {
         let game = model.game
         func back() -> RadialItem {
-            RadialItem(id: "back", icon: "chevron.backward", title: "กลับ", closes: false) { [weak self] in self?.radial.go(.main) }
+            RadialItem(id: "back", icon: "chevron.backward", title: tr("กลับ"), closes: false) { [weak self] in self?.radial.go(.main) }
         }
         switch page {
         case .main:
@@ -700,12 +700,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 let stock = game.stock(of: food)
                 let wait = game.pet.cooldownRemaining(food, at: Date())
                 if stock <= 0 {         // nothing to give: the button leads to the shop instead of a dead end
-                    return RadialItem(id: food.id, icon: .image(IconLibrary.foodImage(food)), title: food.name, badge: "ซื้อ", badgeColor: .blue) { [weak self] in
+                    return RadialItem(id: food.id, icon: .image(IconLibrary.foodImage(food)), title: food.name, badge: tr("ซื้อ"), badgeColor: .blue) { [weak self] in
                         self?.showHub(section: .shop)
                     }
                 }
                 return RadialItem(id: food.id, icon: .image(IconLibrary.foodImage(food)), title: food.name,
-                                  badge: wait > 0 ? DurationText.wait(wait) : (food.price == 0 ? "ฟรี" : "×\(stock)"),
+                                  badge: wait > 0 ? DurationText.wait(wait) : (food.price == 0 ? tr("ฟรี") : "×\(stock)"),
                                   badgeColor: wait > 0 ? .gray : (food.price == 0 ? .green : .orange)) { [weak self] in
                     self?.food.begin(food)
                 }
@@ -727,7 +727,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let next = min(max(current * Double(factor), GestureSettings.minScale), GestureSettings.maxScale)
         model.performQuietly { $0.setGestures { $0.petScale = next }; return [] }   // live, without a disk write per frame
         if ended {
-            gestureLog.record("ย่อ/ขยายสัตว์เลี้ยง \(Int(next * 100))%")
+            gestureLog.record(tr("ย่อ/ขยายสัตว์เลี้ยง {0}%", Int(next * 100)))
             model.save()
         }
     }
@@ -838,30 +838,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         if s.stage == .egg {
-            info("ไข่ — อุ่นแล้ว \(Int(s.hatchProgress))/\(Int(game.pet.balance.hatchNeeded))", symbol: "oval.fill")
-            info("คลิกไข่หรือเปิดแอปทิ้งไว้เพื่ออุ่น")
+            info(tr("ไข่ — อุ่นแล้ว {0}/{1}", Int(s.hatchProgress), Int(game.pet.balance.hatchNeeded)), symbol: "oval.fill")
+            info(tr("คลิกไข่หรือเปิดแอปทิ้งไว้เพื่ออุ่น"))
         } else {
             let xp = game.pet.balance.xpToLeave(s.stage).map { "XP \(Int(s.xp))/\(Int($0))" } ?? "XP \(Int(s.xp))"
             info("\(s.name) — \(s.stage.displayName) · \(xp)")
-            info("อิ่ม \(Int(s.hunger))   อารมณ์ \(Int(s.mood))", symbol: "fork.knife")
-            info("พลัง \(Int(s.energy))   ผูกพัน \(Int(s.bond))", symbol: "bolt.fill")
+            info(tr("อิ่ม {0}   อารมณ์ {1}", Int(s.hunger), Int(s.mood)), symbol: "fork.knife")
+            info(tr("พลัง {0}   ผูกพัน {1}", Int(s.energy), Int(s.bond)), symbol: "bolt.fill")
         }
-        info("เหรียญ \(game.coins)   ต่อเนื่อง \(game.streak.current) วัน", symbol: "circle.hexagongrid.fill")
+        info(tr("เหรียญ {0}   ต่อเนื่อง {1} วัน", game.coins, game.streak.current), symbol: "circle.hexagongrid.fill")
         let done = game.quests.filter(\.done).count
-        if !game.quests.isEmpty { info("ภารกิจวันนี้ \(done)/\(game.quests.count)") }
-        if !game.vault.isEmpty { info("vault \(game.vault.count) ชิ้น", symbol: "tray.full.fill") }
-        info("โหมด\(power.decision.tier.label)\(power.decision.reason.isEmpty ? "" : " · \(power.decision.reason)")", symbol: "leaf.fill")
+        if !game.quests.isEmpty { info(tr("ภารกิจวันนี้ {0}/{1}", done, game.quests.count)) }
+        if !game.vault.isEmpty { info(tr("vault {0} ชิ้น", game.vault.count), symbol: "tray.full.fill") }
+        info(tr("โหมด{0}{1}", power.decision.tier.label, power.decision.reason.isEmpty ? "" : " · \(power.decision.reason)"), symbol: "leaf.fill")
         let waiting = game.reminders.filter(\.isActive).count
-        if waiting > 0 { info("เตือนที่รออยู่ \(waiting)", symbol: "bell.fill") }
+        if waiting > 0 { info(tr("เตือนที่รออยู่ {0}", waiting), symbol: "bell.fill") }
         menu.addItem(.separator())
 
-        action("เปิด Hub…   ⌃⌥H", #selector(openHub))
+        action(tr("เปิด Hub…   ⌃⌥H"), #selector(openHub))
 
-        let feedItem = NSMenuItem(title: "ให้อาหาร", action: nil, keyEquivalent: "")
+        let feedItem = NSMenuItem(title: tr("ให้อาหาร"), action: nil, keyEquivalent: "")
         let feedMenu = NSMenu()
         for food in game.pet.balance.foods {
             let stock = game.stock(of: food)
-            let star = food.id == s.favoriteFood ? " · ของโปรด" : ""
+            let star = food.id == s.favoriteFood ? tr(" · ของโปรด") : ""
             let count = food.price == 0 ? "" : "  ×\(stock)"
             let item = NSMenuItem(title: "\(food.name)\(star)\(count)", action: #selector(feed(_:)), keyEquivalent: "")
             item.image = IconLibrary.foodMenuImage(food)
@@ -874,39 +874,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(feedItem)
 
         menu.addItem(.separator())
-        let shoot = NSMenuItem(title: "ถ่าย/อัด", action: nil, keyEquivalent: "")
+        let shoot = NSMenuItem(title: tr("ถ่าย/อัด"), action: nil, keyEquivalent: "")
         let shootMenu = NSMenu()
-        for (title, sel) in [("ภาพทั้งจอ (นับถอยหลัง)", #selector(captureFull)), ("เลือกพื้นที่   ⌃⌥S", #selector(captureRegion)),
-                             (capture.isRecording ? "หยุดอัดหน้าจอ   ⌃⌥V" : "อัดหน้าจอ   ⌃⌥V", #selector(toggleRecording)),
-                             ("เปิดกล้อง…", #selector(openCamera))] {
+        for (title, sel) in [(tr("ภาพทั้งจอ (นับถอยหลัง)"), #selector(captureFull)), (tr("เลือกพื้นที่   ⌃⌥S"), #selector(captureRegion)),
+                             (capture.isRecording ? tr("หยุดอัดหน้าจอ   ⌃⌥V") : tr("อัดหน้าจอ   ⌃⌥V"), #selector(toggleRecording)),
+                             (tr("เปิดกล้อง…"), #selector(openCamera))] {
             let item = NSMenuItem(title: title, action: sel, keyEquivalent: "")
             item.target = self
             shootMenu.addItem(item)
         }
         shoot.submenu = shootMenu
         menu.addItem(shoot)
-        action(game.shelf.isEmpty ? "ถาดพักไฟล์ (ว่าง)" : "ถาดพักไฟล์ (\(game.shelf.count))", #selector(toggleTray))
-        action("เป่าฟองสบู่", #selector(blowBubbles))
-        action("ตั้งเตือนด่วน…   ⌃⌥R", #selector(quickReminder))
-        action("โน้ตด่วน   ⌃⌥N", #selector(quickNote))
+        action(game.shelf.isEmpty ? tr("ถาดพักไฟล์ (ว่าง)") : tr("ถาดพักไฟล์ ({0})", game.shelf.count), #selector(toggleTray))
+        action(tr("เป่าฟองสบู่"), #selector(blowBubbles))
+        action(tr("ตั้งเตือนด่วน…   ⌃⌥R"), #selector(quickReminder))
+        action(tr("โน้ตด่วน   ⌃⌥N"), #selector(quickNote))
         if let playing = music.nowPlaying { info("\(playing.title.prefix(32))", symbol: "music.note") }
-        action(music.isPlaying ? "หยุดเพลง   ⌃⌥M" : "เล่นเพลง   ⌃⌥M", #selector(toggleMusic))
-        action("เพลงถัดไป   ⌃⌥]", #selector(nextTrack))
+        action(music.isPlaying ? tr("หยุดเพลง   ⌃⌥M") : tr("เล่นเพลง   ⌃⌥M"), #selector(toggleMusic))
+        action(tr("เพลงถัดไป   ⌃⌥]"), #selector(nextTrack))
         let t = pomodoro.timer
-        action(t.isRunning ? "หยุด Pomodoro (\(pomodoro.remainingText))   ⌃⌥P" : "เริ่ม Pomodoro   ⌃⌥P",
+        action(t.isRunning ? tr("หยุด Pomodoro ({0})   ⌃⌥P", pomodoro.remainingText) : tr("เริ่ม Pomodoro   ⌃⌥P"),
                #selector(togglePomodoro))
 
         if devMode {
             menu.addItem(.separator())
-            action("Dev: อุ่นไข่ +50", #selector(devWarm))
+            action(tr("Dev: อุ่นไข่ +50"), #selector(devWarm))
             action("Dev: +100 XP", #selector(devXP))
-            action("Dev: +100 เหรียญ", #selector(devCoins))
-            action("Dev: เตือนใน 5 วินาที", #selector(devReminder))
+            action(tr("Dev: +100 เหรียญ"), #selector(devCoins))
+            action(tr("Dev: เตือนใน 5 วินาที"), #selector(devReminder))
         }
 
         menu.addItem(.separator())
-        action("ซ่อน/แสดงสัตว์เลี้ยง", #selector(toggleVisible))
-        action("ออกจาก Hey!", #selector(quit), key: "q")
+        action(tr("ซ่อน/แสดงสัตว์เลี้ยง"), #selector(toggleVisible))
+        action(tr("ออกจาก Hey!"), #selector(quit), key: "q")
     }
 
     private func showHub(section: HubSection) {
@@ -943,7 +943,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func toggleRecording() { capture.toggleRecording() }
     @objc private func openCamera() { Task { await camera.show() } }
     @objc private func toggleTray() {
-        if model.game.shelf.isEmpty { scene.announce("ถาดว่างอยู่ ลากไฟล์มาวางที่ฉันได้เลย", symbol: "suitcase.fill") } else { tray.toggle() }
+        if model.game.shelf.isEmpty { scene.announce(tr("ถาดว่างอยู่ ลากไฟล์มาวางที่ฉันได้เลย"), symbol: "suitcase.fill") } else { tray.toggle() }
     }
     @objc private func blowBubbles() { bubbles.start() }
     @objc private func toggleMusic() { music.toggle() }
@@ -960,7 +960,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func devXP() { model.perform { $0.grantXP(100) } }
     @objc private func devCoins() { model.perform { $0.grantCoins(100); return [] } }
     @objc private func devReminder() {
-        model.perform { $0.addReminder("ทดสอบการเตือน", at: Date().addingTimeInterval(5), now: Date()) }
+        model.perform { $0.addReminder(tr("ทดสอบการเตือน"), at: Date().addingTimeInterval(5), now: Date()) }
     }
 
     @objc private func toggleVisible() {

@@ -201,13 +201,13 @@ final class PetScene: SKScene {
                                   .colorize(with: color, colorBlendFactor: 0, duration: 0.5)]), withKey: "flash")
         }
         switch reaction {
-        case .lowBattery(let p): say("แบตเหลือ \(p)% แล้วนะ หาที่เสียบปลั๊กหน่อย", symbol: "battery.25percent")
-        case .criticalBattery(let p): say("แบตเหลือ \(p)%! เสียบปลั๊กด่วน", symbol: "battery.0percent")
-        case .pluggedIn: say("ได้ไฟแล้ว! อิ่มจัง", symbol: "bolt.fill"); fsm.send(.clicked); flash(.systemYellow)
-        case .unplugged(let p): if p <= 40 { say("ถอดปลั๊กแล้ว… เหลือ \(p)%") }
-        case .fullyCharged: say("แบตเต็มแล้ว ถอดปลั๊กได้นะ", symbol: "battery.100percent"); fsm.send(.clicked); flash(.systemGreen)
-        case .overheating: say("ร้อนจังเลย พักเครื่องหน่อยมั้ย", symbol: "thermometer.high")
-        case .fastTypist: say("พิมพ์เร็วจัง", symbol: "keyboard"); fsm.send(.clicked)
+        case .lowBattery(let p): say(tr("แบตเหลือ {0}% แล้วนะ หาที่เสียบปลั๊กหน่อย", p), symbol: "battery.25percent")
+        case .criticalBattery(let p): say(tr("แบตเหลือ {0}%! เสียบปลั๊กด่วน", p), symbol: "battery.0percent")
+        case .pluggedIn: say(tr("ได้ไฟแล้ว! อิ่มจัง"), symbol: "bolt.fill"); fsm.send(.clicked); flash(.systemYellow)
+        case .unplugged(let p): if p <= 40 { say(tr("ถอดปลั๊กแล้ว… เหลือ {0}%", p)) }
+        case .fullyCharged: say(tr("แบตเต็มแล้ว ถอดปลั๊กได้นะ"), symbol: "battery.100percent"); fsm.send(.clicked); flash(.systemGreen)
+        case .overheating: say(tr("ร้อนจังเลย พักเครื่องหน่อยมั้ย"), symbol: "thermometer.high")
+        case .fastTypist: say(tr("พิมพ์เร็วจัง"), symbol: "keyboard"); fsm.send(.clicked)
         case .dozeOff: say("zZz…")
         case .wakeUp: fsm.send(.wake)
         }
@@ -217,7 +217,7 @@ final class PetScene: SKScene {
     /// A small celebration, e.g. a finished focus round.
     func cheer() { fsm.send(.cheered) }
 
-    func yawn() { fsm.send(.wake); say("ฮ้าว~ ตื่นแล้ว", symbol: "moon.zzz.fill") }
+    func yawn() { fsm.send(.wake); say(tr("ฮ้าว~ ตื่นแล้ว"), symbol: "moon.zzz.fill") }
 
     /// Visual reaction only (e.g. a file was dropped on the pet).
     func react() { fsm.send(.clicked) }
@@ -309,7 +309,7 @@ final class PetScene: SKScene {
             if pet.energy < 15 || ambient == .dozing { fsm.send(.tired) }
             if pet.hunger < 25, now.timeIntervalSince(lastBeg) > 120, bubbleModel.text == nil, queue.isEmpty {
                 lastBeg = now
-                say("หิวจัง…", symbol: "fork.knife")
+                say(tr("หิวจัง…"), symbol: "fork.knife")
             }
         }
     }
@@ -319,37 +319,37 @@ final class PetScene: SKScene {
             switch event {
             case .pet(let e): handle(pet: e)
             case .questCompleted(let q):
-                say("\(q.title) +\(q.rewardCoins) เหรียญ", symbol: "checkmark.circle.fill")
+                say(tr("{0} +{1} เหรียญ", q.title, q.rewardCoins), symbol: "checkmark.circle.fill")
             case .allQuestsDone(let bonus):
-                say("ภารกิจครบ! +\(bonus) เหรียญ", symbol: "party.popper.fill"); fsm.send(.clicked)
+                say(tr("ภารกิจครบ! +{0} เหรียญ", bonus), symbol: "party.popper.fill"); fsm.send(.clicked)
             case .streak(let days, let bonus):
-                say(bonus > 0 ? "ต่อเนื่อง \(days) วัน +\(bonus) เหรียญ" : "ต่อเนื่อง \(days) วัน", symbol: "flame.fill")
+                say(bonus > 0 ? tr("ต่อเนื่อง {0} วัน +{1} เหรียญ", days, bonus) : tr("ต่อเนื่อง {0} วัน", days), symbol: "flame.fill")
             case .noStock:
-                say("หมดแล้ว ไปซื้อที่ร้านนะ")
+                say(tr("หมดแล้ว ไปซื้อที่ร้านนะ"))
             case .reminderDue(let r):
                 say(r.text, symbol: "bell.fill"); fsm.send(.clicked)
             case .pomodoroCredited:
                 break
             case .vaultAdded(let item):
-                say("เก็บแล้ว: \(item.name.prefix(14))", symbol: "tray.and.arrow.down.fill"); fsm.send(.clicked)
+                say(tr("เก็บแล้ว: {0}", item.name.prefix(14)), symbol: "tray.and.arrow.down.fill"); fsm.send(.clicked)
             case .vaultDuplicate:
-                say("มีไฟล์นี้อยู่แล้ว")
+                say(tr("มีไฟล์นี้อยู่แล้ว"))
             case .vaultRemoved:
                 break
             case .trackAdded:
-                say("เพิ่มเพลงแล้ว", symbol: "music.note"); fsm.send(.clicked)
+                say(tr("เพิ่มเพลงแล้ว"), symbol: "music.note"); fsm.send(.clicked)
             case .trackDuplicate:
-                say("มีเพลงนี้อยู่แล้ว")
+                say(tr("มีเพลงนี้อยู่แล้ว"))
             case .mediaAdded(let m):
-                say(m.kind.isVideo ? "บันทึกวิดีโอแล้ว" : "บันทึกภาพแล้ว", symbol: m.kind.isVideo ? "video.fill" : "camera.fill"); fsm.send(.clicked)
+                say(m.kind.isVideo ? tr("บันทึกวิดีโอแล้ว") : tr("บันทึกภาพแล้ว"), symbol: m.kind.isVideo ? "video.fill" : "camera.fill"); fsm.send(.clicked)
             case .mediaRemoved:
                 break
             case .achievementUnlocked(let a):
-                say("\(a.title) +\(a.reward) เหรียญ", symbol: "trophy.fill"); fsm.send(.clicked)
+                say(tr("{0} +{1} เหรียญ", a.title, a.reward), symbol: "trophy.fill"); fsm.send(.clicked)
             case .miniGameFinished:
                 break   // the game screen shows its own result
             case .shelfAdded(let item):
-                say("พักไว้ในถาด: \(item.name.prefix(14))", symbol: "suitcase.fill"); fsm.send(.clicked)
+                say(tr("พักไว้ในถาด: {0}", item.name.prefix(14)), symbol: "suitcase.fill"); fsm.send(.clicked)
             case .bought, .insufficientCoins:
                 break   // the Hub shows these itself
             }
@@ -358,16 +358,16 @@ final class PetScene: SKScene {
 
     private func handle(pet event: PetEngineEvent) {
         switch event {
-        case .hatched: say("ฟักแล้ว!", symbol: "sparkles"); fsm.send(.clicked)
-        case .evolved(let stage): say("โตขึ้นแล้ว: \(stage.displayName)", symbol: "sparkles"); fsm.send(.clicked)
-        case .fed: say("อร่อย!", symbol: "fork.knife"); fsm.send(.fed)
-        case .refusedEgg: say("ไข่ยังกินไม่ได้นะ")
-        case .refusedFull: say("อิ่มแล้ว~")
-        case .refusedCooldown(let remaining): say("ยังไม่หิวนะ ให้ได้\(DurationText.wait(remaining))", symbol: "clock")
+        case .hatched: say(tr("ฟักแล้ว!"), symbol: "sparkles"); fsm.send(.clicked)
+        case .evolved(let stage): say(tr("โตขึ้นแล้ว: {0}", stage.displayName), symbol: "sparkles"); fsm.send(.clicked)
+        case .fed: say(tr("อร่อย!"), symbol: "fork.knife"); fsm.send(.fed)
+        case .refusedEgg: say(tr("ไข่ยังกินไม่ได้นะ"))
+        case .refusedFull: say(tr("อิ่มแล้ว~"))
+        case .refusedCooldown(let remaining): say(tr("ยังไม่หิวนะ ให้ได้{0}", DurationText.wait(remaining)), symbol: "clock")
         case .eggWarmed(let progress, let needed):
-            let text = "อุ่นแล้ว \(Int(progress))/\(Int(needed))"
+            let text = tr("อุ่นแล้ว {0}/{1}", Int(progress), Int(needed))
             if bubbleModel.text != nil, queue.isEmpty { bubbleModel.symbol = "flame.fill"; bubbleModel.text = text } else { say(text, symbol: "flame.fill") }
-        case .eggWarmEnoughToday: say("วันนี้อุ่นด้วยมือครบแล้ว เปิดแอปไว้ก็อุ่นต่อเองนะ", symbol: "flame.fill")
+        case .eggWarmEnoughToday: say(tr("วันนี้อุ่นด้วยมือครบแล้ว เปิดแอปไว้ก็อุ่นต่อเองนะ"), symbol: "flame.fill")
         case .dailyCheckIn:
             let greeting = Greeting.line(hour: Calendar.current.component(.hour, from: Date()))
             say(greeting.text, symbol: greeting.symbol)
@@ -431,7 +431,7 @@ final class PetScene: SKScene {
             origin.x = Perches.clamp(centerX: window.frame.midX, to: target) - Self.windowSize.width / 2
             origin.y = target.top - feetInset
             window.setFrameOrigin(origin)
-            say("ฮึบ!", symbol: "arrow.up.circle.fill")
+            say(tr("ฮึบ!"), symbol: "arrow.up.circle.fill")
         }
     }
 

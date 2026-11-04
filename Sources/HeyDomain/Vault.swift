@@ -14,9 +14,9 @@ public enum VaultPolicy: String, Codable, CaseIterable, Sendable {
 
     public var label: String {
         switch self {
-        case .auto: "อัตโนมัติ (คัดลอกไฟล์เล็ก อ้างอิงไฟล์ใหญ่/โฟลเดอร์)"
-        case .alwaysCopy: "คัดลอกเสมอ"
-        case .alwaysReference: "อ้างอิงไฟล์เดิมเสมอ"
+        case .auto: tr("อัตโนมัติ (คัดลอกไฟล์เล็ก อ้างอิงไฟล์ใหญ่/โฟลเดอร์)")
+        case .alwaysCopy: tr("คัดลอกเสมอ")
+        case .alwaysReference: tr("อ้างอิงไฟล์เดิมเสมอ")
         }
     }
 

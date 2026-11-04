@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import CoreGraphics
+import HeyDomain
 
 /// One place that knows how to ask for, and explain, the permissions capture needs.
 @MainActor
@@ -16,8 +17,8 @@ enum Permissions {
             return false
         }
         explain(
-            title: "ต้องอนุญาตการบันทึกหน้าจอ",
-            text: "เปิด การตั้งค่าระบบ › ความเป็นส่วนตัวและความปลอดภัย › การบันทึกหน้าจอ แล้วเปิดสวิตช์ให้ Hey! จากนั้นปิดและเปิดแอปใหม่หนึ่งครั้ง",
+            title: tr("ต้องอนุญาตการบันทึกหน้าจอ"),
+            text: tr("เปิด การตั้งค่าระบบ › ความเป็นส่วนตัวและความปลอดภัย › การบันทึกหน้าจอ แล้วเปิดสวิตช์ให้ Hey! จากนั้นปิดและเปิดแอปใหม่หนึ่งครั้ง"),
             pane: "Privacy_ScreenCapture")
         return false
     }
@@ -29,8 +30,8 @@ enum Permissions {
             if await AVCaptureDevice.requestAccess(for: .video) { return true }
         default: break
         }
-        explain(title: "ต้องอนุญาตการใช้กล้อง",
-                text: "เปิด การตั้งค่าระบบ › ความเป็นส่วนตัวและความปลอดภัย › กล้อง แล้วเปิดสวิตช์ให้ Hey!",
+        explain(title: tr("ต้องอนุญาตการใช้กล้อง"),
+                text: tr("เปิด การตั้งค่าระบบ › ความเป็นส่วนตัวและความปลอดภัย › กล้อง แล้วเปิดสวิตช์ให้ Hey!"),
                 pane: "Privacy_Camera")
         return false
     }
@@ -49,8 +50,8 @@ enum Permissions {
         let alert = NSAlert()
         alert.messageText = title
         alert.informativeText = text
-        alert.addButton(withTitle: "เปิดการตั้งค่า")
-        alert.addButton(withTitle: "ไว้ทีหลัง")
+        alert.addButton(withTitle: tr("เปิดการตั้งค่า"))
+        alert.addButton(withTitle: tr("ไว้ทีหลัง"))
         if alert.runModal() == .alertFirstButtonReturn,
            let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(pane)") {
             NSWorkspace.shared.open(url)

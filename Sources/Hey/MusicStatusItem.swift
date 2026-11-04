@@ -120,24 +120,24 @@ final class MusicStatusItem: NSObject, NSMenuDelegate {
         }
         if fromSystem, let s = detector.systemSong {
             header(MarqueeText.display(title: s.title, artist: s.artist))
-            header("เล่นอยู่ในแอปอื่น")
+            header(tr("เล่นอยู่ในแอปอื่น"))
             menu.addItem(.separator())
-            add(s.isPlaying ? "หยุดชั่วคราว" : "เล่นต่อ", #selector(toggleSystem))
-            add("หยุดเพลงและปิดแถบเมนู", #selector(stopSystem))
+            add(s.isPlaying ? tr("หยุดชั่วคราว") : tr("เล่นต่อ"), #selector(toggleSystem))
+            add(tr("หยุดเพลงและปิดแถบเมนู"), #selector(stopSystem))
             menu.addItem(.separator())
         } else {
             if let t = music.nowPlaying {
                 header(MarqueeText.display(title: t.title, artist: t.artist))
                 menu.addItem(.separator())
             }
-            add(music.isPlaying ? "หยุดชั่วคราว" : "เล่นต่อ", #selector(toggle))
-            add("เพลงก่อนหน้า", #selector(previous))
-            add("เพลงถัดไป", #selector(next))
-            if music.hasVideo { add(mini.isShown ? "ปิดจอเล็ก" : "เล่นในจอเล็ก", #selector(toggleMini)) }
-            add("หยุดเพลง", #selector(stop))
+            add(music.isPlaying ? tr("หยุดชั่วคราว") : tr("เล่นต่อ"), #selector(toggle))
+            add(tr("เพลงก่อนหน้า"), #selector(previous))
+            add(tr("เพลงถัดไป"), #selector(next))
+            if music.hasVideo { add(mini.isShown ? tr("ปิดจอเล็ก") : tr("เล่นในจอเล็ก"), #selector(toggleMini)) }
+            add(tr("หยุดเพลง"), #selector(stop))
             menu.addItem(.separator())
         }
-        add("ซ่อนจากแถบเมนู", #selector(hide))
+        add(tr("ซ่อนจากแถบเมนู"), #selector(hide))
     }
 
     @objc private func toggle() { music.toggle() }

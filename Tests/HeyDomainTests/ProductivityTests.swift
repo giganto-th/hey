@@ -205,3 +205,22 @@ private func hm(_ d: Date) -> String {
     fsm.tick(dt: 3.1)
     #expect(fsm.pose != .walk)
 }
+
+@Suite struct EnglishReminderTests {
+    private let now = Date(timeIntervalSince1970: 1_800_000_000)
+    private let cal = Calendar(identifier: .gregorian)
+
+    @Test func parsesEnglishClockTimes() {
+        var c = cal; c.timeZone = TimeZone(identifier: "UTC")!
+        let r1 = ReminderParser.parse("call mom at 6:30pm", now: now, calendar: c)
+        #expect(r1?.text == "call mom")
+        #expect(c.component(.hour, from: r1!.fireAt) == 18)
+        #expect(c.component(.minute, from: r1!.fireAt) == 30)
+        let r2 = ReminderParser.parse("standup 9am tomorrow", now: now, calendar: c)
+        #expect(r2?.text == "standup")
+        #expect(c.component(.hour, from: r2!.fireAt) == 9)
+        let r3 = ReminderParser.parse("take medicine in 2 hours", now: now, calendar: c)
+        #expect(r3?.fireAt == now.addingTimeInterval(7200))
+        #expect(r3?.text == "take medicine")
+    }
+}

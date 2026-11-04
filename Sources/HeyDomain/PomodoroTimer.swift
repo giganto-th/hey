@@ -5,9 +5,9 @@ public enum PomodoroPhase: Sendable, Equatable {
 
     public var label: String {
         switch self {
-        case .focus: "โฟกัส"
-        case .shortBreak: "พักสั้น"
-        case .longBreak: "พักยาว"
+        case .focus: tr("โฟกัส")
+        case .shortBreak: tr("พักสั้น")
+        case .longBreak: tr("พักยาว")
         }
     }
 }

@@ -6,10 +6,10 @@ public enum RepeatRule: Codable, Equatable, Sendable {
 
     public var label: String {
         switch self {
-        case .none: "ครั้งเดียว"
-        case .daily: "ทุกวัน"
-        case .weekly: "ทุกสัปดาห์"
-        case .everyMinutes(let n): "ทุก \(n) นาที"
+        case .none: tr("ครั้งเดียว")
+        case .daily: tr("ทุกวัน")
+        case .weekly: tr("ทุกสัปดาห์")
+        case .everyMinutes(let n): tr("ทุก {0} นาที", n)
         }
     }
 }

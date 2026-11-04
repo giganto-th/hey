@@ -79,21 +79,21 @@ struct ShelfTrayView: View {
         let items = model.game.shelf
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Label("ถาดพักไฟล์ · \(items.count)", systemImage: "suitcase.fill").font(.headline)
+                Label(tr("ถาดพักไฟล์ · {0}", items.count), systemImage: "suitcase.fill").font(.headline)
                 Spacer()
-                Button("ล้าง") { service.clear() }.buttonStyle(.borderless).font(.caption)
+                Button(tr("ล้าง")) { service.clear() }.buttonStyle(.borderless).font(.caption)
                 Button { onClose() } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.borderless)
             }
             ScrollView {
                 VStack(spacing: 6) {
                     ForEach(items.prefix(8)) { item in ShelfChip(item: item, service: service) }
                     if items.count > 8 {
-                        Text("และอีก \(items.count - 8) รายการ — ดูทั้งหมดใน Hub › ฝากไฟล์").font(.caption2).foregroundStyle(.secondary)
+                        Text(tr("และอีก {0} รายการ — ดูทั้งหมดใน Hub › ฝากไฟล์", items.count - 8)).font(.caption2).foregroundStyle(.secondary)
                     }
                 }
             }
             .frame(maxHeight: 330)
-            Text("ลากรายการออกไปวางที่ไหนก็ได้ · ดับเบิลคลิกเพื่อเปิด")
+            Text(tr("ลากรายการออกไปวางที่ไหนก็ได้ · ดับเบิลคลิกเพื่อเปิด"))
                 .font(.caption2).foregroundStyle(.secondary)
         }
         .padding(14)
@@ -114,7 +114,7 @@ private struct ShelfChip: View {
                     Image(nsImage: service.icon(for: item)).resizable().frame(width: 28, height: 28)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(item.name).lineLimit(1).font(.callout)
-                        Text(present ? subtitle : "ไม่พบแล้ว (ถูกย้ายหรือลบ)").font(.caption2)
+                        Text(present ? subtitle : tr("ไม่พบแล้ว (ถูกย้ายหรือลบ)")).font(.caption2)
                             .foregroundStyle(present ? Color.secondary : Color.red).lineLimit(1)
                     }
                     Spacer(minLength: 0)

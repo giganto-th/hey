@@ -500,7 +500,7 @@ public struct Game: Sendable {
     @discardableResult
     public mutating func createPlaylist(_ name: String) -> UUID {
         let clean = name.trimmingCharacters(in: .whitespaces)
-        let list = Playlist(name: clean.isEmpty ? "เพลย์ลิสต์ใหม่" : clean)
+        let list = Playlist(name: clean.isEmpty ? tr("เพลย์ลิสต์ใหม่") : clean)
         playlists.append(list)
         music.playlistID = list.id
         return list.id

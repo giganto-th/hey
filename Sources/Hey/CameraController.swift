@@ -43,7 +43,7 @@ final class CameraController: NSObject, NSWindowDelegate {
         session.sessionPreset = .high
         guard let camera = AVCaptureDevice.default(for: .video),
               let input = try? AVCaptureDeviceInput(device: camera), session.canAddInput(input) else {
-            onMessage?("ไม่พบกล้อง", "exclamationmark.triangle.fill")
+            onMessage?(tr("ไม่พบกล้อง"), "exclamationmark.triangle.fill")
             return
         }
         session.addInput(input)
@@ -67,7 +67,7 @@ final class CameraController: NSObject, NSWindowDelegate {
     private func buildWindow(session: AVCaptureSession) {
         let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 480, height: 400),
                             styleMask: [.titled, .closable, .utilityWindow], backing: .buffered, defer: false)
-        panel.title = "กล้อง"
+        panel.title = tr("กล้อง")
         panel.level = .floating
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
@@ -86,8 +86,8 @@ final class CameraController: NSObject, NSWindowDelegate {
         preview.layer?.addSublayer(layer)
         preview.layer?.backgroundColor = NSColor.black.cgColor
 
-        let photo = NSButton(title: "ถ่ายรูป", target: self, action: #selector(takePhoto))
-        let record = NSButton(title: "เริ่มอัด", target: self, action: #selector(toggleRecord))
+        let photo = NSButton(title: tr("ถ่ายรูป"), target: self, action: #selector(takePhoto))
+        let record = NSButton(title: tr("เริ่มอัด"), target: self, action: #selector(toggleRecord))
         recordButton = record
         let label = NSTextField(labelWithString: "")
         statusLabel = label
@@ -123,7 +123,7 @@ final class CameraController: NSObject, NSWindowDelegate {
     // MARK: actions
 
     @objc private func takePhoto() {
-        guard photoOutput.connection(with: .video)?.isActive == true else { onMessage?("กล้องยังไม่พร้อม ลองอีกครั้ง", "camera.fill"); return }
+        guard photoOutput.connection(with: .video)?.isActive == true else { onMessage?(tr("กล้องยังไม่พร้อม ลองอีกครั้ง"), "camera.fill"); return }
         let settings = photoOutput.availablePhotoCodecTypes.contains(.jpeg)
             ? AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.jpeg]) : AVCapturePhotoSettings()
         photoOutput.capturePhoto(with: settings, delegate: helper)
@@ -133,10 +133,10 @@ final class CameraController: NSObject, NSWindowDelegate {
         if movieOutput.isRecording {
             movieOutput.stopRecording()
         } else {
-            guard movieOutput.connection(with: .video)?.isActive == true else { onMessage?("กล้องยังไม่พร้อม ลองอีกครั้ง", "camera.fill"); return }
+            guard movieOutput.connection(with: .video)?.isActive == true else { onMessage?(tr("กล้องยังไม่พร้อม ลองอีกครั้ง"), "camera.fill"); return }
             let url = CaptureService.newURL(for: .video)
             movieOutput.startRecording(to: url, recordingDelegate: helper)
-            recordButton?.title = "หยุดอัด"
+            recordButton?.title = tr("หยุดอัด")
             recordingStart = Date()
             let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
                 MainActor.assumeIsolated {
@@ -152,27 +152,27 @@ final class CameraController: NSObject, NSWindowDelegate {
     }
 
     private func savePhoto(_ data: Data?) {
-        guard let data else { onMessage?("ถ่ายรูปไม่สำเร็จ", "exclamationmark.triangle.fill"); return }
+        guard let data else { onMessage?(tr("ถ่ายรูปไม่สำเร็จ"), "exclamationmark.triangle.fill"); return }
         let now = Date()
         let url = CaptureService.newURL(for: .photo, at: now)
         do {
             try data.write(to: url)
             model.perform { $0.addMedia(MediaItem(kind: .photo, path: url.path, createdAt: now)) }
         } catch {
-            onMessage?("บันทึกรูปไม่สำเร็จ", "exclamationmark.triangle.fill")
+            onMessage?(tr("บันทึกรูปไม่สำเร็จ"), "exclamationmark.triangle.fill")
         }
     }
 
     private func movieFinished(_ url: URL, _ error: Error?) {
         timer?.invalidate()
         timer = nil
-        recordButton?.title = "เริ่มอัด"
+        recordButton?.title = tr("เริ่มอัด")
         statusLabel?.stringValue = ""
         let seconds = recordingStart.map { Date().timeIntervalSince($0) }
         recordingStart = nil
         // AVFoundation reports an "error" for some normal stops (e.g. disk full is real, max-duration is not), so trust the file.
         guard FileManager.default.fileExists(atPath: url.path) else {
-            onMessage?("บันทึกวิดีโอไม่สำเร็จ", "exclamationmark.triangle.fill")
+            onMessage?(tr("บันทึกวิดีโอไม่สำเร็จ"), "exclamationmark.triangle.fill")
             return
         }
         model.perform { $0.addMedia(MediaItem(kind: .video, path: url.path, createdAt: Date(), duration: seconds)) }

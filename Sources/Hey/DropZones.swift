@@ -169,7 +169,7 @@ private struct ZonesView: View {
             Image(systemName: dest == .vault ? "tray.and.arrow.down.fill" : "suitcase.fill")
                 .font(.system(size: 30, weight: .semibold))
             Text(dest.label).font(.headline)
-            Text(dest == .vault ? "เก็บไว้ดูทีหลัง" : "แล้วลากไปวางที่อื่น")
+            Text(dest == .vault ? tr("เก็บไว้ดูทีหลัง") : tr("แล้วลากไปวางที่อื่น"))
                 .font(.caption).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

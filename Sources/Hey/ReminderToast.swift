@@ -51,12 +51,12 @@ private struct ToastView: View {
                         .font(.headline)
                         .foregroundStyle(.orange)
                     HStack {
-                        Button("รับทราบ") {
+                        Button(tr("รับทราบ")) {
                             model.perform { $0.acknowledgeReminder(id: r.id, at: Date()); return [] }
                         }
                         .buttonStyle(.borderedProminent)
                         .keyboardShortcut(.defaultAction)
-                        Button("เลื่อน 10 นาที") {
+                        Button(tr("เลื่อน 10 นาที")) {
                             model.perform { $0.snoozeReminder(id: r.id, minutes: 10, at: Date()); return [] }
                         }
                         .buttonStyle(.bordered)

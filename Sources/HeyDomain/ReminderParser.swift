@@ -34,8 +34,15 @@ public enum ReminderParser {
         var hour: Int?
         var minute = 0
 
-        if let m = firstMatch(#"(\d{1,2})\s*[:.]\s*(\d{2})\s*(?:น\.?)?"#, in: text) {
-            hour = Int(m.groups[0]); minute = Int(m.groups[1]) ?? 0
+        if let m = firstMatch(#"(\d{1,2})\s*[:.]\s*(\d{2})\s*(am|pm)?(?:\s*น\.?)?"#, in: text) {
+            var h = Int(m.groups[0]) ?? 0
+            minute = Int(m.groups[1]) ?? 0
+            switch m.groups[2].lowercased() {
+            case "pm": if h < 12 { h += 12 }
+            case "am": if h == 12 { h = 0 }
+            default: break
+            }
+            hour = h
             text.removeSubrange(m.range)
         } else if let m = firstMatch(#"(\d{1,2})\s*(am|pm)"#, in: text) {
             var h = Int(m.groups[0]) ?? 0
@@ -88,7 +95,11 @@ public enum ReminderParser {
     }
 
     private static func clean(_ s: String) -> String {
-        let t = s.split(whereSeparator: \.isWhitespace).joined(separator: " ")
-        return t.isEmpty ? "เตือน" : t
+        var words = s.split(whereSeparator: \.isWhitespace).map(String.init)
+        // "call mom at 6pm" leaves a dangling "at"
+        while let last = words.last, ["at", "on", "by"].contains(last.lowercased()) { words.removeLast() }
+        while let first = words.first, ["at", "on", "by"].contains(first.lowercased()) { words.removeFirst() }
+        let t = words.joined(separator: " ")
+        return t.isEmpty ? tr("เตือน") : t
     }
 }

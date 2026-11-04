@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import HeyDomain
 
 /// A small card in the bottom-right corner: "Found a song — add it?"
 @MainActor
@@ -42,17 +43,17 @@ private struct SuggestionView: View {
     var body: some View {
         if let s = detector.suggestion {
             VStack(alignment: .leading, spacing: 10) {
-                Label("เจอเพลง YouTube (\(s.source.rawValue))", systemImage: "music.note")
+                Label(tr("เจอเพลง YouTube ({0})", s.source.label), systemImage: "music.note")
                     .font(.caption).foregroundStyle(.secondary)
                 Text(s.title).font(.headline).lineLimit(2)
                 HStack {
-                    Button("เพิ่มเข้าเพลย์ลิสต์") { detector.accept(play: false) }
+                    Button(tr("เพิ่มเข้าเพลย์ลิสต์")) { detector.accept(play: false) }
                         .buttonStyle(.borderedProminent)
                         .keyboardShortcut(.defaultAction)
-                    Button("เพิ่มและเล่น") { detector.accept(play: true) }
+                    Button(tr("เพิ่มและเล่น")) { detector.accept(play: true) }
                         .buttonStyle(.bordered)
                     Spacer()
-                    Button("ไม่เอา") { detector.dismiss() }.buttonStyle(.borderless)
+                    Button(tr("ไม่เอา")) { detector.dismiss() }.buttonStyle(.borderless)
                 }
             }
             .padding(16)

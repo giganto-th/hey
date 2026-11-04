@@ -6,13 +6,13 @@ public enum GestureKind: String, Codable, CaseIterable, Sendable {
 
     public var label: String {
         switch self {
-        case .swipeLeft: "ปัดซ้าย (2 นิ้ว)"
-        case .swipeRight: "ปัดขวา (2 นิ้ว)"
-        case .swipeUp: "ปัดขึ้น (2 นิ้ว)"
-        case .swipeDown: "ปัดลง (2 นิ้ว)"
-        case .rotateLeft: "หมุนทวนเข็ม (2 นิ้ว)"
-        case .rotateRight: "หมุนตามเข็ม (2 นิ้ว)"
-        case .doubleClick: "ดับเบิลคลิก"
+        case .swipeLeft: tr("ปัดซ้าย (2 นิ้ว)")
+        case .swipeRight: tr("ปัดขวา (2 นิ้ว)")
+        case .swipeUp: tr("ปัดขึ้น (2 นิ้ว)")
+        case .swipeDown: tr("ปัดลง (2 นิ้ว)")
+        case .rotateLeft: tr("หมุนทวนเข็ม (2 นิ้ว)")
+        case .rotateRight: tr("หมุนตามเข็ม (2 นิ้ว)")
+        case .doubleClick: tr("ดับเบิลคลิก")
         }
     }
 }
@@ -22,10 +22,10 @@ public enum Corner: String, Codable, CaseIterable, Sendable {
 
     public var label: String {
         switch self {
-        case .topLeft: "มุมซ้ายบน"
-        case .topRight: "มุมขวาบน"
-        case .bottomLeft: "มุมซ้ายล่าง"
-        case .bottomRight: "มุมขวาล่าง"
+        case .topLeft: tr("มุมซ้ายบน")
+        case .topRight: tr("มุมขวาบน")
+        case .bottomLeft: tr("มุมซ้ายล่าง")
+        case .bottomRight: tr("มุมขวาล่าง")
         }
     }
 }
@@ -39,32 +39,32 @@ public enum PetAction: String, Codable, CaseIterable, Sendable {
 
     public var label: String {
         switch self {
-        case .none: "ไม่ทำอะไร"
-        case .musicToggle: "เล่น/หยุดเพลง"
-        case .musicNext: "เพลงถัดไป"
-        case .musicPrevious: "เพลงก่อนหน้า"
-        case .volumeUp: "เพิ่มเสียง"
-        case .volumeDown: "ลดเสียง"
-        case .openHub: "เปิด Hub"
-        case .quickNote: "โน้ตด่วน"
-        case .quickReminder: "ตั้งเตือนด่วน"
-        case .pomodoroToggle: "เริ่ม/หยุด Pomodoro"
-        case .screenshotRegion: "แคปภาพเลือกพื้นที่"
-        case .recordToggle: "เริ่ม/หยุดอัดหน้าจอ"
-        case .summonPet: "เรียกสัตว์เลี้ยงมาที่เมาส์"
-        case .hidePet: "ซ่อน/แสดงสัตว์เลี้ยง"
-        case .petMenu: "เปิดเมนูสัตว์เลี้ยง"
+        case .none: tr("ไม่ทำอะไร")
+        case .musicToggle: tr("เล่น/หยุดเพลง")
+        case .musicNext: tr("เพลงถัดไป")
+        case .musicPrevious: tr("เพลงก่อนหน้า")
+        case .volumeUp: tr("เพิ่มเสียง")
+        case .volumeDown: tr("ลดเสียง")
+        case .openHub: tr("เปิด Hub")
+        case .quickNote: tr("โน้ตด่วน")
+        case .quickReminder: tr("ตั้งเตือนด่วน")
+        case .pomodoroToggle: tr("เริ่ม/หยุด Pomodoro")
+        case .screenshotRegion: tr("แคปภาพเลือกพื้นที่")
+        case .recordToggle: tr("เริ่ม/หยุดอัดหน้าจอ")
+        case .summonPet: tr("เรียกสัตว์เลี้ยงมาที่เมาส์")
+        case .hidePet: tr("ซ่อน/แสดงสัตว์เลี้ยง")
+        case .petMenu: tr("เปิดเมนูสัตว์เลี้ยง")
         }
     }
 
     /// Short text the pet says when it runs the action.
     public var feedback: String? {
         switch self {
-        case .musicNext: "ถัดไป"
-        case .musicPrevious: "ก่อนหน้า"
-        case .volumeUp: "เสียงดังขึ้น"
-        case .volumeDown: "เสียงเบาลง"
-        case .summonPet: "มาแล้ว!"
+        case .musicNext: tr("ถัดไป")
+        case .musicPrevious: tr("ก่อนหน้า")
+        case .volumeUp: tr("เสียงดังขึ้น")
+        case .volumeDown: tr("เสียงเบาลง")
+        case .summonPet: tr("มาแล้ว!")
         default: nil
         }
     }

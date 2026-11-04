@@ -26,11 +26,11 @@ public enum PetStage: String, Codable, CaseIterable, Sendable {
 
     public var displayName: String {
         switch self {
-        case .egg: "ไข่"
-        case .hatchling: "ลูกน้อย"
-        case .child: "เด็ก"
-        case .teen: "วัยรุ่น"
-        case .adult: "โตเต็มวัย"
+        case .egg: tr("ไข่")
+        case .hatchling: tr("ลูกน้อย")
+        case .child: tr("เด็ก")
+        case .teen: tr("วัยรุ่น")
+        case .adult: tr("โตเต็มวัย")
         }
     }
 }
@@ -79,10 +79,10 @@ public struct Balance: Sendable {
     }
 
     public var foods: [Food] = [
-        Food(id: "rice", name: "ข้าวปั้น", icon: "rice", hunger: 20, mood: 0, xp: 2, cooldown: 600, price: 0),
-        Food(id: "cookie", name: "คุกกี้", icon: "cookie", hunger: 10, mood: 15, xp: 3, cooldown: 1200, price: 8),
-        Food(id: "fruit", name: "ผลไม้", icon: "fruit", hunger: 30, mood: 20, xp: 8, cooldown: 1800, price: 15),
-        Food(id: "honey", name: "น้ำผึ้งทอง", icon: "honey", hunger: 40, mood: 30, xp: 15, cooldown: 3600, price: 40),
+        Food(id: "rice", name: tr("ข้าวปั้น"), icon: "rice", hunger: 20, mood: 0, xp: 2, cooldown: 600, price: 0),
+        Food(id: "cookie", name: tr("คุกกี้"), icon: "cookie", hunger: 10, mood: 15, xp: 3, cooldown: 1200, price: 8),
+        Food(id: "fruit", name: tr("ผลไม้"), icon: "fruit", hunger: 30, mood: 20, xp: 8, cooldown: 1800, price: 15),
+        Food(id: "honey", name: tr("น้ำผึ้งทอง"), icon: "honey", hunger: 40, mood: 30, xp: 15, cooldown: 3600, price: 40),
     ]
 
     public static let standard = Balance()

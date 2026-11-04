@@ -5,10 +5,10 @@ public enum MotionLevel: String, Codable, CaseIterable, Sendable {
 
     public var label: String {
         switch self {
-        case .system: "ตามการตั้งค่าระบบ"
-        case .full: "เต็มรูปแบบ"
-        case .gentle: "นุ่มนวล"
-        case .reduced: "ลดการเคลื่อนไหว"
+        case .system: tr("ตามการตั้งค่าระบบ")
+        case .full: tr("เต็มรูปแบบ")
+        case .gentle: tr("นุ่มนวล")
+        case .reduced: tr("ลดการเคลื่อนไหว")
         }
     }
 }
@@ -35,25 +35,25 @@ public enum CompanionActivity: String, Sendable {
 
     public var label: String {
         switch self {
-        case .dormant: "พักการเคลื่อนไหว"
-        case .egg: "กำลังอุ่นไข่"
-        case .idle: "กำลังมองไปรอบ ๆ"
-        case .walking: "เดินสำรวจ"
-        case .sleeping: "งีบสักหน่อย"
-        case .carried: "กำลังถูกอุ้ม"
-        case .falling: "กำลังลงพื้น"
-        case .attentive: "รอคำสั่งจากคุณ"
-        case .eating: "กำลังกินอาหาร"
-        case .pleased: "ดีใจที่ได้เจอคุณ"
-        case .typing: "จิกคีย์บอร์ดตามคุณ"
-        case .quietTyping: "จิกเบา ๆ ระหว่างโฟกัส"
-        case .focusing: "เฝ้าคุณทำงานเงียบ ๆ"
-        case .dancing: "เต้นขณะเล่นเพลง"
-        case .worried: "พักแรงสักหน่อย"
-        case .startled: "ตกใจ"
-        case .dizzy: "มึนหัว"
-        case .flapping: "ฝึกกระพือปีก"
-        case .flying: "บินระยะสั้น"
+        case .dormant: tr("พักการเคลื่อนไหว")
+        case .egg: tr("กำลังอุ่นไข่")
+        case .idle: tr("กำลังมองไปรอบ ๆ")
+        case .walking: tr("เดินสำรวจ")
+        case .sleeping: tr("งีบสักหน่อย")
+        case .carried: tr("กำลังถูกอุ้ม")
+        case .falling: tr("กำลังลงพื้น")
+        case .attentive: tr("รอคำสั่งจากคุณ")
+        case .eating: tr("กำลังกินอาหาร")
+        case .pleased: tr("ดีใจที่ได้เจอคุณ")
+        case .typing: tr("จิกคีย์บอร์ดตามคุณ")
+        case .quietTyping: tr("จิกเบา ๆ ระหว่างโฟกัส")
+        case .focusing: tr("เฝ้าคุณทำงานเงียบ ๆ")
+        case .dancing: tr("เต้นขณะเล่นเพลง")
+        case .worried: tr("พักแรงสักหน่อย")
+        case .startled: tr("ตกใจ")
+        case .dizzy: tr("มึนหัว")
+        case .flapping: tr("ฝึกกระพือปีก")
+        case .flying: tr("บินระยะสั้น")
         }
     }
 }

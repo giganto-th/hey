@@ -2,6 +2,9 @@ import AppKit
 
 setvbuf(stdout, nil, _IOLBF, 0)   // keep dev logs visible when redirected
 
+// The language is fixed for the whole run (changing it relaunches), so set it before anything builds a string.
+AppLanguage.configure()
+
 // One pet per save: a second copy would overwrite the first one's progress.
 let lockPath = GameModel.dataDirectory().appendingPathComponent(".lock").path
 let lockFile = open(lockPath, O_CREAT | O_RDWR, 0o644)

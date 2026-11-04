@@ -18,17 +18,17 @@ public struct Quest: Codable, Equatable, Sendable, Identifiable {
     public var title: String {
         let n = Int(target)
         switch kind {
-        case .checkIn: return "ทักทายสัตว์เลี้ยงวันนี้"
-        case .warm: return "อุ่นไข่ \(n) ครั้ง"
-        case .online: return "เปิดแอปไว้ \(n) นาที"
-        case .feed: return "ให้อาหาร \(n) ครั้ง"
-        case .pet: return "ลูบ/เล่นกับสัตว์เลี้ยง \(n) ครั้ง"
-        case .variety: return "ให้อาหารต่างชนิด \(n) อย่าง"
-        case .pomodoro: return "โฟกัสให้ครบ \(n) รอบ"
-        case .reminder: return "ตั้งเตือน \(n) อย่าง"
-        case .vault: return "ฝากของใน vault \(n) ชิ้น"
-        case .music: return "ฟังเพลง \(n) นาที"
-        case .capture: return "ถ่ายภาพหรืออัดวิดีโอ \(n) ครั้ง"
+        case .checkIn: return tr("ทักทายสัตว์เลี้ยงวันนี้")
+        case .warm: return tr("อุ่นไข่ {0} ครั้ง", n)
+        case .online: return tr("เปิดแอปไว้ {0} นาที", n)
+        case .feed: return tr("ให้อาหาร {0} ครั้ง", n)
+        case .pet: return tr("ลูบ/เล่นกับสัตว์เลี้ยง {0} ครั้ง", n)
+        case .variety: return tr("ให้อาหารต่างชนิด {0} อย่าง", n)
+        case .pomodoro: return tr("โฟกัสให้ครบ {0} รอบ", n)
+        case .reminder: return tr("ตั้งเตือน {0} อย่าง", n)
+        case .vault: return tr("ฝากของใน vault {0} ชิ้น", n)
+        case .music: return tr("ฟังเพลง {0} นาที", n)
+        case .capture: return tr("ถ่ายภาพหรืออัดวิดีโอ {0} ครั้ง", n)
         }
     }
 

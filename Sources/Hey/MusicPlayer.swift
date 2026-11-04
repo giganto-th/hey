@@ -152,16 +152,16 @@ private final class YouTubeBackend: NSObject, Backend, WKScriptMessageHandler, W
             onTime?(body["p"] as? Double ?? 0, body["d"] as? Double ?? 0)
         case "error":
             let code = body["v"] as? Int ?? 0
-            onError?(code == 101 || code == 150 ? "เจ้าของวิดีโอไม่อนุญาตให้ฝังเล่น"
-                     : code == 100 ? "ไม่พบวิดีโอ (ถูกลบหรือเป็นส่วนตัว)" : "เล่นวิดีโอนี้ไม่ได้ (รหัส \(code))")
+            onError?(code == 101 || code == 150 ? tr("เจ้าของวิดีโอไม่อนุญาตให้ฝังเล่น")
+                     : code == 100 ? tr("ไม่พบวิดีโอ (ถูกลบหรือเป็นส่วนตัว)") : tr("เล่นวิดีโอนี้ไม่ได้ (รหัส {0})", code))
         default: break
         }
     }
 
     func webView(_ w: WKWebView, didFinish n: WKNavigation!) { if Self.debug { print("[yt] page loaded") } }
-    func webView(_ w: WKWebView, didFail n: WKNavigation!, withError e: Error) { pageLost("เชื่อมต่อ YouTube ไม่ได้ ตรวจอินเทอร์เน็ตนะ") }
-    func webView(_ w: WKWebView, didFailProvisionalNavigation n: WKNavigation!, withError e: Error) { pageLost("เชื่อมต่อ YouTube ไม่ได้ ตรวจอินเทอร์เน็ตนะ") }
-    func webViewWebContentProcessDidTerminate(_ w: WKWebView) { pageLost("ตัวเล่น YouTube หยุดทำงาน ลองเล่นใหม่อีกครั้ง") }
+    func webView(_ w: WKWebView, didFail n: WKNavigation!, withError e: Error) { pageLost(tr("เชื่อมต่อ YouTube ไม่ได้ ตรวจอินเทอร์เน็ตนะ")) }
+    func webView(_ w: WKWebView, didFailProvisionalNavigation n: WKNavigation!, withError e: Error) { pageLost(tr("เชื่อมต่อ YouTube ไม่ได้ ตรวจอินเทอร์เน็ตนะ")) }
+    func webViewWebContentProcessDidTerminate(_ w: WKWebView) { pageLost(tr("ตัวเล่น YouTube หยุดทำงาน ลองเล่นใหม่อีกครั้ง")) }
 
     /// The page is gone: start it afresh next time instead of queueing commands for it forever.
     private func pageLost(_ message: String) {
@@ -257,7 +257,7 @@ private final class FileBackend: NSObject, Backend {
     }
 
     func load(_ track: Track) {
-        guard let url = resolve?(track) else { onError?("ไม่พบไฟล์เพลง (ถูกย้ายหรือลบ)"); return }
+        guard let url = resolve?(track) else { onError?(tr("ไม่พบไฟล์เพลง (ถูกย้ายหรือลบ)")); return }
         if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
         let item = AVPlayerItem(url: url)
         endObserver = NotificationCenter.default.addObserver(
@@ -341,7 +341,7 @@ final class MusicPlayer {
         } else if let playlist = currentPlaylist, let first = playlist.tracks.first {
             play(first, in: playlist)
         } else {
-            onMessage?("ยังไม่มีเพลงใน playlist", "music.note.list")
+            onMessage?(tr("ยังไม่มีเพลงใน playlist"), "music.note.list")
         }
     }
 
@@ -391,8 +391,8 @@ final class MusicPlayer {
     @discardableResult
     func addYouTube(_ input: String, to playlistID: UUID) -> String? {
         guard let id = YouTubeLink.videoID(from: input) else {
-            if input.contains("list=") { return "ยังไม่รองรับทั้งเพลย์ลิสต์ — ใส่ลิงก์วิดีโอทีละอัน" }
-            return "ไม่ใช่ลิงก์ YouTube ที่รู้จัก"
+            if input.contains("list=") { return tr("ยังไม่รองรับทั้งเพลย์ลิสต์ — ใส่ลิงก์วิดีโอทีละอัน") }
+            return tr("ไม่ใช่ลิงก์ YouTube ที่รู้จัก")
         }
         let track = Track(source: .youtube(id: id), title: "YouTube \(id)",
                           thumbnailURL: YouTubeLink.thumbnailURL(id), addedAt: Date())
@@ -406,8 +406,8 @@ final class MusicPlayer {
     /// Adds a YouTube video to the current playlist (making one if there is none) and optionally plays it.
     @discardableResult
     func addToCurrent(_ input: String, play: Bool) -> String? {
-        if model.game.currentPlaylist == nil { model.perform { $0.createPlaylist("เพลงของฉัน"); return [] } }
-        guard let list = model.game.currentPlaylist else { return "สร้างเพลย์ลิสต์ไม่สำเร็จ" }
+        if model.game.currentPlaylist == nil { model.perform { $0.createPlaylist(tr("เพลงของฉัน")); return [] } }
+        guard let list = model.game.currentPlaylist else { return tr("สร้างเพลย์ลิสต์ไม่สำเร็จ") }
         if let error = addYouTube(input, to: list.id) { return error }
         if play, let id = YouTubeLink.videoID(from: input),
            let fresh = model.game.playlist(id: list.id),
@@ -421,7 +421,7 @@ final class MusicPlayer {
         let audio = urls.filter { url in
             UTType(filenameExtension: url.pathExtension)?.conforms(to: .audio) ?? false
         }
-        if audio.count < urls.count { onMessage?("ข้ามไฟล์ที่ไม่ใช่เสียง \(urls.count - audio.count) ไฟล์", "exclamationmark.triangle.fill") }
+        if audio.count < urls.count { onMessage?(tr("ข้ามไฟล์ที่ไม่ใช่เสียง {0} ไฟล์", urls.count - audio.count), "exclamationmark.triangle.fill") }
         for url in audio {
             Task {
                 let info = await Self.readTags(url)
@@ -484,7 +484,7 @@ final class MusicPlayer {
         let watchdog = DispatchWorkItem { [weak self] in
             MainActor.assumeIsolated {
                 guard let self, self.isLoading, self.nowPlaying?.id == track.id else { return }
-                self.failed("โหลดเพลงไม่ขึ้น ตรวจอินเทอร์เน็ตนะ")
+                self.failed(tr("โหลดเพลงไม่ขึ้น ตรวจอินเทอร์เน็ตนะ"))
             }
         }
         loadWatchdog = watchdog

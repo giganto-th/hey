@@ -83,7 +83,7 @@ final class FoodController {
             scene.announce(Self.message(for: why), symbol: "fork.knife")
             return
         }
-        if piece != nil { scene.announce("มีอาหารวางอยู่แล้ว รอให้กินก่อนนะ", symbol: "fork.knife"); return }
+        if piece != nil { scene.announce(tr("มีอาหารวางอยู่แล้ว รอให้กินก่อนนะ"), symbol: "fork.knife"); return }
         cancelPlacing()
         let image = IconLibrary.foodImage(food)
         let panel = PlacementPanel(contentRect: screen.frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
@@ -93,7 +93,7 @@ final class FoodController {
         panel.hasShadow = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         let view = PlacementView(frame: NSRect(origin: .zero, size: screen.frame.size), image: image,
-                                 hint: "คลิกเพื่อวาง \(food.name) · Esc ยกเลิก")
+                                 hint: tr("คลิกเพื่อวาง {0} · Esc ยกเลิก", food.name))
         view.onPlace = { [weak self, weak panel] point in
             guard let self, let panel else { return }
             self.place(food, atScreenPoint: NSPoint(x: panel.frame.minX + point.x, y: panel.frame.minY + point.y), on: screen)
@@ -143,7 +143,7 @@ final class FoodController {
         panel.contentView = image
         panel.orderFrontRegardless()
         piece = Piece(food: food, panel: panel, x: x, y: max(p.y - half, floorY), floorY: floorY)
-        scene.announce("มาแล้ว!", symbol: "fork.knife")
+        scene.announce(tr("มาแล้ว!"), symbol: "fork.knife")
         fallTimer?.invalidate()
         let timer = Timer(timeInterval: 1 / 60, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.fall() } }
         RunLoop.main.add(timer, forMode: .common)
@@ -184,11 +184,11 @@ final class FoodController {
 
     private static func message(for event: GameEvent) -> String {
         switch event {
-        case .noStock: return "ไม่มีอาหารนี้แล้ว ไปซื้อที่ร้านค้านะ"
-        case .pet(.refusedEgg): return "ไข่ยังกินไม่ได้นะ"
-        case .pet(.refusedFull): return "อิ่มแล้ว~"
-        case .pet(.refusedCooldown(let remaining)): return "ยังไม่หิวนะ ให้ได้\(DurationText.wait(remaining))"
-        default: return "ให้อาหารไม่ได้ตอนนี้"
+        case .noStock: return tr("ไม่มีอาหารนี้แล้ว ไปซื้อที่ร้านค้านะ")
+        case .pet(.refusedEgg): return tr("ไข่ยังกินไม่ได้นะ")
+        case .pet(.refusedFull): return tr("อิ่มแล้ว~")
+        case .pet(.refusedCooldown(let remaining)): return tr("ยังไม่หิวนะ ให้ได้{0}", DurationText.wait(remaining))
+        default: return tr("ให้อาหารไม่ได้ตอนนี้")
         }
     }
 }
@@ -238,7 +238,7 @@ final class BubbleController {
         }
         if field.isEmpty { popped = 0; startedAt = Date() }
         field.spawn(8, minX: area.minX + 40, maxX: area.maxX - 40)
-        scene.announce("ฟองสบู่! รอมันลงถึงพื้นแล้วจิ๊กเลย", symbol: "bubbles.and.sparkles")
+        scene.announce(tr("ฟองสบู่! รอมันลงถึงพื้นแล้วจิ๊กเลย"), symbol: "bubbles.and.sparkles")
         last = Date()
         guard timer == nil else { return }
         let t = Timer(timeInterval: 1 / 30, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.tick() } }
@@ -273,7 +273,7 @@ final class BubbleController {
             layer.add(group, forKey: "pop")
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { layer.removeFromSuperlayer() }
         }
-        if field.isEmpty { finish(message: "จิ๊กครบแล้ว \(popped) ลูก!") }
+        if field.isEmpty { finish(message: tr("จิ๊กครบแล้ว {0} ลูก!", popped)) }
     }
 
     private func finish(message: String?) {

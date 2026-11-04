@@ -15,7 +15,17 @@ final class MusicDetector {
         let videoID: String
         var title: String
         var source: Source
-        enum Source: String { case clipboard = "คัดลอกลิงก์", browser = "แท็บที่เปิดอยู่", nowPlaying = "กำลังเล่นอยู่" }
+        enum Source: String {
+            case clipboard, browser, nowPlaying
+            /// Where the link came from, in words.
+            var label: String {
+                switch self {
+                case .clipboard: tr("คัดลอกลิงก์")
+                case .browser: tr("แท็บที่เปิดอยู่")
+                case .nowPlaying: tr("กำลังเล่นอยู่")
+                }
+            }
+        }
         var url: String { YouTubeLink.watchURL(videoID).absoluteString }
     }
 
@@ -106,8 +116,8 @@ final class MusicDetector {
             offer(videoID: id, title: YouTubeLink.cleanTabTitle(title), source: .browser)
         case .denied:
             if browserNote == nil {
-                browserNote = "ยังไม่ได้อนุญาตให้ Hey! ควบคุม \(name) — เปิดใน การตั้งค่าระบบ › ความเป็นส่วนตัว › ระบบอัตโนมัติ"
-                player.onMessage?("ต้องอนุญาตการเข้าถึง \(name)", "exclamationmark.triangle.fill")
+                browserNote = tr("ยังไม่ได้อนุญาตให้ Hey! ควบคุม {0} — เปิดใน การตั้งค่าระบบ › ความเป็นส่วนตัว › ระบบอัตโนมัติ", name)
+                player.onMessage?(tr("ต้องอนุญาตการเข้าถึง {0}", name), "exclamationmark.triangle.fill")
                 onChange?()
             }
         case .none:
@@ -131,7 +141,7 @@ final class MusicDetector {
             switch BrowserTabs.all() {
             case .denied(let browser):
                 if browserNote == nil {
-                    browserNote = "ยังไม่ได้อนุญาตให้ Hey! ควบคุม \(browser) — เปิดใน การตั้งค่าระบบ › ความเป็นส่วนตัว › ระบบอัตโนมัติ"
+                    browserNote = tr("ยังไม่ได้อนุญาตให้ Hey! ควบคุม {0} — เปิดใน การตั้งค่าระบบ › ความเป็นส่วนตัว › ระบบอัตโนมัติ", browser)
                     onChange?()
                 }
             case .tabs(let tabs):
@@ -182,7 +192,7 @@ final class MusicDetector {
         if let error = player.addToCurrent(YouTubeLink.watchURL(id).absoluteString, play: false) {
             player.onMessage?(error, "exclamationmark.triangle.fill")
         } else {
-            player.onMessage?("เพิ่มเข้าเพลย์ลิสต์แล้ว", "music.note.list")
+            player.onMessage?(tr("เพิ่มเข้าเพลย์ลิสต์แล้ว"), "music.note.list")
             systemVideoID = nil
             onSystemSongChange?()
         }

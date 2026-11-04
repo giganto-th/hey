@@ -72,7 +72,7 @@ final class VaultService {
             // A rejected duplicate leaves a copy we just made with no owner; clean it up.
             for item in items where item.mode == .copy && model.game.vaultItem(id: item.id) == nil { deleteFiles(of: item) }
         }
-        if !failures.isEmpty { onMessage?("เก็บไม่สำเร็จ: \(failures.joined(separator: ", ").prefix(24))") }
+        if !failures.isEmpty { onMessage?(tr("เก็บไม่สำเร็จ: {0}", failures.joined(separator: ", ").prefix(24))) }
     }
 
     private func makeFileItem(_ url: URL, policy: VaultPolicy, now: Date) async -> VaultItem? {

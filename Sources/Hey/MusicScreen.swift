@@ -16,20 +16,20 @@ struct MusicScreenView: View {
             } else if let song = detector.systemSong {
                 systemPlayer(song)
             } else {
-                Label("ไม่มีเพลงที่เล่นอยู่", systemImage: "music.note").foregroundStyle(.secondary)
+                Label(tr("ไม่มีเพลงที่เล่นอยู่"), systemImage: "music.note").foregroundStyle(.secondary)
             }
             Divider()
-            Toggle("แจ้งเตือนเมื่อพบเพลง YouTube", isOn: Binding(
+            Toggle(tr("แจ้งเตือนเมื่อพบเพลง YouTube"), isOn: Binding(
                 get: { model.game.music.detectNowPlaying && model.game.music.detectBrowser },
                 set: { on in model.perform { $0.setMusic { $0.detectNowPlaying = on; $0.detectBrowser = on }; return [] } }))
                 .font(.callout)
             HStack {
                 if music.hasVideo, !mini.isShown {
-                    Button { mini.show() } label: { Label("เล่นในจอเล็ก", systemImage: "pip.enter") }
+                    Button { mini.show() } label: { Label(tr("เล่นในจอเล็ก"), systemImage: "pip.enter") }
                         .buttonStyle(.borderless)
                 }
                 Spacer()
-                Button("เปิดใน Hub", action: openHub).buttonStyle(.borderless)
+                Button(tr("เปิดใน Hub"), action: openHub).buttonStyle(.borderless)
             }
         }
         .padding(16)
@@ -44,8 +44,8 @@ struct MusicScreenView: View {
             if mini.isShown {
                 VStack(spacing: 8) {
                     Image(systemName: "rectangle.on.rectangle").font(.title)
-                    Text("กำลังเล่นในจอเล็ก").font(.callout)
-                    Button("ปิดจอเล็ก") { mini.hide() }
+                    Text(tr("กำลังเล่นในจอเล็ก")).font(.callout)
+                    Button(tr("ปิดจอเล็ก")) { mini.hide() }
                 }
                 .frame(width: 356, height: 200)
                 .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
@@ -66,10 +66,10 @@ struct MusicScreenView: View {
         }
         HStack(spacing: 22) {
             Spacer()
-            button("backward.fill", "เพลงก่อนหน้า") { music.previous() }
-            button(music.isPlaying ? "pause.fill" : "play.fill", music.isPlaying ? "หยุดชั่วคราว" : "เล่นต่อ", big: true) { music.toggle() }
-            button("forward.fill", "เพลงถัดไป") { music.next() }
-            button("stop.fill", "หยุดเพลง") { music.stop() }
+            button("backward.fill", tr("เพลงก่อนหน้า")) { music.previous() }
+            button(music.isPlaying ? "pause.fill" : "play.fill", music.isPlaying ? tr("หยุดชั่วคราว") : tr("เล่นต่อ"), big: true) { music.toggle() }
+            button("forward.fill", tr("เพลงถัดไป")) { music.next() }
+            button("stop.fill", tr("หยุดเพลง")) { music.stop() }
             Spacer()
         }
     }
@@ -88,17 +88,17 @@ struct MusicScreenView: View {
         }
         HStack(spacing: 22) {
             Spacer()
-            button(song.isPlaying ? "pause.fill" : "play.fill", song.isPlaying ? "หยุดชั่วคราว" : "เล่นต่อ", big: true) { detector.toggleSystemSong() }
-            button("stop.fill", "หยุดเพลงและปิดแถบเมนู") { detector.stopSystemSong() }
+            button(song.isPlaying ? "pause.fill" : "play.fill", song.isPlaying ? tr("หยุดชั่วคราว") : tr("เล่นต่อ"), big: true) { detector.toggleSystemSong() }
+            button("stop.fill", tr("หยุดเพลงและปิดแถบเมนู")) { detector.stopSystemSong() }
             Spacer()
         }
         if detector.canImportSystemSong {
             Button { detector.importSystemSong() } label: {
-                Label("เพิ่มเข้าเพลย์ลิสต์", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
+                Label(tr("เพิ่มเข้าเพลย์ลิสต์"), systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
         } else {
-            Text("เล่นอยู่ในแอปอื่น").font(.caption).foregroundStyle(.secondary)
+            Text(tr("เล่นอยู่ในแอปอื่น")).font(.caption).foregroundStyle(.secondary)
         }
     }
 

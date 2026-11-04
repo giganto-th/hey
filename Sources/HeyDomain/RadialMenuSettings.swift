@@ -6,19 +6,19 @@ public enum RadialAction: String, CaseIterable, Codable, Sendable {
 
     public var label: String {
         switch self {
-        case .music: "เพลง"
-        case .files: "ฝากไฟล์"
-        case .focus: "โฟกัส"
+        case .music: tr("เพลง")
+        case .files: tr("ฝากไฟล์")
+        case .focus: tr("โฟกัส")
         case .hub: "Hub"
-        case .feed: "ให้อาหาร"
-        case .note: "โน้ต"
-        case .remind: "ตั้งเตือน"
-        case .shot: "แคปจอ"
-        case .ocr: "อ่านข้อความจากจอ"
-        case .clip: "ประวัติคลิปบอร์ด"
-        case .rec: "อัดจอ"
-        case .shelf: "ถาดไฟล์"
-        case .bubbles: "ฟองสบู่"
+        case .feed: tr("ให้อาหาร")
+        case .note: tr("โน้ต")
+        case .remind: tr("ตั้งเตือน")
+        case .shot: tr("แคปจอ")
+        case .ocr: tr("อ่านข้อความจากจอ")
+        case .clip: tr("ประวัติคลิปบอร์ด")
+        case .rec: tr("อัดจอ")
+        case .shelf: tr("ถาดไฟล์")
+        case .bubbles: tr("ฟองสบู่")
         }
     }
 
@@ -61,15 +61,15 @@ public struct RadialFolder: Codable, Equatable, Sendable, Identifiable {
 
     public var defaultName: String? {
         switch id {
-        case "capture": "จับภาพ"
-        case "notes": "จดและเตือน"
-        case "other": "อื่น ๆ"
+        case "capture": tr("จับภาพ")
+        case "notes": tr("จดและเตือน")
+        case "other": tr("อื่น ๆ")
         default: nil
         }
     }
 
     /// What the button says (the caller localizes it).
-    public var displayName: String { name ?? defaultName ?? "โฟลเดอร์" }
+    public var displayName: String { name ?? defaultName ?? tr("โฟลเดอร์") }
 }
 
 /// One slot on the ring.

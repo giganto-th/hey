@@ -16,7 +16,7 @@ public struct ClipEntry: Identifiable, Equatable, Sendable {
     public var preview: String {
         let flat = text.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         let first = flat.first ?? ""
-        let more = flat.count > 1 ? " …(+\(flat.count - 1) บรรทัด)" : ""
+        let more = flat.count > 1 ? tr(" …(+{0} บรรทัด)", flat.count - 1) : ""
         return String(first.prefix(120)) + more
     }
 }

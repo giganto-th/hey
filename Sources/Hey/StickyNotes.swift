@@ -40,7 +40,7 @@ final class StickyController: NSObject, NSWindowDelegate {
         let p = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 240, height: 200),
                         styleMask: [.titled, .closable, .resizable, .utilityWindow],
                         backing: .buffered, defer: false)
-        p.title = "โน้ต"
+        p.title = tr("โน้ต")
         p.level = .floating
         p.hidesOnDeactivate = false
         p.isReleasedWhenClosed = false

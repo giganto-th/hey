@@ -61,7 +61,7 @@ final class CaptureService {
             area = picked.rect
             try? await Task.sleep(for: .milliseconds(150))     // the dimmed overlay must be gone
         } else {
-            onMessage?("ยิ้มหน่อย!", "camera.fill")
+            onMessage?(tr("ยิ้มหน่อย!"), "camera.fill")
             await CountdownOverlay.run(seconds: model.game.capture.countdown)
             let mouse = NSEvent.mouseLocation
             screen = NSScreen.screens.first(where: { $0.frame.contains(mouse) }) ?? NSScreen.main ?? NSScreen.screens[0]
@@ -76,7 +76,7 @@ final class CaptureService {
             try png.write(to: url)
             model.perform { $0.addMedia(MediaItem(kind: .screenshot, path: url.path, createdAt: now)) }
         } catch {
-            onMessage?("ถ่ายภาพหน้าจอไม่สำเร็จ", "exclamationmark.triangle.fill")
+            onMessage?(tr("ถ่ายภาพหน้าจอไม่สำเร็จ"), "exclamationmark.triangle.fill")
             FileHandle.standardError.write(Data("[Hey] screenshot failed: \(error)\n".utf8))
         }
     }
@@ -110,13 +110,13 @@ final class CaptureService {
         do {
             let image = try await grab(screen: picked.screen, area: picked.rect)
             let text = try await Task.detached { try TextReader.read(image) }.value
-            guard !text.isEmpty else { onMessage?("ไม่พบข้อความในพื้นที่นี้", "text.magnifyingglass"); return }
+            guard !text.isEmpty else { onMessage?(tr("ไม่พบข้อความในพื้นที่นี้"), "text.magnifyingglass"); return }
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(text, forType: .string)
             let lines = text.split(whereSeparator: \.isNewline).count
-            onMessage?("คัดลอกข้อความแล้ว \(lines) บรรทัด", "text.viewfinder")
+            onMessage?(tr("คัดลอกข้อความแล้ว {0} บรรทัด", lines), "text.viewfinder")
         } catch {
-            onMessage?("อ่านข้อความไม่สำเร็จ", "exclamationmark.triangle.fill")
+            onMessage?(tr("อ่านข้อความไม่สำเร็จ"), "exclamationmark.triangle.fill")
             FileHandle.standardError.write(Data("[Hey] text read failed: \(error)\n".utf8))
         }
     }
@@ -132,7 +132,7 @@ final class CaptureService {
         busy = true
         defer { busy = false }
 
-        onMessage?("เตรียมอัดนะ", "video.fill")
+        onMessage?(tr("เตรียมอัดนะ"), "video.fill")
         await CountdownOverlay.run(seconds: model.game.capture.countdown)
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first(where: { $0.frame.contains(mouse) }) ?? NSScreen.main ?? NSScreen.screens[0]
@@ -168,10 +168,10 @@ final class CaptureService {
             isRecording = true
             elapsed = 0
             startTicker()
-            onMessage?("กำลังอัด", "record.circle.fill")
+            onMessage?(tr("กำลังอัด"), "record.circle.fill")
             onChange?()
         } catch {
-            onMessage?("เริ่มอัดไม่สำเร็จ", "exclamationmark.triangle.fill")
+            onMessage?(tr("เริ่มอัดไม่สำเร็จ"), "exclamationmark.triangle.fill")
             FileHandle.standardError.write(Data("[Hey] recording failed to start: \(error)\n".utf8))
         }
     }
@@ -190,7 +190,7 @@ final class CaptureService {
         let seconds = recordingStarted.map { Date().timeIntervalSince($0) }
         cleanUpRecording()
         guard error == nil, FileManager.default.fileExists(atPath: url.path) else {
-            onMessage?("บันทึกวิดีโอไม่สำเร็จ", "exclamationmark.triangle.fill")
+            onMessage?(tr("บันทึกวิดีโอไม่สำเร็จ"), "exclamationmark.triangle.fill")
             return
         }
         model.perform { $0.addMedia(MediaItem(kind: .screenRecording, path: url.path, createdAt: Date(), duration: seconds)) }
@@ -198,7 +198,7 @@ final class CaptureService {
 
     private func streamStopped(error: Error?) {
         guard isRecording else { return }
-        if error != nil { onMessage?("การอัดหยุดกะทันหัน", "exclamationmark.triangle.fill") }
+        if error != nil { onMessage?(tr("การอัดหยุดกะทันหัน"), "exclamationmark.triangle.fill") }
         // If the output already finished, `recordingFinished` ran; otherwise salvage what we have.
         if let url = recordingURL, FileManager.default.fileExists(atPath: url.path) {
             recordingFinished(error: nil)

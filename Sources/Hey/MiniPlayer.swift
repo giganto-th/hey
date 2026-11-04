@@ -1,6 +1,7 @@
 import AppKit
 import Observation
 import SwiftUI
+import HeyDomain
 
 /// The picture in a small window that floats above everything: drag it anywhere, resize it, close it; the music keeps playing.
 @MainActor
@@ -67,13 +68,13 @@ private struct MiniPlayerView: View {
             VStack {
                 HStack {
                     Spacer()
-                    pill("xmark", "ปิดจอเล็ก") { controller.hide() }
+                    pill("xmark", tr("ปิดจอเล็ก")) { controller.hide() }
                 }
                 Spacer()
                 HStack(spacing: 18) {
-                    pill("backward.fill", "เพลงก่อนหน้า") { music.previous() }
-                    pill(music.isPlaying ? "pause.fill" : "play.fill", music.isPlaying ? "หยุดชั่วคราว" : "เล่นต่อ") { music.toggle() }
-                    pill("forward.fill", "เพลงถัดไป") { music.next() }
+                    pill("backward.fill", tr("เพลงก่อนหน้า")) { music.previous() }
+                    pill(music.isPlaying ? "pause.fill" : "play.fill", music.isPlaying ? tr("หยุดชั่วคราว") : tr("เล่นต่อ")) { music.toggle() }
+                    pill("forward.fill", tr("เพลงถัดไป")) { music.next() }
                 }
             }
             .padding(10)

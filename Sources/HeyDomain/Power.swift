@@ -48,10 +48,10 @@ public enum PowerTier: Int, Comparable, Sendable, CustomStringConvertible {
 
     public var label: String {
         switch self {
-        case .full: "เต็มกำลัง"
-        case .balanced: "สมดุล"
-        case .saver: "ประหยัด"
-        case .dormant: "พัก"
+        case .full: tr("เต็มกำลัง")
+        case .balanced: tr("สมดุล")
+        case .saver: tr("ประหยัด")
+        case .dormant: tr("พัก")
         }
     }
     public var description: String { label }
@@ -85,21 +85,21 @@ public struct PowerDecision: Equatable, Sendable {
 
 public enum PowerPolicy {
     public static func decide(_ s: PowerSignals, settings: PowerSettings = PowerSettings()) -> PowerDecision {
-        if s.userHidPet { return .init(tier: .dormant, reason: "ซ่อนสัตว์เลี้ยงอยู่", hidePet: true) }
-        if s.screenAsleep || s.screenLocked { return .init(tier: .dormant, reason: "หน้าจอดับ/ล็อก", hidePet: false) }
+        if s.userHidPet { return .init(tier: .dormant, reason: tr("ซ่อนสัตว์เลี้ยงอยู่"), hidePet: true) }
+        if s.screenAsleep || s.screenLocked { return .init(tier: .dormant, reason: tr("หน้าจอดับ/ล็อก"), hidePet: false) }
         if s.fullscreenAppActive && settings.hideDuringFullscreen {
-            return .init(tier: .dormant, reason: "มีแอปเต็มจอ", hidePet: true)
+            return .init(tier: .dormant, reason: tr("มีแอปเต็มจอ"), hidePet: true)
         }
         if settings.dormantAfterIdleMinutes > 0, s.userIdleSeconds >= Double(settings.dormantAfterIdleMinutes) * 60 {
-            return .init(tier: .dormant, reason: "ไม่ได้ใช้เครื่องนาน", hidePet: false)
+            return .init(tier: .dormant, reason: tr("ไม่ได้ใช้เครื่องนาน"), hidePet: false)
         }
         if s.lowPowerMode { return .init(tier: .saver, reason: "Low Power Mode", hidePet: false) }
-        if s.thermal >= .fair { return .init(tier: .saver, reason: "เครื่องร้อน", hidePet: false) }
+        if s.thermal >= .fair { return .init(tier: .saver, reason: tr("เครื่องร้อน"), hidePet: false) }
         if !s.onAC, let pct = s.batteryPercent, pct <= settings.saverBelowBatteryPercent {
-            return .init(tier: .saver, reason: "แบตเหลือ \(pct)%", hidePet: false)
+            return .init(tier: .saver, reason: tr("แบตเหลือ {0}%", pct), hidePet: false)
         }
-        if !s.onAC { return .init(tier: .balanced, reason: "ใช้แบตเตอรี่", hidePet: false) }
-        return .init(tier: .full, reason: "เสียบปลั๊ก", hidePet: false)
+        if !s.onAC { return .init(tier: .balanced, reason: tr("ใช้แบตเตอรี่"), hidePet: false) }
+        return .init(tier: .full, reason: tr("เสียบปลั๊ก"), hidePet: false)
     }
 }
 

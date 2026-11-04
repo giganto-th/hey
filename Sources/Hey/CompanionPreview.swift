@@ -8,11 +8,11 @@ enum CompanionPreviewMode: String, CaseIterable, Identifiable {
     var id: Self { self }
     var title: String {
         switch self {
-        case .idle: "พัก"
-        case .music: "เพลง"
-        case .typing: "พิมพ์"
-        case .combined: "พิมพ์ + เพลง"
-        case .focus: "โฟกัส"
+        case .idle: tr("พัก")
+        case .music: tr("เพลง")
+        case .typing: tr("พิมพ์")
+        case .combined: tr("พิมพ์ + เพลง")
+        case .focus: tr("โฟกัส")
         }
     }
 }
@@ -94,7 +94,7 @@ struct CompanionPreview: View {
     var body: some View {
         SpriteView(scene: scene, isPaused: !visible, preferredFramesPerSecond: settings.level == .reduced ? 6 : 24, options: [.allowsTransparency])
             .frame(width: size.width, height: size.height)
-            .accessibilityLabel(stage == .egg ? "ไข่ของสัตว์เลี้ยง" : "สัตว์เลี้ยง · \(mode.title)")
+            .accessibilityLabel(stage == .egg ? tr("ไข่ของสัตว์เลี้ยง") : tr("สัตว์เลี้ยง · {0}", mode.title))
             .onAppear { configure(); visible = true }
             .onDisappear { visible = false }
             .onChange(of: stage) { configure() }
@@ -112,28 +112,28 @@ struct MotionSettingsControls: View {
     @State private var preview: CompanionPreviewMode = .idle
 
     var body: some View {
-        Picker("ระดับการเคลื่อนไหว", selection: Binding(
+        Picker(tr("ระดับการเคลื่อนไหว"), selection: Binding(
             get: { game.motion.level },
             set: { level in model.perform { $0.setMotion { $0.level = level }; return [] } })) {
                 ForEach(MotionLevel.allCases, id: \.self) { Text($0.label).tag($0) }
             }
-        Toggle("เต้นขณะเปิดเพลง", isOn: Binding(
+        Toggle(tr("เต้นขณะเปิดเพลง"), isOn: Binding(
             get: { game.motion.dance },
             set: { value in model.perform { $0.setMotion { $0.dance = value }; return [] } }))
-        Toggle("เดินสำรวจเมื่อไม่ได้ทำกิจกรรม", isOn: Binding(
+        Toggle(tr("เดินสำรวจเมื่อไม่ได้ทำกิจกรรม"), isOn: Binding(
             get: { game.motion.roam },
             set: { value in model.perform { $0.setMotion { $0.roam = value }; return [] } }))
-        Text("การเต้นใช้จังหวะอัตโนมัติจากสถานะเล่นเพลง ยังไม่ได้ตรวจจับ beat ของเสียง · พิมพ์จะเปลี่ยนเป็นจิกคีย์บอร์ด และโฟกัสจะหยุดเต้น")
+        Text(tr("การเต้นใช้จังหวะอัตโนมัติจากสถานะเล่นเพลง ยังไม่ได้ตรวจจับ beat ของเสียง · พิมพ์จะเปลี่ยนเป็นจิกคีย์บอร์ด และโฟกัสจะหยุดเต้น"))
             .font(.caption).foregroundStyle(.secondary)
         VStack(alignment: .leading, spacing: 8) {
-            Picker("ลองท่าทาง", selection: $preview) {
+            Picker(tr("ลองท่าทาง"), selection: $preview) {
                 ForEach(CompanionPreviewMode.allCases) { Text($0.title).tag($0) }
             }.pickerStyle(.segmented)
             HStack {
                 CompanionPreview(stage: .adult, mode: preview, settings: game.motion, species: game.species)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("ลองท่าทางของ \(game.pet.state.name)").font(.headline)
-                    Text("ใช้ตัววาดเดียวกับบนเดสก์ท็อป ตัวอย่างนี้ไม่มีเสียงและไม่เพิ่มรางวัล")
+                    Text(tr("ลองท่าทางของ {0}", game.pet.state.name)).font(.headline)
+                    Text(tr("ใช้ตัววาดเดียวกับบนเดสก์ท็อป ตัวอย่างนี้ไม่มีเสียงและไม่เพิ่มรางวัล"))
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

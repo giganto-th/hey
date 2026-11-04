@@ -88,7 +88,7 @@ final class PowerMonitor {
         if model.game.power.hideDuringFullscreen { s.fullscreenAppActive = Self.fullscreenAppIsActive() }
 
         var next = PowerPolicy.decide(s, settings: model.game.power)
-        if let forcedTier { next.tier = forcedTier; next.reason = "บังคับด้วย HEY_DEV_TIER" }
+        if let forcedTier { next.tier = forcedTier; next.reason = tr("บังคับด้วย HEY_DEV_TIER") }
         signals = s
         guard next != decision else { return }
         decision = next

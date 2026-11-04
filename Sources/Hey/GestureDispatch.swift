@@ -6,7 +6,7 @@ import HeyDomain
 @MainActor
 @Observable
 final class GestureLog {
-    private(set) var last = "ยังไม่มี"
+    private(set) var last = tr("ยังไม่มี")
     private(set) var at: Date?
     func record(_ text: String) { last = text; at = Date() }
 }

@@ -15,10 +15,10 @@ struct TodayView: View {
             VStack(alignment: .leading, spacing: 24) {
                 HStack(spacing: 20) {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("อีกหนึ่งวันดี ๆ\nไปด้วยกัน").font(.system(size: 28, weight: .medium))
-                        Text("งานของคุณอยู่ตรงหน้า\nส่วนเพื่อนตัวป่วนอยู่ข้าง ๆ")
+                        Text(tr("อีกหนึ่งวันดี ๆ\nไปด้วยกัน")).font(.system(size: 28, weight: .medium))
+                        Text(tr("งานของคุณอยู่ตรงหน้า\nส่วนเพื่อนตัวป่วนอยู่ข้าง ๆ"))
                             .foregroundStyle(.secondary)
-                        Button("ดูแล \(game.pet.state.name)", systemImage: "heart") { router.section = .pet }
+                        Button(tr("ดูแล {0}", game.pet.state.name), systemImage: "heart") { router.section = .pet }
                             .buttonStyle(PillButtonStyle())
                     }
                     Spacer(minLength: 0)
@@ -26,44 +26,44 @@ struct TodayView: View {
                 }
                 if game.pet.state.stage == .egg {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("ค่อย ๆ อุ่น แล้วมารู้จักกัน").font(.headline)
+                        Text(tr("ค่อย ๆ อุ่น แล้วมารู้จักกัน")).font(.headline)
                         ProgressView(value: min(game.pet.state.hatchProgress, game.pet.balance.hatchNeeded), total: game.pet.balance.hatchNeeded)
-                        Text("ฟักก่อน แล้ว \(game.pet.state.name) จะจิกคีย์บอร์ดและเต้นเป็นเพื่อนคุณ")
+                        Text(tr("ฟักก่อน แล้ว {0} จะจิกคีย์บอร์ดและเต้นเป็นเพื่อนคุณ", game.pet.state.name))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 } else {
                     HStack(spacing: 24) {
-                        stat("ความอิ่ม", value: game.pet.state.hunger, symbol: "fork.knife")
-                        stat("อารมณ์", value: game.pet.state.mood, symbol: "face.smiling")
-                        stat("พลังงาน", value: game.pet.state.energy, symbol: "bolt")
+                        stat(tr("ความอิ่ม"), value: game.pet.state.hunger, symbol: "fork.knife")
+                        stat(tr("อารมณ์"), value: game.pet.state.mood, symbol: "face.smiling")
+                        stat(tr("พลังงาน"), value: game.pet.state.energy, symbol: "bolt")
                     }
                 }
                 Divider()
-                featureRow("เวลาให้เรื่องสำคัญ", subtitle: pomodoro.timer.isRunning ? "\(pomodoro.remainingText) · \(pomodoro.timer.phase == .focus ? "โฟกัส" : "พัก")" : "โฟกัสทีละรอบ · \(game.pet.state.name) จะอยู่นิ่ง ๆ", symbol: "timer") {
-                    Button(pomodoro.timer.isRunning ? "หยุดชั่วคราว" : "เริ่มโฟกัส") { pomodoro.toggle() }
+                featureRow(tr("เวลาให้เรื่องสำคัญ"), subtitle: pomodoro.timer.isRunning ? "\(pomodoro.remainingText) · \(pomodoro.timer.phase == .focus ? tr("โฟกัส") : tr("พัก"))" : tr("โฟกัสทีละรอบ · {0} จะอยู่นิ่ง ๆ", game.pet.state.name), symbol: "timer") {
+                    Button(pomodoro.timer.isRunning ? tr("หยุดชั่วคราว") : tr("เริ่มโฟกัส")) { pomodoro.toggle() }
                 }
                 Divider()
-                featureRow("เพลงของคุณ", subtitle: music.nowPlaying?.title ?? "เลือกเพลงที่อยากฟัง แล้วค่อย ๆ ทำงานไปด้วยกัน", symbol: "music.note") {
-                    Button(music.nowPlaying == nil ? "เลือกเพลง" : music.isPlaying ? "หยุดเพลง" : "เล่นต่อ") {
+                featureRow(tr("เพลงของคุณ"), subtitle: music.nowPlaying?.title ?? tr("เลือกเพลงที่อยากฟัง แล้วค่อย ๆ ทำงานไปด้วยกัน"), symbol: "music.note") {
+                    Button(music.nowPlaying == nil ? tr("เลือกเพลง") : music.isPlaying ? tr("หยุดเพลง") : tr("เล่นต่อ")) {
                         if music.nowPlaying == nil { router.section = .music } else { music.toggle() }
                     }
                 }
                 Divider()
                 if let next = game.reminders.filter(\.isActive).min(by: { $0.nextFire < $1.nextFire }) {
-                    featureRow("เตือนถัดไป", subtitle: "\(next.nextFire.formatted(date: .abbreviated, time: .shortened)) · \(next.text)", symbol: "bell") {
-                        Button("ดูเตือน") { router.section = .reminders }
+                    featureRow(tr("เตือนถัดไป"), subtitle: "\(next.nextFire.formatted(date: .abbreviated, time: .shortened)) · \(next.text)", symbol: "bell") {
+                        Button(tr("ดูเตือน")) { router.section = .reminders }
                     }
                 } else {
-                    featureRow("เผื่อมีเรื่องต้องจำ", subtitle: "ตั้งเตือนด้วยภาษาไทย หรือเรียกด่วนด้วย ⌃⌥R", symbol: "bell") {
-                        Button("ตั้งเตือน") { router.section = .reminders }
+                    featureRow(tr("เผื่อมีเรื่องต้องจำ"), subtitle: tr("ตั้งเตือนด้วยภาษาไทย หรือเรียกด่วนด้วย ⌃⌥R"), symbol: "bell") {
+                        Button(tr("ตั้งเตือน")) { router.section = .reminders }
                     }
                 }
                 Divider()
                 HStack(spacing: 12) {
-                    Button("ฝากไฟล์ \(game.vault.count) ชิ้น", systemImage: "tray") { router.section = .vault }
-                    Button("โน้ต \(game.notes.count) ใบ", systemImage: "note.text") { router.section = .notes }
+                    Button(tr("ฝากไฟล์ {0} ชิ้น", game.vault.count), systemImage: "tray") { router.section = .vault }
+                    Button(tr("โน้ต {0} ใบ", game.notes.count), systemImage: "note.text") { router.section = .notes }
                     Spacer()
-                    Button("ปรับการเคลื่อนไหว", systemImage: "slider.horizontal.3") { router.section = .settings }
+                    Button(tr("ปรับการเคลื่อนไหว"), systemImage: "slider.horizontal.3") { router.section = .settings }
                 }.font(.callout)
             }.padding(28)
         }

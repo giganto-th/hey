@@ -20,8 +20,8 @@ public struct CalendarHeadsUp: Sendable {
     public static func line(for event: CalendarEventInfo, now: Date) -> String {
         let minutes = max(1, Int((event.start.timeIntervalSince(now) / 60).rounded(.up)))
         let title = event.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let name = title.isEmpty ? "นัดหมาย" : String(title.prefix(40))
-        return "อีก \(minutes) นาที: \(name)"
+        let name = title.isEmpty ? tr("นัดหมาย") : String(title.prefix(40))
+        return tr("อีก {0} นาที: {1}", minutes, name)
     }
 
     public mutating func due(_ events: [CalendarEventInfo], now: Date) -> [CalendarEventInfo] {

@@ -10,30 +10,30 @@ enum HubSection: String, CaseIterable, Identifiable {
 
     /// The sidebar's groups, so twelve-plus pages stay easy to scan.
     static let groups: [(title: String, sections: [HubSection])] = [
-        ("สัตว์เลี้ยง", [.pet, .quests, .shop, .achievements, .game]),
-        ("เครื่องมือ", [.vault, .clipboard, .music, .capture, .reminders, .focus, .notes]),
-        ("ตั้งค่า", [.gestures, .settings]),
+        (tr("สัตว์เลี้ยง"), [.pet, .quests, .shop, .achievements, .game]),
+        (tr("เครื่องมือ"), [.vault, .clipboard, .music, .capture, .reminders, .focus, .notes]),
+        (tr("ตั้งค่า"), [.gestures, .settings]),
     ]
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .today: "วันนี้"
-        case .quests: "ภารกิจ"
-        case .shop: "ร้านค้า"
-        case .vault: "ฝากไฟล์"
-        case .music: "เพลง"
-        case .capture: "ถ่าย/อัด"
-        case .reminders: "เตือน"
-        case .focus: "โฟกัส"
-        case .notes: "โน้ต"
-        case .clipboard: "คลิปบอร์ด"
-        case .game: "มินิเกม"
-        case .achievements: "ความสำเร็จ"
-        case .gestures: "ท่าทาง"
-        case .pet: "ภาพรวม"
-        case .settings: "การตั้งค่า"
+        case .today: tr("วันนี้")
+        case .quests: tr("ภารกิจ")
+        case .shop: tr("ร้านค้า")
+        case .vault: tr("ฝากไฟล์")
+        case .music: tr("เพลง")
+        case .capture: tr("ถ่าย/อัด")
+        case .reminders: tr("เตือน")
+        case .focus: tr("โฟกัส")
+        case .notes: tr("โน้ต")
+        case .clipboard: tr("คลิปบอร์ด")
+        case .game: tr("มินิเกม")
+        case .achievements: tr("ความสำเร็จ")
+        case .gestures: tr("ท่าทาง")
+        case .pet: tr("ภาพรวม")
+        case .settings: tr("การตั้งค่า")
         }
     }
 
@@ -73,12 +73,12 @@ enum HubDestination: String, CaseIterable, Identifiable {
     }
     var title: String {
         switch self {
-        case .today: "วันนี้"
-        case .music: "เพลง"
-        case .files: "ไฟล์และโน้ต"
-        case .productivity: "โฟกัสและเตือน"
+        case .today: tr("วันนี้")
+        case .music: tr("เพลง")
+        case .files: tr("ไฟล์และโน้ต")
+        case .productivity: tr("โฟกัสและเตือน")
         case .pet: "Hei Hei"
-        case .settings: "การตั้งค่า"
+        case .settings: tr("การตั้งค่า")
         }
     }
     var icon: String {
@@ -137,7 +137,7 @@ struct HubView: View {
                 header(game)
                 let sections = current.sections
                 if sections.count > 1 {
-                    Picker("หน้า", selection: Binding<HubSection>(get: { router.section ?? .today }, set: { router.section = $0 })) {
+                    Picker(tr("หน้า"), selection: Binding<HubSection>(get: { router.section ?? .today }, set: { router.section = $0 })) {
                         ForEach(sections) { section in Text(section.title).tag(section) }
                     }
                     .pickerStyle(.segmented)
@@ -177,11 +177,11 @@ struct HubView: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(HubDestination.containing(router.section ?? .today).title).font(.system(size: 26, weight: .semibold, design: .rounded))
-                Text("เพื่อนร่วมโต๊ะตัวป่วน").font(.caption).foregroundStyle(.white.opacity(0.65))
+                Text(tr("เพื่อนร่วมโต๊ะตัวป่วน")).font(.caption).foregroundStyle(.white.opacity(0.65))
             }
             Spacer()
-            Label("\(game.coins) เหรียญ", systemImage: "circle.hexagongrid.fill").glassPill()
-            Label("\(game.streak.current) วัน", systemImage: "flame").glassPill()
+            Label(tr("{0} เหรียญ", game.coins), systemImage: "circle.hexagongrid.fill").glassPill()
+            Label(tr("{0} วัน", game.streak.current), systemImage: "flame").glassPill()
         }
         .font(.callout)
         .padding(.horizontal, 8).padding(.bottom, 14).padding(.top, 4)
@@ -193,9 +193,9 @@ private struct QuestsTab: View {
 
     var body: some View {
         List {
-            Section("ภารกิจวันนี้ (รีเซ็ตตี 4)") {
+            Section(tr("ภารกิจวันนี้ (รีเซ็ตตี 4)")) {
                 if game.quests.isEmpty {
-                    Text("ยังไม่มีภารกิจ").foregroundStyle(.secondary)
+                    Text(tr("ยังไม่มีภารกิจ")).foregroundStyle(.secondary)
                 }
                 ForEach(game.quests) { quest in
                     VStack(alignment: .leading, spacing: 6) {
@@ -214,9 +214,9 @@ private struct QuestsTab: View {
                 }
             }
             Section {
-                Label("ทำครบทุกข้อ รับโบนัส \(Game.allDoneBonus) เหรียญ", systemImage: "gift")
-                Label("ทำครบต่อเนื่อง \(Game.streakBonusEvery) วัน รับ \(Game.streakBonus) เหรียญ", systemImage: "flame")
-                Label("ขาดวัน streak ไม่รีเซ็ต แต่ลดลงครึ่งหนึ่ง", systemImage: "info.circle")
+                Label(tr("ทำครบทุกข้อ รับโบนัส {0} เหรียญ", Game.allDoneBonus), systemImage: "gift")
+                Label(tr("ทำครบต่อเนื่อง {0} วัน รับ {1} เหรียญ", Game.streakBonusEvery, Game.streakBonus), systemImage: "flame")
+                Label(tr("ขาดวัน streak ไม่รีเซ็ต แต่ลดลงครึ่งหนึ่ง"), systemImage: "info.circle")
             }
             .font(.callout)
             .foregroundStyle(.secondary)
@@ -224,7 +224,7 @@ private struct QuestsTab: View {
     }
 
     private func reward(_ q: Quest) -> String {
-        q.rewardXP > 0 ? "\(q.rewardCoins) เหรียญ · XP \(Int(q.rewardXP))" : "\(q.rewardCoins) เหรียญ"
+        q.rewardXP > 0 ? tr("{0} เหรียญ · XP {1}", q.rewardCoins, Int(q.rewardXP)) : tr("{0} เหรียญ", q.rewardCoins)
     }
 }
 
@@ -234,21 +234,21 @@ private struct ShopTab: View {
 
     var body: some View {
         List {
-            Section("อาหาร") {
+            Section(tr("อาหาร")) {
                 ForEach(game.pet.balance.foods) { food in
                     HStack {
                         FoodIconView(food: food, size: 40)
                         VStack(alignment: .leading) {
                             Text(food.name)
-                            Text("อิ่ม +\(Int(food.hunger))  อารมณ์ +\(Int(food.mood))  XP +\(Int(food.xp))")
+                            Text(tr("อิ่ม +{0}  อารมณ์ +{1}  XP +{2}", Int(food.hunger), Int(food.mood), Int(food.xp)))
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
                         if food.price == 0 {
-                            Text("ฟรี ไม่จำกัด").font(.caption).foregroundStyle(.secondary)
+                            Text(tr("ฟรี ไม่จำกัด")).font(.caption).foregroundStyle(.secondary)
                         } else {
-                            Text("มี \(game.stock(of: food))").font(.caption).foregroundStyle(.secondary)
-                            Button("ซื้อ \(food.price) เหรียญ") {
+                            Text(tr("มี {0}", game.stock(of: food))).font(.caption).foregroundStyle(.secondary)
+                            Button(tr("ซื้อ {0} เหรียญ", food.price)) {
                                 model.perform { $0.buy(food) }
                             }
                             .disabled(game.coins < food.price)
@@ -272,7 +272,7 @@ private struct PetTab: View {
             Section {
                 let installed = SpritePet.installedSpecies()
                 if installed.count > 1 {
-                    Picker("หน้าตา", selection: Binding(
+                    Picker(tr("หน้าตา"), selection: Binding(
                         get: { game.species },
                         set: { id in model.perform { $0.setSpecies(id); return [] } })) {
                             ForEach(PetSpecies.all.filter { installed.contains($0.id) }) { Text($0.label).tag($0.id) }
@@ -287,43 +287,43 @@ private struct PetTab: View {
                 }
                 .listRowBackground(Color.clear)
             }
-            Section(s.stage == .egg ? "ไข่" : "\(s.name) — \(s.stage.displayName)") {
+            Section(s.stage == .egg ? tr("ไข่") : "\(s.name) — \(s.stage.displayName)") {
                 if s.stage == .egg {
-                    bar("อุ่นไข่", s.hatchProgress, game.pet.balance.hatchNeeded)
-                    Text("คลิก/ลูบไข่ หรือเปิดแอปไว้เพื่ออุ่น ฟักแล้วจึงให้อาหารได้")
+                    bar(tr("อุ่นไข่"), s.hatchProgress, game.pet.balance.hatchNeeded)
+                    Text(tr("คลิก/ลูบไข่ หรือเปิดแอปไว้เพื่ออุ่น ฟักแล้วจึงให้อาหารได้"))
                         .font(.caption).foregroundStyle(.secondary)
                 } else {
                     if let need = game.pet.balance.xpToLeave(s.stage) {
                         bar("XP", s.xp, need)
                     } else {
-                        Text("XP \(Int(s.xp)) (ขั้นสูงสุด)").font(.callout)
+                        Text(tr("XP {0} (ขั้นสูงสุด)", Int(s.xp))).font(.callout)
                     }
-                    bar("อิ่ม", s.hunger, 100, symbol: "fork.knife")
-                    bar("อารมณ์", s.mood, 100, symbol: "face.smiling")
-                    bar("พลังงาน", s.energy, 100, symbol: "bolt.fill")
-                    Label("ผูกพัน \(Int(s.bond))", systemImage: "heart.fill").font(.callout)
+                    bar(tr("อิ่ม"), s.hunger, 100, symbol: "fork.knife")
+                    bar(tr("อารมณ์"), s.mood, 100, symbol: "face.smiling")
+                    bar(tr("พลังงาน"), s.energy, 100, symbol: "bolt.fill")
+                    Label(tr("ผูกพัน {0}", Int(s.bond)), systemImage: "heart.fill").font(.callout)
                 }
             }
             if s.stage != .egg {
-                Section("ให้อาหาร") {
+                Section(tr("ให้อาหาร")) {
                     ForEach(game.pet.balance.foods) { food in
                         let stock = game.stock(of: food)
                         HStack {
                             HStack(spacing: 8) {
                                 FoodIconView(food: food, size: 24)
-                                Text("\(food.name)\(food.id == s.favoriteFood ? " · ของโปรด" : "")")
+                                Text("\(food.name)\(food.id == s.favoriteFood ? tr(" · ของโปรด") : "")")
                             }
                             Spacer()
                             if food.price > 0 {
-                                Text("มี \(stock)").font(.caption).foregroundStyle(.secondary)
+                                Text(tr("มี {0}", stock)).font(.caption).foregroundStyle(.secondary)
                             }
                             let wait = game.pet.cooldownRemaining(food, at: Date())
                             if stock <= 0 {
-                                Button("ซื้อ") { router.section = .shop }
+                                Button(tr("ซื้อ")) { router.section = .shop }
                             } else if wait > 0 {
-                                Text("ให้ได้\(DurationText.wait(wait))").font(.caption).foregroundStyle(.secondary)
+                                Text(tr("ให้ได้{0}", DurationText.wait(wait))).font(.caption).foregroundStyle(.secondary)
                             } else {
-                                Button("ให้") { model.perform { $0.feed(food, at: Date()) } }
+                                Button(tr("ให้")) { model.perform { $0.feed(food, at: Date()) } }
                             }
                         }
                     }
@@ -359,38 +359,38 @@ private struct RemindersTab: View {
 
     private static let formatter: DateFormatter = {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "th_TH")
+        f.locale = Locale(identifier: Localization.isEnglish ? "en_US" : "th_TH")
         f.dateFormat = "E d MMM HH:mm"
         return f
     }()
 
     var body: some View {
         List {
-            Section("ตั้งเตือนใหม่") {
-                TextField("เช่น  ประชุม อีก 20 นาที  /  พรุ่งนี้ 9 โมง ส่งงาน  /  กินยา 18:30", text: $text)
+            Section(tr("ตั้งเตือนใหม่")) {
+                TextField(tr("เช่น  ประชุม อีก 20 นาที  /  พรุ่งนี้ 9 โมง ส่งงาน  /  กินยา 18:30"), text: $text)
                     .onChange(of: text) { _, new in
                         if let p = ReminderParser.parse(new, now: Date()) {
                             date = p.fireAt
-                            hint = "เข้าใจว่า: \"\(p.text)\" เวลา \(Self.formatter.string(from: p.fireAt))"
+                            hint = tr("เข้าใจว่า: \"{0}\" เวลา {1}", p.text, Self.formatter.string(from: p.fireAt))
                         } else {
-                            hint = new.isEmpty ? "" : "ไม่พบเวลาในข้อความ — เลือกเวลาด้านล่างเอง"
+                            hint = new.isEmpty ? "" : tr("ไม่พบเวลาในข้อความ — เลือกเวลาด้านล่างเอง")
                         }
                     }
                 if !hint.isEmpty { Text(hint).font(.caption).foregroundStyle(.secondary) }
-                DatePicker("เวลา", selection: $date)
-                Picker("ซ้ำ", selection: $rule) {
-                    Text("ครั้งเดียว").tag(0)
-                    Text("ทุกวัน").tag(1)
-                    Text("ทุกสัปดาห์").tag(2)
-                    Text("ทุก 30 นาที").tag(3)
+                DatePicker(tr("เวลา"), selection: $date)
+                Picker(tr("ซ้ำ"), selection: $rule) {
+                    Text(tr("ครั้งเดียว")).tag(0)
+                    Text(tr("ทุกวัน")).tag(1)
+                    Text(tr("ทุกสัปดาห์")).tag(2)
+                    Text(tr("ทุก 30 นาที")).tag(3)
                 }
-                Button("เพิ่มการเตือน") { add() }
+                Button(tr("เพิ่มการเตือน")) { add() }
                     .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
             }
 
-            Section("รายการ") {
+            Section(tr("รายการ")) {
                 let active = game.reminders.filter(\.isActive).sorted { $0.nextFire < $1.nextFire }
-                if active.isEmpty { Text("ยังไม่มีการเตือน").foregroundStyle(.secondary) }
+                if active.isEmpty { Text(tr("ยังไม่มีการเตือน")).foregroundStyle(.secondary) }
                 ForEach(active) { r in
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
@@ -400,7 +400,7 @@ private struct RemindersTab: View {
                         }
                         Spacer()
                         if r.ringing {
-                            Button("รับทราบ") { model.perform { $0.acknowledgeReminder(id: r.id, at: Date()); return [] } }
+                            Button(tr("รับทราบ")) { model.perform { $0.acknowledgeReminder(id: r.id, at: Date()); return [] } }
                         }
                         Button(role: .destructive) {
                             model.perform { $0.removeReminder(id: r.id); return [] }
@@ -444,19 +444,19 @@ private struct PomodoroTab: View {
                 .frame(maxWidth: 260)
             GlassEffectContainer(spacing: 10) {
                 HStack(spacing: 10) {
-                    Button(t.isRunning ? "หยุดชั่วคราว" : "เริ่ม") { pomodoro.toggle() }
+                    Button(t.isRunning ? tr("หยุดชั่วคราว") : tr("เริ่ม")) { pomodoro.toggle() }
                         .buttonStyle(.glassProminent)
                         .keyboardShortcut(.defaultAction)
-                    Button("ข้าม") { pomodoro.skip() }.buttonStyle(.glass)
-                    Button("รีเซ็ต") { pomodoro.reset() }.buttonStyle(.glass)
+                    Button(tr("ข้าม")) { pomodoro.skip() }.buttonStyle(.glass)
+                    Button(tr("รีเซ็ต")) { pomodoro.reset() }.buttonStyle(.glass)
                 }
             }
             }
             .padding(32)
             .glassCard(cornerRadius: 32)
-            Text("โฟกัสเสร็จแล้ววันนี้ \(t.completedFocus) รอบ · ทำครบรับ XP และนับเป็นภารกิจ")
+            Text(tr("โฟกัสเสร็จแล้ววันนี้ {0} รอบ · ทำครบรับ XP และนับเป็นภารกิจ", t.completedFocus))
                 .font(.caption).foregroundStyle(.secondary)
-            Text("25 นาทีโฟกัส · 5 นาทีพัก · ทุก 4 รอบพัก 15 นาที · สัตว์เลี้ยงจะนั่งเงียบ ๆ ระหว่างโฟกัส")
+            Text(tr("25 นาทีโฟกัส · 5 นาทีพัก · ทุก 4 รอบพัก 15 นาที · สัตว์เลี้ยงจะนั่งเงียบ ๆ ระหว่างโฟกัส"))
                 .font(.caption2).foregroundStyle(.secondary)
             Spacer()
         }
@@ -481,17 +481,17 @@ private struct ClipboardTab: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                TextField("ค้นหา", text: $query).textFieldStyle(.roundedBorder).frame(maxWidth: 240)
-                Toggle("หยุดบันทึก", isOn: Binding(get: { service.paused }, set: { service.paused = $0 }))
+                TextField(tr("ค้นหา"), text: $query).textFieldStyle(.roundedBorder).frame(maxWidth: 240)
+                Toggle(tr("หยุดบันทึก"), isOn: Binding(get: { service.paused }, set: { service.paused = $0 }))
                 Spacer()
-                Button("ล้าง (เว้นที่ปักหมุด)") { service.clear() }
+                Button(tr("ล้าง (เว้นที่ปักหมุด)")) { service.clear() }
                     .disabled(service.history.entries.allSatisfy(\.pinned))
             }
             .padding(12)
             Divider()
             List {
                 if entries.isEmpty {
-                    Text(query.isEmpty ? "ยังไม่มีอะไร คัดลอกข้อความแล้วจะมาอยู่ที่นี่" : "ไม่พบ").foregroundStyle(.secondary)
+                    Text(query.isEmpty ? tr("ยังไม่มีอะไร คัดลอกข้อความแล้วจะมาอยู่ที่นี่") : tr("ไม่พบ")).foregroundStyle(.secondary)
                 }
                 ForEach(entries) { entry in
                     HStack(spacing: 10) {
@@ -501,18 +501,18 @@ private struct ClipboardTab: View {
                             Text(entry.createdAt, style: .relative).font(.caption2).foregroundStyle(.secondary)
                         }
                         Spacer()
-                        if copiedID == entry.id { Text("คัดลอกแล้ว").font(.caption).foregroundStyle(.secondary) }
+                        if copiedID == entry.id { Text(tr("คัดลอกแล้ว")).font(.caption).foregroundStyle(.secondary) }
                         Button { service.togglePin(entry.id) } label: { Image(systemName: entry.pinned ? "pin.fill" : "pin") }
-                            .buttonStyle(.borderless).help(entry.pinned ? "เลิกปักหมุด" : "ปักหมุด")
+                            .buttonStyle(.borderless).help(entry.pinned ? tr("เลิกปักหมุด") : tr("ปักหมุด"))
                         Button { service.copy(entry); copiedID = entry.id } label: { Image(systemName: "doc.on.doc") }
-                            .buttonStyle(.borderless).help("คัดลอกอีกครั้ง")
+                            .buttonStyle(.borderless).help(tr("คัดลอกอีกครั้ง"))
                         Button { service.remove(entry.id) } label: { Image(systemName: "minus.circle") }
-                            .buttonStyle(.borderless).help("ลบ")
+                            .buttonStyle(.borderless).help(tr("ลบ"))
                     }
                     .padding(.vertical, 2)
                 }
             }
-            Text("เก็บเฉพาะข้อความ ในหน่วยความจำเท่านั้น ปิดแอปแล้วหาย และไม่เก็บสิ่งที่แอปรหัสผ่านระบุว่าเป็นความลับ")
+            Text(tr("เก็บเฉพาะข้อความ ในหน่วยความจำเท่านั้น ปิดแอปแล้วหาย และไม่เก็บสิ่งที่แอปรหัสผ่านระบุว่าเป็นความลับ"))
                 .font(.caption).foregroundStyle(.secondary).padding(8)
         }
     }
@@ -526,21 +526,21 @@ private struct NotesTab: View {
         VStack(spacing: 0) {
             HStack {
                 Button { model.perform { $0.addNote(now: Date()); return [] } } label: {
-                    Label("โน้ตใหม่", systemImage: "plus")
+                    Label(tr("โน้ตใหม่"), systemImage: "plus")
                 }
                 Spacer()
-                Text("ปักหมุดเพื่อให้โน้ตลอยอยู่บนจอ").font(.caption).foregroundStyle(.secondary)
+                Text(tr("ปักหมุดเพื่อให้โน้ตลอยอยู่บนจอ")).font(.caption).foregroundStyle(.secondary)
             }
             .padding(12)
             Divider()
             List {
-                if game.notes.isEmpty { Text("ยังไม่มีโน้ต").foregroundStyle(.secondary) }
+                if game.notes.isEmpty { Text(tr("ยังไม่มีโน้ต")).foregroundStyle(.secondary) }
                 ForEach(game.notes) { note in
                     HStack(alignment: .top, spacing: 10) {
                         RoundedRectangle(cornerRadius: 3)
                             .fill(stickyColors[note.colorIndex % stickyColors.count])
                             .frame(width: 8)
-                        TextField("พิมพ์โน้ต…", text: Binding(
+                        TextField(tr("พิมพ์โน้ต…"), text: Binding(
                             get: { note.text },
                             set: { t in model.perform { $0.updateNote(id: note.id, text: t, now: Date()); return [] } }),
                             axis: .vertical)
@@ -581,8 +581,8 @@ private struct VaultTab: View {
             Divider()
             List {
                 if items.isEmpty {
-                    Text(game.vault.isEmpty ? "ลากไฟล์ โฟลเดอร์ ข้อความ หรือลิงก์มาวางที่สัตว์เลี้ยง (หรือที่หน้าต่างนี้) เพื่อฝากไว้"
-                                            : "ไม่พบรายการที่ตรงกัน")
+                    Text(game.vault.isEmpty ? tr("ลากไฟล์ โฟลเดอร์ ข้อความ หรือลิงก์มาวางที่สัตว์เลี้ยง (หรือที่หน้าต่างนี้) เพื่อฝากไว้")
+                                            : tr("ไม่พบรายการที่ตรงกัน"))
                         .foregroundStyle(.secondary)
                 }
                 ForEach(items) { item in
@@ -598,28 +598,28 @@ private struct VaultTab: View {
             }, isTargeted: { dropTargeted = $0 })
         }
         .confirmationDialog(
-            "ลบ “\(pendingDelete?.name ?? "")” ?",
+            tr("ลบ “{0}” ?", pendingDelete?.name ?? ""),
             isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
             titleVisibility: .visible
         ) {
-            Button("ลบ", role: .destructive) {
+            Button(tr("ลบ"), role: .destructive) {
                 if let item = pendingDelete { model.perform { $0.removeVaultItem(id: item.id) } }
                 pendingDelete = nil
             }
-            Button("ยกเลิก", role: .cancel) { pendingDelete = nil }
+            Button(tr("ยกเลิก"), role: .cancel) { pendingDelete = nil }
         } message: {
-            Text(pendingDelete?.mode == .copy ? "ไฟล์ที่คัดลอกไว้ใน vault จะถูกลบถาวร" : "ลบเฉพาะรายการ ไฟล์ต้นฉบับไม่ถูกแตะต้อง")
+            Text(pendingDelete?.mode == .copy ? tr("ไฟล์ที่คัดลอกไว้ใน vault จะถูกลบถาวร") : tr("ลบเฉพาะรายการ ไฟล์ต้นฉบับไม่ถูกแตะต้อง"))
         }
     }
 
     private func controls(_ game: Game) -> some View {
         VStack(spacing: 8) {
             HStack {
-                TextField("ค้นหาชื่อ ข้อความ แท็ก", text: $query)
+                TextField(tr("ค้นหาชื่อ ข้อความ แท็ก"), text: $query)
                     .textFieldStyle(.roundedBorder)
                 if !game.vaultTags.isEmpty {
-                    Picker("แท็ก", selection: $tag) {
-                        Text("ทุกแท็ก").tag(String?.none)
+                    Picker(tr("แท็ก"), selection: $tag) {
+                        Text(tr("ทุกแท็ก")).tag(String?.none)
                         ForEach(game.vaultTags, id: \.self) { Text("#\($0)").tag(String?.some($0)) }
                     }
                     .labelsHidden()
@@ -627,18 +627,18 @@ private struct VaultTab: View {
                 }
             }
             HStack {
-                Picker("เก็บแบบ", selection: Binding(
+                Picker(tr("เก็บแบบ"), selection: Binding(
                     get: { game.vaultSettings.policy },
                     set: { p in model.perform { $0.setVaultPolicy(p); return [] } })) {
                     ForEach(VaultPolicy.allCases, id: \.self) { Text($0.label).tag($0) }
                 }
-                Picker("หมดอายุ", selection: Binding(
+                Picker(tr("หมดอายุ"), selection: Binding(
                     get: { game.vaultSettings.defaultExpiryDays },
                     set: { d in model.perform { $0.setVaultDefaultExpiry(days: d); return [] } })) {
-                    Text("ไม่ลบ").tag(Int?.none)
-                    Text("1 วัน").tag(Int?.some(1))
-                    Text("7 วัน").tag(Int?.some(7))
-                    Text("30 วัน").tag(Int?.some(30))
+                    Text(tr("ไม่ลบ")).tag(Int?.none)
+                    Text(tr("1 วัน")).tag(Int?.some(1))
+                    Text(tr("7 วัน")).tag(Int?.some(7))
+                    Text(tr("30 วัน")).tag(Int?.some(30))
                 }
                 .frame(width: 150)
             }
@@ -684,25 +684,25 @@ private struct VaultRow: View {
                 }
             }
             Button { vault.open(item) } label: { Image(systemName: opensExternally ? "arrow.up.forward.square" : "doc.on.doc") }
-                .help(opensExternally ? "เปิด" : "คัดลอกข้อความ")
+                .help(opensExternally ? tr("เปิด") : tr("คัดลอกข้อความ"))
                 .disabled(missing)
             if item.kind == .file || item.kind == .folder {
                 Button { vault.reveal(item) } label: { Image(systemName: "magnifyingglass") }
-                    .help("แสดงใน Finder").disabled(missing)
+                    .help(tr("แสดงใน Finder")).disabled(missing)
             }
             Menu {
-                Button(item.pinned ? "เลิกปักหมุด" : "ปักหมุด (ไม่หมดอายุ)") {
+                Button(item.pinned ? tr("เลิกปักหมุด") : tr("ปักหมุด (ไม่หมดอายุ)")) {
                     model.perform { $0.setVaultPinned(id: item.id, !item.pinned); return [] }
                 }
-                Button("แก้แท็ก…") { tagText = item.tags.joined(separator: ", "); editingTags = true }
-                Menu("หมดอายุ") {
-                    Button("ไม่หมดอายุ") { setExpiry(nil) }
-                    Button("อีก 1 วัน") { setExpiry(1) }
-                    Button("อีก 7 วัน") { setExpiry(7) }
-                    Button("อีก 30 วัน") { setExpiry(30) }
+                Button(tr("แก้แท็ก…")) { tagText = item.tags.joined(separator: ", "); editingTags = true }
+                Menu(tr("หมดอายุ")) {
+                    Button(tr("ไม่หมดอายุ")) { setExpiry(nil) }
+                    Button(tr("อีก 1 วัน")) { setExpiry(1) }
+                    Button(tr("อีก 7 วัน")) { setExpiry(7) }
+                    Button(tr("อีก 30 วัน")) { setExpiry(30) }
                 }
                 Divider()
-                Button("ลบ…", role: .destructive, action: onDelete)
+                Button(tr("ลบ…"), role: .destructive, action: onDelete)
             } label: { Image(systemName: "ellipsis.circle") }
             .menuStyle(.borderlessButton)
             .fixedSize()
@@ -710,11 +710,11 @@ private struct VaultRow: View {
         .padding(.vertical, 3)
         .popover(isPresented: $editingTags) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("แท็ก (คั่นด้วย ,)").font(.caption)
-                TextField("เช่น งาน, ด่วน", text: $tagText)
+                Text(tr("แท็ก (คั่นด้วย ,)")).font(.caption)
+                TextField(tr("เช่น งาน, ด่วน"), text: $tagText)
                     .frame(width: 220)
                     .onSubmit { saveTags() }
-                Button("บันทึก") { saveTags() }.keyboardShortcut(.defaultAction)
+                Button(tr("บันทึก")) { saveTags() }.keyboardShortcut(.defaultAction)
             }
             .padding(12)
         }
@@ -733,18 +733,18 @@ private struct VaultRow: View {
     }
 
     private var subtitle: String {
-        if missing { return "ไม่พบไฟล์ (ถูกย้ายหรือลบ)" }
+        if missing { return tr("ไม่พบไฟล์ (ถูกย้ายหรือลบ)") }
         var parts: [String] = []
         switch item.kind {
-        case .file, .folder: parts.append(item.mode == .copy ? "คัดลอกไว้" : "อ้างอิง")
+        case .file, .folder: parts.append(item.mode == .copy ? tr("คัดลอกไว้") : tr("อ้างอิง"))
         case .link: parts.append(item.text ?? "")
         case .text: parts.append(String((item.text ?? "").prefix(50)).replacingOccurrences(of: "\n", with: " "))
         }
         if let size = item.size, size > 0 { parts.append(ByteCountFormatter.string(fromByteCount: size, countStyle: .file)) }
         let f = RelativeDateTimeFormatter()
-        f.locale = Locale(identifier: "th_TH")
+        f.locale = Locale(identifier: Localization.isEnglish ? "en_US" : "th_TH")
         parts.append(f.localizedString(for: item.addedAt, relativeTo: Date()))
-        if let exp = item.expiresAt, !item.pinned { parts.append("หมดอายุ " + f.localizedString(for: exp, relativeTo: Date())) }
+        if let exp = item.expiresAt, !item.pinned { parts.append(tr("หมดอายุ ") + f.localizedString(for: exp, relativeTo: Date())) }
         return parts.filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
@@ -800,24 +800,24 @@ private struct MusicTab: View {
             list
             PlayerBar(model: model, game: game, player: player)
         }
-        .alert("เปลี่ยนชื่อเพลย์ลิสต์", isPresented: $renaming) {
-            TextField("ชื่อ", text: $newName)
-            Button("ตกลง") { if let p = playlist { model.perform { $0.renamePlaylist(id: p.id, to: newName); return [] } } }
-            Button("ยกเลิก", role: .cancel) {}
+        .alert(tr("เปลี่ยนชื่อเพลย์ลิสต์"), isPresented: $renaming) {
+            TextField(tr("ชื่อ"), text: $newName)
+            Button(tr("ตกลง")) { if let p = playlist { model.perform { $0.renamePlaylist(id: p.id, to: newName); return [] } } }
+            Button(tr("ยกเลิก"), role: .cancel) {}
         }
-        .confirmationDialog("ลบเพลย์ลิสต์ “\(playlist?.name ?? "")” ?", isPresented: $confirmDelete, titleVisibility: .visible) {
-            Button("ลบ", role: .destructive) { if let p = playlist { model.perform { $0.deletePlaylist(id: p.id); return [] } } }
-            Button("ยกเลิก", role: .cancel) {}
-        } message: { Text("ลบเฉพาะรายการ ไฟล์เพลงและวิดีโอจริงไม่ถูกลบ") }
+        .confirmationDialog(tr("ลบเพลย์ลิสต์ “{0}” ?", playlist?.name ?? ""), isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button(tr("ลบ"), role: .destructive) { if let p = playlist { model.perform { $0.deletePlaylist(id: p.id); return [] } } }
+            Button(tr("ยกเลิก"), role: .cancel) {}
+        } message: { Text(tr("ลบเฉพาะรายการ ไฟล์เพลงและวิดีโอจริงไม่ถูกลบ")) }
     }
 
     private var header: some View {
         VStack(spacing: 8) {
             HStack {
                 if game.playlists.isEmpty {
-                    Text("ยังไม่มีเพลย์ลิสต์").foregroundStyle(.secondary)
+                    Text(tr("ยังไม่มีเพลย์ลิสต์")).foregroundStyle(.secondary)
                 } else {
-                    Picker("เพลย์ลิสต์", selection: Binding(
+                    Picker(tr("เพลย์ลิสต์"), selection: Binding(
                         get: { playlist?.id },
                         set: { id in model.perform { $0.setMusic { $0.playlistID = id }; return [] } })) {
                         ForEach(game.playlists) { Text("\($0.name) (\($0.tracks.count))").tag(Optional($0.id)) }
@@ -825,19 +825,19 @@ private struct MusicTab: View {
                     .labelsHidden()
                 }
                 Button { model.perform { $0.createPlaylist(""); return [] } } label: { Image(systemName: "plus") }
-                    .help("เพลย์ลิสต์ใหม่")
+                    .help(tr("เพลย์ลิสต์ใหม่"))
                 if let p = playlist {
-                    Button { newName = p.name; renaming = true } label: { Image(systemName: "pencil") }.help("เปลี่ยนชื่อ")
-                    Button { confirmDelete = true } label: { Image(systemName: "trash") }.help("ลบเพลย์ลิสต์")
+                    Button { newName = p.name; renaming = true } label: { Image(systemName: "pencil") }.help(tr("เปลี่ยนชื่อ"))
+                    Button { confirmDelete = true } label: { Image(systemName: "trash") }.help(tr("ลบเพลย์ลิสต์"))
                 }
             }
             if let p = playlist {
                 HStack {
-                    TextField("วางลิงก์ YouTube แล้วกด Enter", text: $link)
+                    TextField(tr("วางลิงก์ YouTube แล้วกด Enter"), text: $link)
                         .textFieldStyle(.roundedBorder)
                         .onSubmit { addLink(p) }
-                    Button("เพิ่ม") { addLink(p) }.disabled(link.trimmingCharacters(in: .whitespaces).isEmpty)
-                    Button("ไฟล์เพลง…") { pickFiles(p) }
+                    Button(tr("เพิ่ม")) { addLink(p) }.disabled(link.trimmingCharacters(in: .whitespaces).isEmpty)
+                    Button(tr("ไฟล์เพลง…")) { pickFiles(p) }
                 }
                 if !message.isEmpty { Text(message).font(.caption).foregroundStyle(.orange) }
             }
@@ -849,7 +849,7 @@ private struct MusicTab: View {
         if let p = playlist {
             List {
                 if p.tracks.isEmpty {
-                    Text("ว่างเปล่า — วางลิงก์ YouTube ด้านบน หรือลากลิงก์/ไฟล์เสียงมาวางที่นี่")
+                    Text(tr("ว่างเปล่า — วางลิงก์ YouTube ด้านบน หรือลากลิงก์/ไฟล์เสียงมาวางที่นี่"))
                         .foregroundStyle(.secondary)
                 }
                 ForEach(p.tracks) { track in
@@ -876,7 +876,7 @@ private struct MusicTab: View {
             VStack(spacing: 12) {
                 Spacer()
                 Image(systemName: "music.note.list").font(.largeTitle).foregroundStyle(.secondary)
-                Button("สร้างเพลย์ลิสต์แรก") { model.perform { $0.createPlaylist("เพลงของฉัน"); return [] } }
+                Button(tr("สร้างเพลย์ลิสต์แรก")) { model.perform { $0.createPlaylist(tr("เพลงของฉัน")); return [] } }
                 Spacer()
             }
             .frame(maxWidth: .infinity)
@@ -931,8 +931,8 @@ private struct TrackRow: View {
     }
 
     private var subtitle: String {
-        if missing { return "ไม่พบไฟล์เพลง (ถูกย้ายหรือลบ)" }
-        var parts = [track.isYouTube ? "YouTube" : "ไฟล์"]
+        if missing { return tr("ไม่พบไฟล์เพลง (ถูกย้ายหรือลบ)") }
+        var parts = [track.isYouTube ? "YouTube" : tr("ไฟล์")]
         if let a = track.artist { parts.append(a) }
         if let d = track.duration { parts.append(format(d)) }
         return parts.joined(separator: " · ")
@@ -952,7 +952,7 @@ private struct PlayerBar: View {
     var body: some View {
         VStack(spacing: 6) {
             HStack {
-                Text(player.nowPlaying?.title ?? "ยังไม่ได้เล่น").lineLimit(1).font(.callout.weight(.medium))
+                Text(player.nowPlaying?.title ?? tr("ยังไม่ได้เล่น")).lineLimit(1).font(.callout.weight(.medium))
                 Spacer()
                 if player.isLoading { ProgressView().controlSize(.small) }
             }
@@ -982,7 +982,7 @@ private struct PlayerBar: View {
                     .frame(width: 90)
             }
             .buttonStyle(.borderless)
-            Text("เพลงจาก YouTube ใช้แบตมากกว่าไฟล์ในเครื่อง และต้องออนไลน์")
+            Text(tr("เพลงจาก YouTube ใช้แบตมากกว่าไฟล์ในเครื่อง และต้องออนไลน์"))
                 .font(.caption2).foregroundStyle(.secondary)
         }
         .padding(14)
@@ -1011,19 +1011,19 @@ private struct GalleryTab: View {
             let items = game.media.filter { filter == nil || $0.kind == filter }
             ScrollView {
                 if items.isEmpty {
-                    Text(game.media.isEmpty ? "ยังไม่มีรูปหรือวิดีโอ — ลองกดปุ่มด้านบน หรือ ⌃⌥S / ⌃⌥V" : "ไม่มีรายการในหมวดนี้")
+                    Text(game.media.isEmpty ? tr("ยังไม่มีรูปหรือวิดีโอ — ลองกดปุ่มด้านบน หรือ ⌃⌥S / ⌃⌥V") : tr("ไม่มีรายการในหมวดนี้"))
                         .foregroundStyle(.secondary).padding(40)
                 } else {
                     LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(items) { item in
                             MediaCell(item: item)
                                 .contextMenu {
-                                    Button("เปิด") { NSWorkspace.shared.open(URL(fileURLWithPath: item.path)) }
-                                    Button("แสดงใน Finder") {
+                                    Button(tr("เปิด")) { NSWorkspace.shared.open(URL(fileURLWithPath: item.path)) }
+                                    Button(tr("แสดงใน Finder")) {
                                         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: item.path)])
                                     }
                                     if !item.kind.isVideo {
-                                        Button("คัดลอกภาพ") {
+                                        Button(tr("คัดลอกภาพ")) {
                                             if let image = NSImage(contentsOfFile: item.path) {
                                                 NSPasteboard.general.clearContents()
                                                 NSPasteboard.general.writeObjects([image])
@@ -1031,7 +1031,7 @@ private struct GalleryTab: View {
                                         }
                                     }
                                     Divider()
-                                    Button("ย้ายไปถังขยะ…", role: .destructive) { pendingDelete = item }
+                                    Button(tr("ย้ายไปถังขยะ…"), role: .destructive) { pendingDelete = item }
                                 }
                         }
                     }
@@ -1039,49 +1039,49 @@ private struct GalleryTab: View {
                 }
             }
         }
-        .confirmationDialog("ย้าย “\(URL(fileURLWithPath: pendingDelete?.path ?? "").lastPathComponent)” ไปถังขยะ?",
+        .confirmationDialog(tr("ย้าย “{0}” ไปถังขยะ?", URL(fileURLWithPath: pendingDelete?.path ?? "").lastPathComponent),
                             isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
                             titleVisibility: .visible) {
-            Button("ย้ายไปถังขยะ", role: .destructive) {
+            Button(tr("ย้ายไปถังขยะ"), role: .destructive) {
                 if let item = pendingDelete {
                     try? FileManager.default.trashItem(at: URL(fileURLWithPath: item.path), resultingItemURL: nil)
                     model.perform { $0.removeMedia(id: item.id) }
                 }
                 pendingDelete = nil
             }
-            Button("ยกเลิก", role: .cancel) { pendingDelete = nil }
-        } message: { Text("กู้คืนได้จากถังขยะ") }
+            Button(tr("ยกเลิก"), role: .cancel) { pendingDelete = nil }
+        } message: { Text(tr("กู้คืนได้จากถังขยะ")) }
     }
 
     private var controls: some View {
         VStack(spacing: 8) {
             HStack {
-                Button("ภาพทั้งจอ") { Task { await capture.screenshot(region: false) } }
-                Button("เลือกพื้นที่  ⌃⌥S") { Task { await capture.screenshot(region: true) } }
-                Button(capture.isRecording ? "หยุดอัด (\(Int(capture.elapsed))s)" : "อัดหน้าจอ  ⌃⌥V") { capture.toggleRecording() }
+                Button(tr("ภาพทั้งจอ")) { Task { await capture.screenshot(region: false) } }
+                Button(tr("เลือกพื้นที่  ⌃⌥S")) { Task { await capture.screenshot(region: true) } }
+                Button(capture.isRecording ? tr("หยุดอัด ({0}s)", Int(capture.elapsed)) : tr("อัดหน้าจอ  ⌃⌥V")) { capture.toggleRecording() }
                     .tint(capture.isRecording ? .red : nil)
-                Button("กล้อง…") { Task { await camera.show() } }
+                Button(tr("กล้อง…")) { Task { await camera.show() } }
                 Spacer()
             }
             HStack(spacing: 16) {
-                Stepper("นับถอยหลัง \(game.capture.countdown) วิ", value: Binding(
+                Stepper(tr("นับถอยหลัง {0} วิ", game.capture.countdown), value: Binding(
                     get: { game.capture.countdown },
                     set: { n in model.perform { $0.setCapture { $0.countdown = n }; return [] } }), in: 0...10)
-                Toggle("เสียงระบบ", isOn: Binding(
+                Toggle(tr("เสียงระบบ"), isOn: Binding(
                     get: { game.capture.recordSystemAudio },
                     set: { v in model.perform { $0.setCapture { $0.recordSystemAudio = v }; return [] } }))
-                Toggle("ไมค์", isOn: Binding(
+                Toggle(tr("ไมค์"), isOn: Binding(
                     get: { game.capture.recordMicrophone },
                     set: { v in model.perform { $0.setCapture { $0.recordMicrophone = v }; return [] } }))
                 Spacer()
-                Picker("แสดง", selection: $filter) {
-                    Text("ทั้งหมด").tag(MediaKind?.none)
+                Picker(tr("แสดง"), selection: $filter) {
+                    Text(tr("ทั้งหมด")).tag(MediaKind?.none)
                     ForEach(MediaKind.allCases, id: \.self) { Text($0.label).tag(MediaKind?.some($0)) }
                 }
                 .frame(width: 190)
             }
             .font(.caption)
-            Text("ภาพเก็บที่ ~/Pictures/Hey · วิดีโอที่ ~/Movies/Hey · หน้าต่างของ Hey! (สัตว์เลี้ยง ฯลฯ) จะไม่ติดในภาพ")
+            Text(tr("ภาพเก็บที่ ~/Pictures/Hey · วิดีโอที่ ~/Movies/Hey · หน้าต่างของ Hey! (สัตว์เลี้ยง ฯลฯ) จะไม่ติดในภาพ"))
                 .font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(12)
@@ -1144,7 +1144,7 @@ private struct GesturesTab: View {
     var body: some View {
         let g = game.gestures
         List {
-            Section("ท่าบนตัวสัตว์เลี้ยง (ต้องใช้ทัชแพด และวางเมาส์บนตัว)") {
+            Section(tr("ท่าบนตัวสัตว์เลี้ยง (ต้องใช้ทัชแพด และวางเมาส์บนตัว)")) {
                 ForEach(GestureKind.allCases, id: \.self) { kind in
                     Picker(kind.label, selection: Binding(
                         get: { g.action(for: kind) },
@@ -1152,24 +1152,24 @@ private struct GesturesTab: View {
                         ForEach(PetAction.allCases, id: \.self) { Text($0.label).tag($0) }
                     }
                 }
-                LabeledContent("ท่าล่าสุดที่รู้จัก") {
+                LabeledContent(tr("ท่าล่าสุดที่รู้จัก")) {
                     Text(log.last).foregroundStyle(.secondary)
                 }
-                Text("ลองปัด/หมุนสองนิ้วบนตัวสัตว์ ถ้าทิศกลับด้านกับที่คาดไว้ ให้สลับคำสั่งของท่านั้น หรือบอกผมเพื่อแก้ให้")
+                Text(tr("ลองปัด/หมุนสองนิ้วบนตัวสัตว์ ถ้าทิศกลับด้านกับที่คาดไว้ ให้สลับคำสั่งของท่านั้น หรือบอกผมเพื่อแก้ให้"))
                     .font(.caption).foregroundStyle(.secondary)
             }
 
-            Section("มุมจอ") {
-                Toggle("เปิดมุมจอ", isOn: Binding(
+            Section(tr("มุมจอ")) {
+                Toggle(tr("เปิดมุมจอ"), isOn: Binding(
                     get: { g.hotCornersEnabled },
                     set: { v in model.perform { $0.setGestures { $0.hotCornersEnabled = v }; return [] } }))
                 if g.hotCornersEnabled {
-                    Picker("ค้างเมาส์ไว้", selection: Binding(
+                    Picker(tr("ค้างเมาส์ไว้"), selection: Binding(
                         get: { g.cornerDwell },
                         set: { v in model.perform { $0.setGestures { $0.cornerDwell = v }; return [] } })) {
-                        Text("0.3 วินาที").tag(0.3)
-                        Text("0.5 วินาที").tag(0.5)
-                        Text("1 วินาที").tag(1.0)
+                        Text(tr("0.3 วินาที")).tag(0.3)
+                        Text(tr("0.5 วินาที")).tag(0.5)
+                        Text(tr("1 วินาที")).tag(1.0)
                     }
                     ForEach(Corner.allCases, id: \.self) { corner in
                         Picker(corner.label, selection: Binding(
@@ -1178,12 +1178,12 @@ private struct GesturesTab: View {
                             ForEach(PetAction.allCases, id: \.self) { Text($0.label).tag($0) }
                         }
                     }
-                    Text("ถ้าใช้ Hot Corners ของ macOS อยู่ ให้เลือกมุมที่ไม่ชนกัน")
+                    Text(tr("ถ้าใช้ Hot Corners ของ macOS อยู่ ให้เลือกมุมที่ไม่ชนกัน"))
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
 
-            Section("ขนาดสัตว์เลี้ยง") {
+            Section(tr("ขนาดสัตว์เลี้ยง")) {
                 HStack {
                     Slider(value: Binding(
                         get: { g.petScale },
@@ -1193,12 +1193,12 @@ private struct GesturesTab: View {
                     }
                     Text("\(Int(g.petScale * 100))%").monospacedDigit().frame(width: 48, alignment: .trailing)
                 }
-                Text("หรือ pinch สองนิ้วบนตัวสัตว์")
+                Text(tr("หรือ pinch สองนิ้วบนตัวสัตว์"))
                     .font(.caption).foregroundStyle(.secondary)
             }
 
             Section {
-                Button("คืนค่าเริ่มต้นของท่าและมุมจอ") {
+                Button(tr("คืนค่าเริ่มต้นของท่าและมุมจอ")) {
                     model.perform { $0.setGestures { $0.resetBindings() }; return [] }
                 }
             }
@@ -1215,7 +1215,7 @@ private struct AchievementsTab: View {
     var body: some View {
         let done = game.achievements.count
         List {
-            Section("ปลดล็อกแล้ว \(done)/\(Achievement.all.count)") {
+            Section(tr("ปลดล็อกแล้ว {0}/{1}", done, Achievement.all.count)) {
                 ForEach(Achievement.all) { a in
                     let unlockedAt = game.achievements[a.id]
                     let value = min(a.progress(game), a.goal)
@@ -1227,11 +1227,11 @@ private struct AchievementsTab: View {
                             HStack {
                                 Text(a.title).fontWeight(.medium)
                                 Spacer()
-                                Text("\(a.reward) เหรียญ").font(.caption).foregroundStyle(.secondary)
+                                Text(tr("{0} เหรียญ", a.reward)).font(.caption).foregroundStyle(.secondary)
                             }
                             Text(a.detail).font(.caption).foregroundStyle(.secondary)
                             if let unlockedAt {
-                                Text("ได้เมื่อ " + unlockedAt.formatted(.dateTime.day().month().year()))
+                                Text(tr("ได้เมื่อ ") + unlockedAt.formatted(.dateTime.day().month().year()))
                                     .font(.caption2).foregroundStyle(.green)
                             } else {
                                 ProgressView(value: value, total: a.goal)
@@ -1322,9 +1322,9 @@ private struct MiniGameTab: View {
         let left = game.miniGamePlaysLeft(at: Date())
         VStack(spacing: 12) {
             HStack {
-                Text("แต้ม \(state.score)").font(.title2.weight(.semibold)).monospacedDigit()
+                Text(tr("แต้ม {0}", state.score)).font(.title2.weight(.semibold)).monospacedDigit()
                 Spacer()
-                Text(String(format: "เหลือ %.0f วิ", state.timeLeft)).monospacedDigit().foregroundStyle(.secondary)
+                Text(String(format: tr("เหลือ %.0f วิ"), state.timeLeft)).monospacedDigit().foregroundStyle(.secondary)
             }
             .padding(.horizontal, 20).padding(.top, 12)
 
@@ -1344,14 +1344,14 @@ private struct MiniGameTab: View {
                     if !state.running {
                         VStack(spacing: 8) {
                             if state.finished {
-                                Text("จบเกม! ได้ \(state.score) แต้ม").font(.title3.weight(.semibold))
-                                Text(state.lastReward > 0 ? "ได้รับ \(state.lastReward) เหรียญ" : "วันนี้รับเหรียญครบแล้ว (เล่นเพื่อความสนุกได้)")
+                                Text(tr("จบเกม! ได้ {0} แต้ม", state.score)).font(.title3.weight(.semibold))
+                                Text(state.lastReward > 0 ? tr("ได้รับ {0} เหรียญ", state.lastReward) : tr("วันนี้รับเหรียญครบแล้ว (เล่นเพื่อความสนุกได้)"))
                                     .foregroundStyle(.secondary)
                             } else {
-                                Text("จับอาหารที่ร่วงลงมา").font(.title3.weight(.semibold))
-                                Text("อาหารทั่วไป +1 · น้ำผึ้ง +3 · ของอันตราย −2").foregroundStyle(.secondary)
+                                Text(tr("จับอาหารที่ร่วงลงมา")).font(.title3.weight(.semibold))
+                                Text(tr("อาหารทั่วไป +1 · น้ำผึ้ง +3 · ของอันตราย −2")).foregroundStyle(.secondary)
                             }
-                            Button(state.finished ? "เล่นอีกครั้ง" : "เริ่ม") { state.start() }
+                            Button(state.finished ? tr("เล่นอีกครั้ง") : tr("เริ่ม")) { state.start() }
                                 .buttonStyle(.glassProminent)
                         }
                     }
@@ -1359,8 +1359,8 @@ private struct MiniGameTab: View {
             }
             .padding(.horizontal, 20)
 
-            Text(left > 0 ? "รับเหรียญได้อีก \(left) รอบวันนี้ · ได้เหรียญ = แต้ม ÷ 2 (สูงสุด \(MiniGame.maxRewardPerPlay))"
-                          : "รอบที่ได้เหรียญของวันนี้หมดแล้ว · สถิติสูงสุด \(game.stats.miniGameBest) แต้ม")
+            Text(left > 0 ? tr("รับเหรียญได้อีก {0} รอบวันนี้ · ได้เหรียญ = แต้ม ÷ 2 (สูงสุด {1})", left, MiniGame.maxRewardPerPlay)
+                          : tr("รอบที่ได้เหรียญของวันนี้หมดแล้ว · สถิติสูงสุด {0} แต้ม", game.stats.miniGameBest))
                 .font(.caption).foregroundStyle(.secondary).padding(.bottom, 12)
         }
         .onReceive(ticker) { now in
@@ -1387,13 +1387,13 @@ private struct FilesTab: View {
         VStack(spacing: 0) {
             VStack(spacing: 10) {
                 Picker("", selection: $page) {
-                    Text("ฝากเก็บ (\(game.vault.count))").tag(0)
-                    Text("ถาดพักไฟล์ (\(game.shelf.count))").tag(1)
+                    Text(tr("ฝากเก็บ ({0})", game.vault.count)).tag(0)
+                    Text(tr("ถาดพักไฟล์ ({0})", game.shelf.count)).tag(1)
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                Text(page == 0 ? "เก็บไว้ถาวร ค้นหา ติดแท็ก ปักหมุด — ลากไฟล์เข้าหาสัตว์เลี้ยงแล้วเลือกช่อง “ฝากเก็บ”"
-                               : "ที่พักชั่วคราวระหว่างทาง — ลากไฟล์เข้าหาสัตว์เลี้ยงแล้วเลือกช่อง “พักไว้ลากต่อ” จากนั้นลากออกไปวางที่ไหนก็ได้")
+                Text(page == 0 ? tr("เก็บไว้ถาวร ค้นหา ติดแท็ก ปักหมุด — ลากไฟล์เข้าหาสัตว์เลี้ยงแล้วเลือกช่อง “ฝากเก็บ”")
+                               : tr("ที่พักชั่วคราวระหว่างทาง — ลากไฟล์เข้าหาสัตว์เลี้ยงแล้วเลือกช่อง “พักไว้ลากต่อ” จากนั้นลากออกไปวางที่ไหนก็ได้"))
                     .font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(12)
@@ -1407,22 +1407,22 @@ private struct FilesTab: View {
 
     private var settings: some View {
         HStack(spacing: 16) {
-            Picker("ปล่อยลงตัวสัตว์ตรงๆ", selection: Binding(
+            Picker(tr("ปล่อยลงตัวสัตว์ตรงๆ"), selection: Binding(
                 get: { game.files.dropDefault },
                 set: { d in model.perform { $0.setFiles { $0.dropDefault = d }; return [] } })) {
                 ForEach(DropDestination.allCases, id: \.self) { Text($0.label).tag($0) }
             }
             .frame(width: 230)
-            Toggle("เอาออกจากถาดเมื่อลากออกแล้ว", isOn: Binding(
+            Toggle(tr("เอาออกจากถาดเมื่อลากออกแล้ว"), isOn: Binding(
                 get: { game.files.removeAfterDragOut },
                 set: { v in model.perform { $0.setFiles { $0.removeAfterDragOut = v }; return [] } }))
-            Picker("ถาดล้างเอง", selection: Binding(
+            Picker(tr("ถาดล้างเอง"), selection: Binding(
                 get: { game.files.shelfExpireHours },
                 set: { v in model.perform { $0.setFiles { $0.shelfExpireHours = v }; return [] } })) {
-                Text("ไม่ล้าง").tag(0)
-                Text("6 ชม.").tag(6)
-                Text("24 ชม.").tag(24)
-                Text("3 วัน").tag(72)
+                Text(tr("ไม่ล้าง")).tag(0)
+                Text(tr("6 ชม.")).tag(6)
+                Text(tr("24 ชม.")).tag(24)
+                Text(tr("3 วัน")).tag(72)
             }
             .frame(width: 150)
         }
@@ -1440,7 +1440,7 @@ private struct ShelfList: View {
     var body: some View {
         List {
             if game.shelf.isEmpty {
-                Text("ถาดว่างอยู่ — ลากอะไรก็ได้เข้าหาสัตว์เลี้ยง แล้วปล่อยลงช่อง “พักไว้ลากต่อ”")
+                Text(tr("ถาดว่างอยู่ — ลากอะไรก็ได้เข้าหาสัตว์เลี้ยง แล้วปล่อยลงช่อง “พักไว้ลากต่อ”"))
                     .foregroundStyle(.secondary)
             }
             ForEach(game.shelf) { item in
@@ -1450,11 +1450,11 @@ private struct ShelfList: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(item.name).lineLimit(1)
                         Text(present ? item.kind == .text ? String((item.text ?? "").prefix(60)) : (item.path ?? item.text ?? "")
-                                     : "ไม่พบแล้ว (ถูกย้ายหรือลบ)")
+                                     : tr("ไม่พบแล้ว (ถูกย้ายหรือลบ)"))
                             .font(.caption).foregroundStyle(present ? Color.secondary : Color.red).lineLimit(1)
                     }
                     Spacer()
-                    Button("ฝากเก็บถาวร") { keep(item) }.disabled(!present)
+                    Button(tr("ฝากเก็บถาวร")) { keep(item) }.disabled(!present)
                     Button(role: .destructive) { shelf.remove(item) } label: { Image(systemName: "xmark") }
                         .buttonStyle(.borderless)
                 }
@@ -1463,7 +1463,7 @@ private struct ShelfList: View {
                 .onTapGesture(count: 2) { if present { shelf.open(item) } }
             }
             if !game.shelf.isEmpty {
-                Button("ล้างถาดทั้งหมด", role: .destructive) { shelf.clear() }
+                Button(tr("ล้างถาดทั้งหมด"), role: .destructive) { shelf.clear() }
             }
         }
     }
@@ -1506,45 +1506,48 @@ private struct SettingsTab: View {
 
     var body: some View {
         List {
-            Section("การเคลื่อนไหวของ \(game.pet.state.name)") {
+            Section(tr("การเคลื่อนไหวของ {0}", game.pet.state.name)) {
                 MotionSettingsControls(model: model, game: game)
             }
             RadialMenuEditor(model: model, game: game)
-            Section("ปฏิกิริยาต่อสิ่งที่เกิดบนเครื่อง") {
+            Section(tr("ปฏิกิริยาต่อสิ่งที่เกิดบนเครื่อง")) {
                 let r = game.reactions
-                Toggle("เปิดปฏิกิริยา", isOn: Binding(
+                Toggle(tr("เปิดปฏิกิริยา"), isOn: Binding(
                     get: { r.enabled },
                     set: { v in model.perform { $0.setReactions { $0.enabled = v }; return [] } }))
                 Group {
-                    Toggle("จิกคีย์บอร์ดจิ๋วเมื่อกำลังพิมพ์", isOn: Binding(
+                    Toggle(tr("จิกคีย์บอร์ดจิ๋วเมื่อกำลังพิมพ์"), isOn: Binding(
                         get: { r.typing },
                         set: { v in model.perform { $0.setReactions { $0.typing = v }; return [] } }))
-                    Toggle("แบตใกล้หมด / เสียบปลั๊ก / แบตเต็ม / เครื่องร้อน", isOn: Binding(
+                    Toggle(tr("แบตใกล้หมด / เสียบปลั๊ก / แบตเต็ม / เครื่องร้อน"), isOn: Binding(
                         get: { r.battery },
                         set: { v in model.perform { $0.setReactions { $0.battery = v }; return [] } }))
-                    Toggle("หันมองเมาส์ที่เข้ามาใกล้", isOn: Binding(
+                    Toggle(tr("หันมองเมาส์ที่เข้ามาใกล้"), isOn: Binding(
                         get: { r.curious },
                         set: { v in model.perform { $0.setReactions { $0.curious = v }; return [] } }))
-                    Toggle("เตือนเมื่ออยู่ในแอปเดิมนาน (เขียนโค้ด อ่าน เล่นเกม)", isOn: Binding(
+                    Toggle(tr("เตือนเมื่ออยู่ในแอปเดิมนาน (เขียนโค้ด อ่าน เล่นเกม)"), isOn: Binding(
                         get: { r.appStreaks },
                         set: { v in model.perform { $0.setReactions { $0.appStreaks = v }; return [] } }))
                 }
                 .disabled(!r.enabled)
-                Text("นับแค่จำนวนครั้งที่กดแป้น ไม่เห็นว่ากดแป้นอะไร ไม่เก็บข้อมูล และไม่ต้องขอสิทธิ์ใดๆ · หลับเองเมื่อไม่ได้ใช้เครื่อง 3 นาที · ง่วงตอนดึก · ตื่นพร้อมหาวหลังเครื่องหลับ")
+                Text(tr("นับแค่จำนวนครั้งที่กดแป้น ไม่เห็นว่ากดแป้นอะไร ไม่เก็บข้อมูล และไม่ต้องขอสิทธิ์ใดๆ · หลับเองเมื่อไม่ได้ใช้เครื่อง 3 นาที · ง่วงตอนดึก · ตื่นพร้อมหาวหลังเครื่องหลับ"))
                     .font(.caption2).foregroundStyle(.secondary)
             }
-            Section("หน้าตา Hub") {
-                LabeledContent("ความทึบของพื้นหลัง") {
+            Section(tr("ภาษา")) {
+                LanguageSetting()
+            }
+            Section(tr("หน้าตา Hub")) {
+                LabeledContent(tr("ความทึบของพื้นหลัง")) {
                     HStack {
                         Slider(value: $hubOpacity, in: 0.2...1)
                         Text("\(Int(hubOpacity * 100))%").monospacedDigit().foregroundStyle(.secondary).frame(width: 44, alignment: .trailing)
                     }.frame(maxWidth: 260)
                 }
-                Text("ลดลงเพื่อให้เห็นเดสก์ท็อปทะลุหน้าต่าง กระจกของแต่ละการ์ดยังคงอยู่")
+                Text(tr("ลดลงเพื่อให้เห็นเดสก์ท็อปทะลุหน้าต่าง กระจกของแต่ละการ์ดยังคงอยู่"))
                     .font(.caption2).foregroundStyle(.secondary)
             }
-            Section("ปฏิทิน") {
-                Toggle("เตือนก่อนนัดหมายถึง 10 นาที", isOn: Binding(
+            Section(tr("ปฏิทิน")) {
+                Toggle(tr("เตือนก่อนนัดหมายถึง 10 นาที"), isOn: Binding(
                     get: { calendarOn },
                     set: { v in
                         calendarOn = v
@@ -1554,29 +1557,29 @@ private struct SettingsTab: View {
                             UserDefaults.standard.set(false, forKey: CalendarService.enabledKey)
                         } } }
                     }))
-                Text("อ่านเฉพาะชื่อและเวลานัดหมายใน 30 นาทีข้างหน้า ไม่แก้ไขปฏิทิน ไม่เก็บข้อมูล และจะขอสิทธิ์ปฏิทินเมื่อเปิดสวิตช์นี้ครั้งแรก")
+                Text(tr("อ่านเฉพาะชื่อและเวลานัดหมายใน 30 นาทีข้างหน้า ไม่แก้ไขปฏิทิน ไม่เก็บข้อมูล และจะขอสิทธิ์ปฏิทินเมื่อเปิดสวิตช์นี้ครั้งแรก"))
                     .font(.caption2).foregroundStyle(.secondary)
             }
-            Section("ประหยัดพลังงาน") {
+            Section(tr("ประหยัดพลังงาน")) {
                 let d = power.decision
-                LabeledContent("ตอนนี้") {
+                LabeledContent(tr("ตอนนี้")) {
                     Text("\(d.tier.label)\(d.reason.isEmpty ? "" : " · \(d.reason)")").foregroundStyle(.secondary)
                 }
-                Toggle("ซ่อนสัตว์เลี้ยงเมื่อมีแอปเต็มจอ", isOn: Binding(
+                Toggle(tr("ซ่อนสัตว์เลี้ยงเมื่อมีแอปเต็มจอ"), isOn: Binding(
                     get: { game.power.hideDuringFullscreen },
                     set: { v in model.perform { $0.setPower { $0.hideDuringFullscreen = v }; return [] }; power.evaluate() }))
-                Picker("พักเมื่อไม่ได้ใช้เครื่อง", selection: Binding(
+                Picker(tr("พักเมื่อไม่ได้ใช้เครื่อง"), selection: Binding(
                     get: { game.power.dormantAfterIdleMinutes },
                     set: { v in model.perform { $0.setPower { $0.dormantAfterIdleMinutes = v }; return [] }; power.evaluate() })) {
-                    Text("ไม่พัก").tag(0)
-                    Text("5 นาที").tag(5)
-                    Text("10 นาที").tag(10)
-                    Text("30 นาที").tag(30)
+                    Text(tr("ไม่พัก")).tag(0)
+                    Text(tr("5 นาที")).tag(5)
+                    Text(tr("10 นาที")).tag(10)
+                    Text(tr("30 นาที")).tag(30)
                 }
-                Toggle("ให้สัตว์เลี้ยงโตแล้วเดิน/ยืนบนหน้าต่างอื่น", isOn: Binding(
+                Toggle(tr("ให้สัตว์เลี้ยงโตแล้วเดิน/ยืนบนหน้าต่างอื่น"), isOn: Binding(
                     get: { game.power.walkOnWindows },
                     set: { v in model.perform { $0.setPower { $0.walkOnWindows = v }; return [] } }))
-                Toggle("เปิด Hey! อัตโนมัติเมื่อเข้าสู่ระบบ", isOn: Binding(
+                Toggle(tr("เปิด Hey! อัตโนมัติเมื่อเข้าสู่ระบบ"), isOn: Binding(
                     get: { loginOn },
                     set: { v in
                         if let message = LoginItem.set(v) { loginMessage = message }
@@ -1585,38 +1588,63 @@ private struct SettingsTab: View {
                     }))
                     .disabled(!LoginItem.isAvailable)
                 if !loginMessage.isEmpty { Text(loginMessage).font(.caption).foregroundStyle(.orange) }
-                if !LoginItem.isAvailable { Text("ตัวเลือกนี้ใช้ได้เมื่อรันจาก Hey.app").font(.caption).foregroundStyle(.secondary) }
-                Text("ใช้แบตต่ำ/Low Power/เครื่องร้อน จะลดเฟรมเรตลงอัตโนมัติ · หน้าจอดับหรือล็อกจะหยุดวาดสัตว์ แต่เตือนและภารกิจยังทำงานต่อ")
+                if !LoginItem.isAvailable { Text(tr("ตัวเลือกนี้ใช้ได้เมื่อรันจาก Hey.app")).font(.caption).foregroundStyle(.secondary) }
+                Text(tr("ใช้แบตต่ำ/Low Power/เครื่องร้อน จะลดเฟรมเรตลงอัตโนมัติ · หน้าจอดับหรือล็อกจะหยุดวาดสัตว์ แต่เตือนและภารกิจยังทำงานต่อ"))
                     .font(.caption2).foregroundStyle(.secondary)
             }
-            Section("เพลง") {
+            Section(tr("เพลง")) {
             VStack(alignment: .leading, spacing: 4) {
-                Toggle("แสดงชื่อเพลงวิ่งบนแถบเมนูขณะเล่น", isOn: Binding(
+                Toggle(tr("แสดงชื่อเพลงวิ่งบนแถบเมนูขณะเล่น"), isOn: Binding(
                     get: { game.music.showInMenuBar },
                     set: { v in model.perform { $0.setMusic { $0.showInMenuBar = v }; return [] } }))
-                Toggle("เสนอให้เพิ่มเมื่อคัดลอกลิงก์ YouTube", isOn: Binding(
+                Toggle(tr("เสนอให้เพิ่มเมื่อคัดลอกลิงก์ YouTube"), isOn: Binding(
                     get: { game.music.detectClipboard },
                     set: { v in model.perform { $0.setMusic { $0.detectClipboard = v }; return [] } }))
-                Toggle("เสนอให้เพิ่มวิดีโอ YouTube ที่เปิดอยู่ในแท็บหน้าสุดของเบราว์เซอร์", isOn: Binding(
+                Toggle(tr("เสนอให้เพิ่มวิดีโอ YouTube ที่เปิดอยู่ในแท็บหน้าสุดของเบราว์เซอร์"), isOn: Binding(
                     get: { game.music.detectBrowser },
                     set: { v in model.perform { $0.setMusic { $0.detectBrowser = v }; return [] } }))
-                Toggle("(ทดลอง) อ่านเพลงที่กำลังเล่นจากระบบ — เสนอเพิ่มเข้าเพลย์ลิสต์ และโชว์ชื่อเพลงวิ่งบนแถบเมนูแม้เล่นในเบราว์เซอร์", isOn: Binding(
+                Toggle(tr("(ทดลอง) อ่านเพลงที่กำลังเล่นจากระบบ — เสนอเพิ่มเข้าเพลย์ลิสต์ และโชว์ชื่อเพลงวิ่งบนแถบเมนูแม้เล่นในเบราว์เซอร์"), isOn: Binding(
                     get: { game.music.detectNowPlaying },
                     set: { v in model.perform { $0.setMusic { $0.detectNowPlaying = v }; return [] } }))
                 if game.music.detectNowPlaying {
                     Text(NowPlayingReader.libraryURL == nil
-                         ? "ไม่พบไฟล์ libheynp.dylib จึงใช้ไม่ได้"
-                         : "ใช้ API ส่วนตัวของ macOS (Apple ปิดได้เมื่อไรก็ได้) · รู้ว่ากำลังเล่นอะไรแล้วหาแท็บ YouTube ที่ตรงกันเพื่อเอาลิงก์ จึงต้องอนุญาตระบบอัตโนมัติ · ไม่เก็บ ไม่ส่งออกไปไหน")
+                         ? tr("ไม่พบไฟล์ libheynp.dylib จึงใช้ไม่ได้")
+                         : tr("ใช้ API ส่วนตัวของ macOS (Apple ปิดได้เมื่อไรก็ได้) · รู้ว่ากำลังเล่นอะไรแล้วหาแท็บ YouTube ที่ตรงกันเพื่อเอาลิงก์ จึงต้องอนุญาตระบบอัตโนมัติ · ไม่เก็บ ไม่ส่งออกไปไหน"))
                         .font(.caption2).foregroundStyle(NowPlayingReader.libraryURL == nil ? Color.orange : Color.secondary)
                 }
                 if game.music.detectBrowser {
-                    Text(detector.browserNote ?? "รองรับ Safari, Chrome, Arc, Brave, Edge · macOS จะถามสิทธิ์ควบคุมเบราว์เซอร์ครั้งแรก · อ่านเฉพาะ URL ของแท็บหน้าสุด และใช้เฉพาะเมื่อเป็นหน้า YouTube")
+                    Text(detector.browserNote ?? tr("รองรับ Safari, Chrome, Arc, Brave, Edge · macOS จะถามสิทธิ์ควบคุมเบราว์เซอร์ครั้งแรก · อ่านเฉพาะ URL ของแท็บหน้าสุด และใช้เฉพาะเมื่อเป็นหน้า YouTube"))
                         .font(.caption2).foregroundStyle(detector.browserNote == nil ? Color.secondary : Color.orange)
                 }
             }
             }
-            Section("เกี่ยวกับ") {
+            Section(tr("เกี่ยวกับ")) {
                 AboutSection(model: model)
+            }
+        }
+    }
+}
+
+/// Thai / English / follow the Mac. The language is read at launch, so a change offers to relaunch the app.
+private struct LanguageSetting: View {
+    @State private var choice = AppLanguage.choice
+    @State private var needsRestart = AppLanguage.needsRestart
+
+    var body: some View {
+        Picker(tr("ภาษาของแอป"), selection: $choice) {
+            Text(tr("ตามระบบ")).tag(LanguageChoice.system)
+            Text("ไทย").tag(LanguageChoice.thai)
+            Text("English").tag(LanguageChoice.english)
+        }
+        .onChange(of: choice) { _, new in
+            AppLanguage.choice = new
+            needsRestart = AppLanguage.needsRestart
+        }
+        if needsRestart {
+            HStack {
+                Text(tr("ภาษาใหม่จะใช้เมื่อเปิดแอปใหม่")).font(.caption).foregroundStyle(.orange)
+                Spacer()
+                Button(tr("เปิดแอปใหม่ตอนนี้")) { AppLanguage.relaunch() }
             }
         }
     }
@@ -1630,7 +1658,7 @@ private struct AboutSection: View {
         let info = Bundle.main.infoDictionary
         let short = info?["CFBundleShortVersionString"] as? String
         let build = info?["CFBundleVersion"] as? String
-        guard let short else { return "รันจากซอร์สโค้ด (ไม่ใช่ Hey.app)" }
+        guard let short else { return tr("รันจากซอร์สโค้ด (ไม่ใช่ Hey.app)") }
         return build.map { "\(short) (\($0))" } ?? short
     }
 
@@ -1640,24 +1668,24 @@ private struct AboutSection: View {
                 .resizable().frame(width: 56, height: 56)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Hey!").font(.title3.weight(.bold))
-                Text("เพื่อนตัวน้อยบนเดสก์ท็อป Mac").font(.callout).foregroundStyle(.secondary)
-                Text("เวอร์ชัน \(version) · ต้องใช้ macOS 26 ขึ้นไป").font(.caption).foregroundStyle(.secondary)
+                Text(tr("เพื่อนตัวน้อยบนเดสก์ท็อป Mac")).font(.callout).foregroundStyle(.secondary)
+                Text(tr("เวอร์ชัน {0} · ต้องใช้ macOS 26 ขึ้นไป", version)).font(.caption).foregroundStyle(.secondary)
             }
         }
         HStack(spacing: 10) {
-            if let site = URL(string: "https://giganto-th.github.io/hey/") { Link("เว็บไซต์", destination: site) }
+            if let site = URL(string: "https://giganto-th.github.io/hey/") { Link(tr("เว็บไซต์"), destination: site) }
             if let repo = URL(string: "https://github.com/giganto-th/hey") { Link("GitHub", destination: repo) }
-            if let release = URL(string: "https://github.com/giganto-th/hey/releases/latest") { Link("ดาวน์โหลดเวอร์ชันล่าสุด", destination: release) }
-            if let video = URL(string: "https://www.youtube.com/watch?v=JBi-y-_I9jk") { Link("วิดีโอแนะนำ", destination: video) }
+            if let release = URL(string: "https://github.com/giganto-th/hey/releases/latest") { Link(tr("ดาวน์โหลดเวอร์ชันล่าสุด"), destination: release) }
+            if let video = URL(string: "https://www.youtube.com/watch?v=JBi-y-_I9jk") { Link(tr("วิดีโอแนะนำ"), destination: video) }
         }
-        LabeledContent("โฟลเดอร์ข้อมูล") {
-            Button("แสดงใน Finder") { NSWorkspace.shared.activateFileViewerSelecting([model.directory]) }
+        LabeledContent(tr("โฟลเดอร์ข้อมูล")) {
+            Button(tr("แสดงใน Finder")) { NSWorkspace.shared.activateFileViewerSelecting([model.directory]) }
         }
         Text(model.directory.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
             .font(.caption2).foregroundStyle(.secondary).textSelection(.enabled)
         let about = AboutContent.current
         if !about.people.isEmpty {
-            Text("ผู้สร้าง").font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 6)
+            Text(tr("ผู้สร้าง")).font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 6)
             ForEach(about.people) { person in
                 HStack(spacing: 12) {
                     Group {
@@ -1679,7 +1707,7 @@ private struct AboutSection: View {
             }
         }
         if !about.donations.isEmpty {
-            Text("สนับสนุนผู้สร้าง").font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 6)
+            Text(tr("สนับสนุนผู้สร้าง")).font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 6)
             ForEach(about.donations) { donation in
                 HStack(spacing: 12) {
                     if let file = donation.image, let qr = AboutContent.image(named: file) {
@@ -1692,9 +1720,9 @@ private struct AboutSection: View {
                     }
                     Spacer()
                     if let text = donation.text {
-                        Button("คัดลอก") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(text, forType: .string) }
+                        Button(tr("คัดลอก")) { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(text, forType: .string) }
                     }
-                    if let link = donation.url.flatMap(URL.init(string:)) { Link("เปิดลิงก์", destination: link) }
+                    if let link = donation.url.flatMap(URL.init(string:)) { Link(tr("เปิดลิงก์"), destination: link) }
                 }
             }
         }
@@ -1708,18 +1736,18 @@ private struct RadialMenuEditor: View {
 
     var body: some View {
         let menu = game.radialMenu
-        Section("เมนูรอบสัตว์เลี้ยง") {
-            Text("จัดว่าปุ่มไหนอยู่บนวงแรก ปุ่มไหนอยู่ในโฟลเดอร์ หรือซ่อนไว้ ลากแถวเพื่อเรียงลำดับ หรือใช้ปุ่ม ย้ายไป… ได้ วงแรกมีได้สูงสุด \(RadialMenuSettings.maxRing) ช่อง และ Hub อยู่บนวงแรกเสมอ")
+        Section(tr("เมนูรอบสัตว์เลี้ยง")) {
+            Text(tr("จัดว่าปุ่มไหนอยู่บนวงแรก ปุ่มไหนอยู่ในโฟลเดอร์ หรือซ่อนไว้ ลากแถวเพื่อเรียงลำดับ หรือใช้ปุ่ม ย้ายไป… ได้ วงแรกมีได้สูงสุด {0} ช่อง และ Hub อยู่บนวงแรกเสมอ", RadialMenuSettings.maxRing))
                 .font(.caption).foregroundStyle(.secondary)
             HStack {
-                Button("เพิ่มโฟลเดอร์") { change { _ = $0.addFolder(named: "โฟลเดอร์ใหม่") } }
+                Button(tr("เพิ่มโฟลเดอร์")) { change { _ = $0.addFolder(named: tr("โฟลเดอร์ใหม่")) } }
                     .disabled(menu.ring.count >= RadialMenuSettings.maxRing)
-                Button("คืนค่าเริ่มต้น") { change { $0.reset() } }
+                Button(tr("คืนค่าเริ่มต้น")) { change { $0.reset() } }
                 Spacer()
-                Text("วงแรก \(menu.ring.count)/\(RadialMenuSettings.maxRing)").font(.caption).foregroundStyle(.secondary)
+                Text(tr("วงแรก {0}/{1}", menu.ring.count, RadialMenuSettings.maxRing)).font(.caption).foregroundStyle(.secondary)
             }
         }
-        Section("วงแรก") {
+        Section(tr("วงแรก")) {
             ForEach(Array(menu.ring.enumerated()), id: \.offset) { _, entry in
                 switch entry {
                 case .action(let action):
@@ -1728,9 +1756,9 @@ private struct RadialMenuEditor: View {
                     HStack {
                         Image(systemName: folder.symbol).frame(width: 22).foregroundStyle(.tint)
                         FolderNameField(folder: folder, change: change)
-                        Text("\(folder.actions.count) ปุ่ม").font(.caption).foregroundStyle(.secondary)
+                        Text(tr("{0} ปุ่ม", folder.actions.count)).font(.caption).foregroundStyle(.secondary)
                         Button(role: .destructive) { change { $0.deleteFolder(folder.id) } } label: { Image(systemName: "trash") }
-                            .buttonStyle(.borderless).help("ลบโฟลเดอร์ (ปุ่มข้างในจะถูกซ่อน)")
+                            .buttonStyle(.borderless).help(tr("ลบโฟลเดอร์ (ปุ่มข้างในจะถูกซ่อน)"))
                     }
                 }
             }
@@ -1742,13 +1770,13 @@ private struct RadialMenuEditor: View {
                     ActionRow(action: action, menu: menu, change: change)
                 }
                 .onMove { from, to in change { $0.moveActions(in: folder.id, from: from, to: to) } }
-                if folder.actions.isEmpty { Text("ว่างอยู่ — เพิ่มปุ่มจากรายการ ซ่อนอยู่ หรือย้ายมาจากวงแรก").font(.caption).foregroundStyle(.secondary) }
+                if folder.actions.isEmpty { Text(tr("ว่างอยู่ — เพิ่มปุ่มจากรายการ ซ่อนอยู่ หรือย้ายมาจากวงแรก")).font(.caption).foregroundStyle(.secondary) }
             } header: {
                 Label(folder.displayName, systemImage: folder.symbol)
             }
         }
         if !menu.hidden.isEmpty {
-            Section("ซ่อนอยู่") {
+            Section(tr("ซ่อนอยู่")) {
                 ForEach(menu.hidden, id: \.self) { action in
                     ActionRow(action: action, menu: menu, change: change)
                 }
@@ -1774,15 +1802,15 @@ private struct ActionRow: View {
                 .foregroundStyle(place == nil ? Color.secondary : Color.accentColor)
             Text(action.label).foregroundStyle(place == nil ? Color.secondary : Color.primary)
             Spacer()
-            Menu("ย้ายไป…") {
-                Button("วงแรก") { change { _ = $0.place(action, in: .ring) } }
+            Menu(tr("ย้ายไป…")) {
+                Button(tr("วงแรก")) { change { _ = $0.place(action, in: .ring) } }
                     .disabled(place == .ring || menu.ring.count >= RadialMenuSettings.maxRing)
                 ForEach(menu.folders) { folder in
-                    Button("โฟลเดอร์ \(folder.displayName)") { change { _ = $0.place(action, in: .folder(folder.id)) } }
+                    Button(tr("โฟลเดอร์ {0}", folder.displayName)) { change { _ = $0.place(action, in: .folder(folder.id)) } }
                         .disabled(action == .hub || place == .folder(folder.id) || folder.actions.count >= RadialMenuSettings.maxFolderActions)
                 }
                 Divider()
-                Button("ซ่อน") { change { _ = $0.hide(action) } }
+                Button(tr("ซ่อน")) { change { _ = $0.hide(action) } }
                     .disabled(action == .hub || place == nil)
             }
             .menuStyle(.borderlessButton).fixedSize()
@@ -1798,7 +1826,7 @@ private struct FolderNameField: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        TextField("ชื่อโฟลเดอร์", text: $draft, prompt: Text(folder.defaultName ?? "โฟลเดอร์"))
+        TextField(tr("ชื่อโฟลเดอร์"), text: $draft, prompt: Text(folder.defaultName ?? tr("โฟลเดอร์")))
             .textFieldStyle(.roundedBorder)
             .focused($focused)
             .onAppear { draft = folder.name ?? "" }

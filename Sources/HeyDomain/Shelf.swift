@@ -8,8 +8,8 @@ public enum DropDestination: String, Codable, CaseIterable, Sendable {
 
     public var label: String {
         switch self {
-        case .vault: "ฝากเก็บ"
-        case .shelf: "พักไว้ลากต่อ"
+        case .vault: tr("ฝากเก็บ")
+        case .shelf: tr("พักไว้ลากต่อ")
         }
     }
 }
