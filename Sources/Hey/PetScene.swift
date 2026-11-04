@@ -41,6 +41,16 @@ final class PetScene: SKScene {
 
     weak var window: NSWindow?
 
+    /// Something on the floor the pet wants to walk to (food, a bubble). `ready` is false while it is still falling.
+    struct SeekTarget {
+        let x: CGFloat
+        var reach: CGFloat = 26
+        var ready = true
+        let arrive: () -> Void
+    }
+    /// Asked every frame; nil means nothing to go for.
+    var seekTarget: (() -> SeekTarget?)?
+
     private var stage: PetStage { model.game.pet.state.stage }
     private var queue: [(text: String, symbol: String?)] = []
 
@@ -212,6 +222,12 @@ final class PetScene: SKScene {
     /// Visual reaction only (e.g. a file was dropped on the pet).
     func react() { fsm.send(.clicked) }
 
+    /// One quick peck (popping a bubble).
+    func peck() { fsm.send(.pecked) }
+
+    /// Screen x of the pet's centre, and the floor it walks on, for things that need to land where it can reach.
+    var petCenterX: CGFloat? { window?.frame.midX }
+
     // MARK: geometry
 
     private var spriteSide: CGFloat { Self.baseSprite * CGFloat(stage.scale * model.game.gestures.petScale) }
@@ -235,9 +251,31 @@ final class PetScene: SKScene {
         refreshMotion()
         lookAtPointer(dt: dt)
         refreshSurfaces(dt: dt)
+        pursueTarget()
         fsm.tick(dt: dt)
         if !presentation.holdsPosition || fsm.pose == .carried || fsm.pose == .falling || fsm.pose == .fly { move(dt: CGFloat(dt)) }
         render(dt: dt)
+    }
+
+    /// Walks toward whatever `seekTarget` offers and calls `arrive` when it gets there.
+    private func pursueTarget() {
+        guard let window, let target = seekTarget?() else {
+            if fsm.isSeeking { fsm.settle() }
+            return
+        }
+        guard stage != .egg, tier.allowsPerching, !presentation.holdsPosition else { return }
+        switch fsm.pose {
+        case .carried, .falling, .dizzy, .eat, .fly, .flap: return
+        default: break
+        }
+        if perch != nil { perch = nil; forceFall(); return }          // climb down first
+        switch Seek.decide(petX: window.frame.midX, targetX: target.x, reach: target.reach) {
+        case .arrived:
+            if fsm.isSeeking { fsm.settle() }
+            if target.ready { target.arrive() }
+        case .toward(let right):
+            fsm.seek(right: right)
+        }
     }
 
     /// Curious: when the pointer is near and the pet is just standing there, it turns to look.
@@ -413,7 +451,7 @@ final class PetScene: SKScene {
 
         switch fsm.pose {
         case .walk where stage != .egg:
-            origin.x += 40 * dt * (fsm.facingRight ? 1 : -1)
+            origin.x += (fsm.isSeeking ? 110 : 40) * dt * (fsm.facingRight ? 1 : -1)
             if let perch {
                 let center = origin.x + half
                 let limited = Perches.clamp(centerX: center, to: perch)

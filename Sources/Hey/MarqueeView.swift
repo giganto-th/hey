@@ -10,8 +10,7 @@ final class MarqueeView: NSView {
     private let icon = NSImageView()
     private let clip = NSView()
     private let strip = NSView()
-    private let first = NSTextField(labelWithString: "")
-    private let second = NSTextField(labelWithString: "")
+    private var labels: [NSTextField] = []
     private var text = ""
     private var playing = false
     private var scrolling = false
@@ -19,13 +18,6 @@ final class MarqueeView: NSView {
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
-        for label in [first, second] {
-            label.font = .menuBarFont(ofSize: 0)
-            label.lineBreakMode = .byClipping
-            label.isBordered = false
-            label.drawsBackground = false
-            strip.addSubview(label)
-        }
         clip.wantsLayer = true
         clip.layer?.masksToBounds = true
         strip.wantsLayer = true
@@ -48,8 +40,6 @@ final class MarqueeView: NSView {
         self.scrolling = scrolling
         icon.image = NSImage(systemSymbolName: playing ? "music.note" : "pause.fill", accessibilityDescription: nil)?
             .withSymbolConfiguration(.init(pointSize: 12, weight: .medium))
-        first.stringValue = text
-        second.stringValue = text
         needsLayout = true
     }
 
@@ -59,22 +49,27 @@ final class MarqueeView: NSView {
         icon.frame = NSRect(x: 2, y: (h - 16) / 2, width: 16, height: 16)
         clip.frame = NSRect(x: Self.iconWidth, y: 0, width: max(bounds.width - Self.iconWidth, 0), height: h)
 
-        first.sizeToFit()
-        let textWidth = ceil(first.frame.width)
-        let labelHeight = first.frame.height
+        // Copies of the title, a fixed gap apart, always cover the window and one more period, so the strip never shows a blank stretch.
+        let probe = NSTextField(labelWithString: text)
+        probe.font = .menuBarFont(ofSize: 0)
+        probe.sizeToFit()
+        let textWidth = ceil(probe.frame.width)
+        let labelHeight = probe.frame.height
         let y = (h - labelHeight) / 2
-        // Always runs while a song plays; a title that fits just gets a longer pause before it comes round again.
         let loops = scrolling
-        let gap = max(Self.gap, clip.bounds.width - textWidth + Self.gap)
-
-        first.frame = NSRect(x: 0, y: y, width: textWidth, height: labelHeight)
-        second.frame = NSRect(x: textWidth + gap, y: y, width: textWidth, height: labelHeight)
-        second.isHidden = !loops
-        strip.frame = NSRect(x: 0, y: 0, width: loops ? textWidth * 2 + gap : textWidth, height: h)
+        let period = textWidth + Self.gap
+        let copies = loops ? Int(ceil(clip.bounds.width / max(period, 1))) + 1 : 1
+        while labels.count < copies { labels.append(Self.makeLabel()); strip.addSubview(labels[labels.count - 1]) }
+        for (i, label) in labels.enumerated() {
+            label.isHidden = i >= copies
+            label.stringValue = text
+            label.frame = NSRect(x: CGFloat(i) * period, y: y, width: textWidth, height: labelHeight)
+        }
+        strip.frame = NSRect(x: 0, y: 0, width: loops ? period * CGFloat(copies) : textWidth, height: h)
 
         strip.layer?.removeAnimation(forKey: "marquee")
         if loops {
-            let distance = textWidth + gap
+            let distance = period
             let anim = CABasicAnimation(keyPath: "transform.translation.x")
             anim.fromValue = 0
             anim.toValue = -distance
@@ -86,6 +81,15 @@ final class MarqueeView: NSView {
         } else {
             clip.layer?.mask = nil
         }
+    }
+
+    private static func makeLabel() -> NSTextField {
+        let label = NSTextField(labelWithString: "")
+        label.font = .menuBarFont(ofSize: 0)
+        label.lineBreakMode = .byClipping
+        label.isBordered = false
+        label.drawsBackground = false
+        return label
     }
 
     /// Soft edges so the text slides in and out instead of being cut off.

@@ -7,6 +7,8 @@ import HeyDomain
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var window: PetWindow!
+    private var food: FoodController!
+    private var bubbles: BubbleController!
     private var scene: PetScene!
     private var model: GameModel!
     private var pomodoro = PomodoroModel()
@@ -55,6 +57,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let view = PetView(frame: NSRect(origin: .zero, size: size))
         scene = PetScene(size: size, model: model)
         scene.window = window
+        food = FoodController(model: model, scene: scene)
+        bubbles = BubbleController(scene: scene)
+        scene.seekTarget = { [weak self] in self?.food.target() ?? self?.bubbles.target() }
         view.onEvent = { [weak scene] in scene?.send($0) }
         vault = VaultService(model: model)
         music = MusicPlayer(model: model)
@@ -284,6 +289,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     if what == "record" { await capture.startRecording(); try? await Task.sleep(for: .seconds(3)); await capture.stopRecording() }
                 }
             }
+            if env["HEY_DEV_BUBBLES"] != nil { DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.bubbles.start() } }
+            if let id = env["HEY_DEV_PLACE"], let f = model.game.pet.balance.foods.first(where: { $0.id == id }) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.food.begin(f) }
+            }
+            if let id = env["HEY_DEV_FOOD"], let f = model.game.pet.balance.foods.first(where: { $0.id == id }) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.food.dropForDev(f) }
+            }
             if let path = env["HEY_DEV_MARQUEE"] {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
                     MainActor.assumeIsolated {
@@ -453,6 +465,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .openHub(let page):
             if let section = page.flatMap(HubSection.init(rawValue:)) { router.section = section }
             openHub()
+        case .bubbles: bubbles.start()
         }
     }
 
@@ -637,6 +650,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return RadialItem(id: "focus", icon: pomodoro.timer.isRunning ? "pause.circle.fill" : "timer",
                               title: pomodoro.timer.isRunning ? "หยุดโฟกัส" : "โฟกัส",
                               badge: pomodoro.timer.isRunning ? pomodoro.remainingText : nil, badgeColor: .red) { [weak self] in self?.pomodoro.toggle() }
+        case .bubbles: return RadialItem(id: "bubbles", icon: "bubbles.and.sparkles", title: "ฟองสบู่") { [weak self] in self?.bubbles.start() }
         case .hub:
             let questsLeft = game.quests.filter { !$0.done }.count
             return RadialItem(id: "hub", icon: "square.grid.2x2.fill", title: "Hub",
@@ -682,7 +696,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 return RadialItem(id: food.id, icon: .image(IconLibrary.foodImage(food)), title: food.name,
                                   badge: wait > 0 ? DurationText.wait(wait) : (food.price == 0 ? "ฟรี" : "×\(stock)"),
                                   badgeColor: wait > 0 ? .gray : (food.price == 0 ? .green : .orange)) { [weak self] in
-                    self?.model.perform { $0.feed(food, at: Date()) }
+                    self?.food.begin(food)
                 }
             }
         case .more:
@@ -861,6 +875,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         shoot.submenu = shootMenu
         menu.addItem(shoot)
         action(game.shelf.isEmpty ? "ถาดพักไฟล์ (ว่าง)" : "ถาดพักไฟล์ (\(game.shelf.count))", #selector(toggleTray))
+        action("เป่าฟองสบู่", #selector(blowBubbles))
         action("ตั้งเตือนด่วน…   ⌃⌥R", #selector(quickReminder))
         action("โน้ตด่วน   ⌃⌥N", #selector(quickNote))
         if let playing = music.nowPlaying { info("\(playing.title.prefix(32))", symbol: "music.note") }
@@ -917,6 +932,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func toggleTray() {
         if model.game.shelf.isEmpty { scene.announce("ถาดว่างอยู่ ลากไฟล์มาวางที่ฉันได้เลย", symbol: "suitcase.fill") } else { tray.toggle() }
     }
+    @objc private func blowBubbles() { bubbles.start() }
     @objc private func toggleMusic() { music.toggle() }
     @objc private func nextTrack() { music.next() }
     @objc private func togglePomodoro() { pomodoro.toggle() }
@@ -924,7 +940,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func feed(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String,
               let food = model.game.pet.balance.foods.first(where: { $0.id == id }) else { return }
-        model.perform { $0.feed(food, at: Date()) }
+        self.food.begin(food)
     }
 
     @objc private func devWarm() { model.perform { $0.grantWarmth(50) } }

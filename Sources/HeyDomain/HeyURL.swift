@@ -5,6 +5,7 @@ public enum HeyCommand: Equatable, Sendable {
     case note(String)
     case copyClip(Int)
     case openHub(String?)
+    case bubbles
 }
 
 /// Parses `hey://…` links so Shortcuts ("Open URLs"), Terminal or Alfred can drive the app.
@@ -25,6 +26,7 @@ public enum HeyURL {
             let n = value("n").flatMap(Int.init) ?? 0
             return n >= 0 && n < 100 ? .copyClip(n) : nil
         case "hub": return .openHub(value("page"))
+        case "bubbles": return .bubbles
         default: return nil
         }
     }

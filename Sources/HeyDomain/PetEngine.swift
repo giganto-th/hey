@@ -99,6 +99,14 @@ public struct PetEngine: Sendable {
         return addXP(0.5)
     }
 
+    /// Why this food can't be given right now, or nil if it can. Does not change anything.
+    public func feedRefusal(_ food: Food, at now: Date) -> PetEngineEvent? {
+        guard state.stage != .egg else { return .refusedEgg }
+        guard state.hunger < 95 else { return .refusedFull }
+        let remaining = cooldownRemaining(food, at: now)
+        return remaining > 0 ? .refusedCooldown(remaining: remaining) : nil
+    }
+
     public mutating func feed(_ food: Food, at now: Date) -> [PetEngineEvent] {
         rollDayIfNeeded(now)
         guard state.stage != .egg else { return [.refusedEgg] }

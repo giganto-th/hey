@@ -51,3 +51,11 @@ Add the new actions to `RadialAction` so they are pinnable in the existing custo
 2. 2.1 and 2.2 are independent; do 2.2 first (smaller), then 2.1.
 3. Risks: clipboard privacy (handled by the concealed-type skip and a pause toggle); Vision Thai accuracy (test on real screenshots); reaction spam (every reaction has a cooldown and a Settings toggle).
 4. Every phase ends with `swift test`, `scripts/make-app.sh`, and a check in the running app.
+
+## Done 2026-11-04 (late)
+
+- Menu-bar title scrolls without a blank gap (tiled copies, fixed gap).
+- Vault and Gallery items start a real drag session (copy only), so they drop onto the Finder, the desktop and other apps.
+- Food is placed anywhere on screen; it falls to the floor and the pet walks over to eat it (`FoodController`, `Seek`).
+- Bubble chase: `BubbleField` (pure) + `BubbleController`; the pet walks under the nearest bubble and pecks it.
+- Open: the food art is flat 2D and does not match the 3D clay Hei Hei; regenerate through the Codex pipeline.

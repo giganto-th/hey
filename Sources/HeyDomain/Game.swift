@@ -240,6 +240,12 @@ public struct Game: Sendable {
         return events
     }
 
+    /// What would stop this food being given now (no stock, egg, full, cooldown), without changing anything.
+    public func feedRefusal(_ food: Food, at now: Date) -> GameEvent? {
+        if food.price > 0, inventory[food.id, default: 0] <= 0, pet.state.stage != .egg { return .noStock(food) }
+        return pet.feedRefusal(food, at: now).map(GameEvent.pet)
+    }
+
     public mutating func feed(_ food: Food, at now: Date) -> [GameEvent] {
         if food.price > 0, inventory[food.id, default: 0] <= 0, pet.state.stage != .egg {
             return [.noStock(food)]

@@ -662,19 +662,27 @@ private struct VaultRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            icon.frame(width: 32, height: 32)
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    if item.pinned { Image(systemName: "pin.fill").font(.caption).foregroundStyle(.orange) }
-                    Text(item.name).lineLimit(1)
+            ZStack {
+                HStack(spacing: 10) {
+                    icon.frame(width: 32, height: 32)
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 6) {
+                            if item.pinned { Image(systemName: "pin.fill").font(.caption).foregroundStyle(.orange) }
+                            Text(item.name).lineLimit(1)
+                        }
+                        Text(subtitle).font(.caption).foregroundStyle(missing ? .red : .secondary).lineLimit(1)
+                        if !item.tags.isEmpty {
+                            Text(item.tags.map { "#\($0)" }.joined(separator: " "))
+                                .font(.caption2).foregroundStyle(.blue)
+                        }
+                    }
+                    Spacer(minLength: 0)
                 }
-                Text(subtitle).font(.caption).foregroundStyle(missing ? .red : .secondary).lineLimit(1)
-                if !item.tags.isEmpty {
-                    Text(item.tags.map { "#\($0)" }.joined(separator: " "))
-                        .font(.caption2).foregroundStyle(.blue)
+                // A real drag session, so the item can be dropped on the Finder, the desktop or any other app (as a copy).
+                if !missing {
+                    DragHandle(writer: { dragWriter() }, image: { dragIcon() }, onFinished: { _ in }, onOpen: { vault.open(item) })
                 }
             }
-            Spacer()
             Button { vault.open(item) } label: { Image(systemName: opensExternally ? "arrow.up.forward.square" : "doc.on.doc") }
                 .help(opensExternally ? "เปิด" : "คัดลอกข้อความ")
                 .disabled(missing)
@@ -700,9 +708,6 @@ private struct VaultRow: View {
             .fixedSize()
         }
         .padding(.vertical, 3)
-        .contentShape(Rectangle())
-        .onTapGesture(count: 2) { if !missing { vault.open(item) } }
-        .onDrag { dragProvider() }
         .popover(isPresented: $editingTags) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("แท็ก (คั่นด้วย ,)").font(.caption)
@@ -743,16 +748,21 @@ private struct VaultRow: View {
         return parts.filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
-    private func dragProvider() -> NSItemProvider {
+    private func dragWriter() -> NSPasteboardWriting? {
+        switch item.kind {
+        case .file, .folder: return url.map { $0 as NSURL }
+        case .link: return item.text.flatMap(URL.init(string:)).map { $0 as NSURL }
+        case .text: return (item.text ?? "") as NSString
+        }
+    }
+
+    private func dragIcon() -> NSImage {
         switch item.kind {
         case .file, .folder:
-            if let url, let p = NSItemProvider(contentsOf: url) { return p }
-            return NSItemProvider()
-        case .link:
-            if let t = item.text, let u = URL(string: t) { return NSItemProvider(object: u as NSURL) }
-            return NSItemProvider()
-        case .text:
-            return NSItemProvider(object: (item.text ?? "") as NSString)
+            if let url { return NSWorkspace.shared.icon(forFile: url.path) }
+            return NSImage()
+        case .link: return NSImage(systemSymbolName: "link", accessibilityDescription: nil) ?? NSImage()
+        case .text: return NSImage(systemSymbolName: "text.alignleft", accessibilityDescription: nil) ?? NSImage()
         }
     }
 
@@ -1103,7 +1113,14 @@ private struct MediaCell: View {
             Text(item.createdAt, format: .dateTime.day().month().hour().minute())
                 .font(.caption2).foregroundStyle(.secondary)
         }
-        .onTapGesture(count: 2) { if !missing { NSWorkspace.shared.open(URL(fileURLWithPath: item.path)) } }
+        .overlay {
+            if !missing {
+                DragHandle(writer: { URL(fileURLWithPath: item.path) as NSURL },
+                           image: { image ?? NSWorkspace.shared.icon(forFile: item.path) },
+                           onFinished: { _ in },
+                           onOpen: { NSWorkspace.shared.open(URL(fileURLWithPath: item.path)) })
+            }
+        }
         .task(id: item.path) {
             let url = URL(fileURLWithPath: item.path)
             guard FileManager.default.fileExists(atPath: item.path) else { missing = true; return }

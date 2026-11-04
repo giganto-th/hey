@@ -8,6 +8,8 @@ public enum PetPose: Equatable, Sendable {
 
 public enum PetEvent: Sendable {
     case clicked, doubleClicked, cheered, petted, grabbed, released, landed, tired, fed, wake
+    /// One quick peck at something (a bubble), shorter than a meal.
+    case pecked
     /// Shaken hard or dropped from a height while in the air: it will be dazed when it lands.
     case shaken
 }
@@ -59,6 +61,17 @@ public struct BehaviorFSM: Sendable {
         if pose == .walk || pose == .sleep || pose == .fly || pose == .flap { enter(.idle, for: 2) }
     }
 
+    /// Head for something to the left or right: keeps walking (the duration is refreshed every call) until `settle()`.
+    /// A sleeper is woken first. Never interrupts being carried, falling, a daze or a meal.
+    public mutating func seek(right: Bool) {
+        guard interruptible, pose != .dizzy, pose != .eat else { return }
+        facingRight = right
+        enter(.walk, for: 3600)
+    }
+
+    /// True while the pet is on its way to something.
+    public var isSeeking: Bool { pose == .walk && duration >= 3600 }
+
     private var interruptible: Bool { pose != .carried && pose != .falling }
 
     public mutating func send(_ event: PetEvent) {
@@ -76,6 +89,8 @@ public struct BehaviorFSM: Sendable {
             }
         case .fed:
             if interruptible { enter(.eat, for: 2.0) }
+        case .pecked:
+            if interruptible, pose != .dizzy { enter(.eat, for: 0.7) }
         case .wake:
             if pose == .sleep { enter(.idle, for: 1.5) }
         case .tired:
