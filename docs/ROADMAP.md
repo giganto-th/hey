@@ -58,4 +58,4 @@ Add the new actions to `RadialAction` so they are pinnable in the existing custo
 - Vault and Gallery items start a real drag session (copy only), so they drop onto the Finder, the desktop and other apps.
 - Food is placed anywhere on screen; it falls to the floor and the pet walks over to eat it (`FoodController`, `Seek`).
 - Bubble chase: `BubbleField` (pure) + `BubbleController`; the pet walks under the nearest bubble and pecks it.
-- Open: the food art is flat 2D and does not match the 3D clay Hei Hei; regenerate through the Codex pipeline.
+- Food art regenerated in the 3D animated-film style (cookie, apple, honey jar, rice bowl); the sheet is drawn on flat blue, keyed with a blue key (the apple leaf and the rice bowl clash with green).

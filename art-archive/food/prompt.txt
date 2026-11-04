@@ -1,0 +1,9 @@
+Use the built-in image generation tool. Personal-use art for a private macOS desktop-pet app. Reference for the rendering style: /tmp/art3/ref_heihei.png (a stylized cinematic 3D animated-film character: glossy soft CGI, soft lighting, subtle subsurface scattering, natural specular highlights, rich saturated colours).
+Draw a 2x2 sheet of FOUR separate food items for the pet, each centred in its own equal quarter of the image, each fully inside its cell with generous empty margin, none overlapping or touching:
+ top-left: a round plump chocolate-chip cookie, golden-brown, 3 big glossy chocolate chunks, viewed slightly from above;
+ top-right: a shiny red apple with a short brown stem and one leaf (dark olive-green leaf, NOT bright green);
+ bottom-left: a small round glass jar of golden honey with a wooden honey dipper resting in it, a drip of honey on the rim, a little cloth lid tied with twine;
+ bottom-right: a warm terracotta (orange-brown) bowl heaped with fluffy steaming white rice (a little steam wisps are NOT drawn; no steam).
+Style: 3D animated-feature look matching the reference's rendering (soft CGI, physically based materials, gentle highlights, soft ambient occlusion), friendly and appetising, slightly exaggerated cartoon proportions. Every item is rendered the same way, same lighting from the top-left.
+Background: perfectly flat pure chroma blue #0000FF everywhere (no gradient, no floor, no cast shadow, no contact shadow, no grid lines, no labels or text). No item may contain pure blue or deep blue.
+Output: a single square image, saved as /tmp/art3/food/sheet.png (upscale to about 2048x2048 if needed).
