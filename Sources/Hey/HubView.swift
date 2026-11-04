@@ -1617,7 +1617,48 @@ private struct SettingsTab: View {
                 }
             }
             }
+            Section("เกี่ยวกับ") {
+                AboutSection(model: model)
+            }
         }
+    }
+}
+
+/// Version, links, where the data lives and the credits.
+private struct AboutSection: View {
+    let model: GameModel
+
+    private var version: String {
+        let info = Bundle.main.infoDictionary
+        let short = info?["CFBundleShortVersionString"] as? String
+        let build = info?["CFBundleVersion"] as? String
+        guard let short else { return "รันจากซอร์สโค้ด (ไม่ใช่ Hey.app)" }
+        return build.map { "\(short) (\($0))" } ?? short
+    }
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(nsImage: NSApp.applicationIconImage ?? NSImage())
+                .resizable().frame(width: 56, height: 56)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Hey!").font(.title3.weight(.bold))
+                Text("เพื่อนตัวน้อยบนเดสก์ท็อป Mac").font(.callout).foregroundStyle(.secondary)
+                Text("เวอร์ชัน \(version) · ต้องใช้ macOS 26 ขึ้นไป").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        HStack(spacing: 10) {
+            if let site = URL(string: "https://giganto-th.github.io/hey/") { Link("เว็บไซต์", destination: site) }
+            if let repo = URL(string: "https://github.com/giganto-th/hey") { Link("GitHub", destination: repo) }
+            if let release = URL(string: "https://github.com/giganto-th/hey/releases/latest") { Link("ดาวน์โหลดเวอร์ชันล่าสุด", destination: release) }
+            if let video = URL(string: "https://www.youtube.com/watch?v=JBi-y-_I9jk") { Link("วิดีโอแนะนำ", destination: video) }
+        }
+        LabeledContent("โฟลเดอร์ข้อมูล") {
+            Button("แสดงใน Finder") { NSWorkspace.shared.activateFileViewerSelecting([model.directory]) }
+        }
+        Text(model.directory.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
+            .font(.caption2).foregroundStyle(.secondary).textSelection(.enabled)
+        Text("ข้อมูลทั้งหมด (สัตว์เลี้ยง โน้ต ไฟล์ที่ฝาก) เก็บในเครื่องนี้เท่านั้น ไม่ส่งออกไปไหน ตัวละคร Hei Hei เป็นแฟนอาร์ตจากภาพยนตร์ Moana ของ Disney ทำไว้ใช้ส่วนตัว")
+            .font(.caption2).foregroundStyle(.secondary)
     }
 }
 
