@@ -37,7 +37,6 @@ Add the new actions to `RadialAction` so they are pinnable in the existing custo
 - Shortcuts: built (2026-11-04) as `hey://` links (`HeyURL`), usable from Shortcuts' "Open URLs": `focus/start`, `focus/stop`, `note?text=`, `clip?n=0`, `hub?page=`. Real App Intents were skipped: they need Xcode metadata extraction, which the SwiftPM build does not run.
 - Calendar next-event heads-up through EventKit (read-only): built (2026-11-04), `CalendarHeadsUp` + `CalendarService`, opt-in toggle in Hub → ตั้งค่า → ปฏิทิน, asks for calendar access only when turned on.
 - Frontmost-app awareness: built (2026-11-04) as `AppFocusEngine` (bundle id only, one speech bubble per long stay: coding 40 min, reading 30, gaming 45, 1 h cooldown). Idle-pose changes per app still need art.
-- Launcher dock: built (2026-11-04). Floating Liquid Glass dock (⌃⌥D, ring action, `hey://dock`): pinned apps and groups (`DockLayout`), running apps' icons turn slowly (still under Reduce Motion), drag onto another icon to group, drop .app files to pin, right-click to rename/ungroup/move.
 - Dress-up items in the shop; rare idle poses.
 
 ## Art tasks (parallel, via Codex pipeline in `docs/SPRITE_PIPELINE.md`)

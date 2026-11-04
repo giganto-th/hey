@@ -29,7 +29,6 @@ public struct SaveData: Codable, Equatable, Sendable {
     public var reactions = ReactionSettings()
     public var motion = MotionSettings()
     public var radialMenu = RadialMenuSettings()
-    public var dock = DockLayout()
     public var shelf: [ShelfItem] = []
     public var files = FileSettings()
     public var stats = LifetimeStats()
@@ -40,7 +39,7 @@ public struct SaveData: Codable, Equatable, Sendable {
 
     // Hand-written so a file saved by an older build (missing newer keys) still loads.
     private enum CodingKeys: String, CodingKey {
-        case version, pet, coins, inventory, quests, questDay, streak, reminders, notes, vault, vaultSettings, playlists, music, media, capture, power, gestures, species, reactions, motion, radialMenu, dock, shelf, files, stats, achievements, guide
+        case version, pet, coins, inventory, quests, questDay, streak, reminders, notes, vault, vaultSettings, playlists, music, media, capture, power, gestures, species, reactions, motion, radialMenu, shelf, files, stats, achievements, guide
     }
 
     public init(from decoder: Decoder) throws {
@@ -73,7 +72,6 @@ public struct SaveData: Codable, Equatable, Sendable {
         reactions = value(ReactionSettings.self, .reactions, default: ReactionSettings())
         motion = value(MotionSettings.self, .motion, default: MotionSettings())
         radialMenu = value(RadialMenuSettings.self, .radialMenu, default: RadialMenuSettings())
-        dock = value(DockLayout.self, .dock, default: DockLayout())
         shelf = list(ShelfItem.self, .shelf)
         files = value(FileSettings.self, .files, default: FileSettings())
         stats = value(LifetimeStats.self, .stats, default: LifetimeStats())
@@ -134,7 +132,6 @@ public struct Game: Sendable {
     public private(set) var reactions: ReactionSettings
     public private(set) var motion: MotionSettings
     public private(set) var radialMenu: RadialMenuSettings
-    public private(set) var dock: DockLayout
     public private(set) var shelf: [ShelfItem]
     public private(set) var files: FileSettings
     public private(set) var stats: LifetimeStats
@@ -170,7 +167,6 @@ public struct Game: Sendable {
         reactions = save.reactions
         motion = save.motion
         radialMenu = save.radialMenu
-        dock = save.dock
         shelf = save.shelf
         files = save.files
         stats = save.stats
@@ -201,7 +197,6 @@ public struct Game: Sendable {
         s.reactions = reactions
         s.motion = motion
         s.radialMenu = radialMenu
-        s.dock = dock
         s.shelf = shelf
         s.files = files
         s.stats = stats
@@ -591,7 +586,6 @@ public struct Game: Sendable {
     }
 
     public mutating func setReactions(_ change: (inout ReactionSettings) -> Void) { change(&reactions) }
-    public mutating func setDock(_ change: (inout DockLayout) -> Void) { change(&dock) }
     public mutating func setRadialMenu(_ change: (inout RadialMenuSettings) -> Void) { change(&radialMenu) }
     public mutating func renamePet(_ name: String) { pet.rename(name) }
 

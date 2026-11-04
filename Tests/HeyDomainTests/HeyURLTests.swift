@@ -20,7 +20,6 @@ struct HeyURLTests {
         #expect(p("hey://clip?n=2") == .copyClip(2))
         #expect(p("hey://clip?n=-1") == nil)
         #expect(p("hey://hub?page=clipboard") == .openHub("clipboard"))
-        #expect(p("hey://dock") == .toggleDock)
     }
     @Test func ignoresOtherSchemes() {
         #expect(p("https://example.com/focus/start") == nil)

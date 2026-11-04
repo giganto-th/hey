@@ -35,7 +35,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var context = ContextEngine()
     private var appFocus = AppFocusEngine()
     private let calendar = CalendarService()
-    private var dock: DockController!
     private var pendingCorner: Corner?
     private var cornerWork: DispatchWorkItem?
     private var cornerArmed = true
@@ -166,8 +165,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         toast = ReminderToastController(model: model)
         stickies = StickyController(model: model)
-        dock = DockController(model: model)
-        dock.start()
         model.onChange = { [weak self] in
             self?.scene.refreshMotion()
             self?.toast.sync()
@@ -213,20 +210,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if let section = env["HEY_DEV_HUB"].flatMap(HubSection.init(rawValue:)) {
                 router.section = section; openHub()
             }
-            if env["HEY_DEV_DOCK"] == "seed", model.game.dock.entries.isEmpty {     // a few real apps, one group, to look at
-                let names = ["Safari", "Notes", "Calendar", "Terminal", "Music", "Mail", "Reminders"]
-                let apps = names.compactMap { n in ["/Applications/\(n).app", "/System/Applications/\(n).app"].first { FileManager.default.fileExists(atPath: $0) } }
-                    .compactMap { DockService.app(at: URL(fileURLWithPath: $0)) }
-                model.perform { game in
-                    game.setDock { layout in
-                        apps.forEach { layout.add($0) }
-                        if apps.count > 5 { layout.drop(apps[5].bundleID, onto: apps[1].bundleID); layout.drop(apps[6 % apps.count].bundleID, onto: apps[1].bundleID) }
-                    }
-                    return []
-                }
-            }
-            if let path = env["HEY_DEV_DOCK_SNAP"] { DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in self?.dock.writeSnapshot(to: path) } }
-            if env["HEY_DEV_DOCK"] != nil { DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.dock.show() } }
             if let path = env["HEY_DEV_LOCAL_TRACK"] {
                 // An isolated silent fixture exercises the real AVPlayer → scene callbacks.
                 if model.game.currentPlaylist == nil { model.perform { $0.createPlaylist("ทดสอบเพลง"); return [] } }
@@ -467,7 +450,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .copyClip(let n):
             let entries = clipboard.history.entries
             if n < entries.count { clipboard.copy(entries[n]) }
-        case .toggleDock: dock.toggle()
         case .openHub(let page):
             if let section = page.flatMap(HubSection.init(rawValue:)) { router.section = section }
             openHub()
@@ -546,7 +528,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             (kVK_ANSI_R, "R", { [weak self] in self?.quickReminder() }),
             (kVK_ANSI_P, "P", { [weak self] in self?.pomodoro.toggle() }),
             (kVK_ANSI_H, "H", { [weak self] in self?.openHub() }),
-            (kVK_ANSI_D, "D", { [weak self] in self?.dock.toggle() }),
             (kVK_ANSI_M, "M", { [weak self] in self?.music.toggle() }),
             (kVK_ANSI_S, "S", { [weak self] in self?.captureRegion() }),
             (kVK_ANSI_V, "V", { [weak self] in self?.capture.toggleRecording() }),
@@ -673,7 +654,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .shelf:
             return RadialItem(id: "shelf", icon: "suitcase.fill", title: "ถาดไฟล์",
                               badge: game.shelf.isEmpty ? nil : "\(game.shelf.count)", badgeColor: .teal) { [weak self] in self?.toggleTray() }
-        case .dock: return RadialItem(id: "dock", icon: "dock.rectangle", title: "Dock") { [weak self] in self?.dock.toggle() }
         case .hide: return RadialItem(id: "hide", icon: "eye.slash.fill", title: "ซ่อน") { [weak self] in self?.toggleVisible() }
         }
     }
@@ -851,7 +831,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
 
         action("เปิด Hub…   ⌃⌥H", #selector(openHub))
-        action("Dock แอป   ⌃⌥D", #selector(toggleDock))
 
         let feedItem = NSMenuItem(title: "ให้อาหาร", action: nil, keyEquivalent: "")
         let feedMenu = NSMenu()
@@ -930,7 +909,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         hubWindow?.makeKeyAndOrderFront(nil)
     }
 
-    @objc private func toggleDock() { dock.toggle() }
     @objc private func captureFull() { Task { await capture.screenshot(region: false) } }
     @objc private func captureRegion() { Task { await capture.screenshot(region: true) } }
     private func readScreenText() { Task { await capture.readText() } }
