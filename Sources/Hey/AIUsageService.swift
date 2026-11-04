@@ -16,7 +16,6 @@ final class AIUsageService {
     static let warnKey = "aiUsageWarn"
     static let criticalKey = "aiUsageCritical"
     static let systemNotifyKey = "aiUsageSystemNotify"
-    static let badgeKey = "aiUsageBadge"
     static let connectedKey = "aiUsageConnected"
     static let codexHomesKey = "aiUsageCodexHomes"
     static let antigravityCacheKey = "aiUsageAntigravityCache"
@@ -39,7 +38,6 @@ final class AIUsageService {
     private(set) var lastRefresh: Date?
 
     @ObservationIgnored var onAlert: ((UsageAlert) -> Void)?
-    @ObservationIgnored var onBadgeChange: (() -> Void)?
     @ObservationIgnored private lazy var alerts = UsageAlerts(thresholds: thresholds)
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var labels: [String: String] = [:]          // Claude login id -> email, remembered for the session
@@ -115,20 +113,6 @@ final class AIUsageService {
         }
     }
 
-    /// Show the highest used percentage next to the menu-bar icon once it passes the warning level.
-    var badgeEnabled: Bool {
-        get { UserDefaults.standard.object(forKey: Self.badgeKey) as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: Self.badgeKey); onBadgeChange?() }
-    }
-
-    /// The fullest quota across all accounts right now, if it is past the warning level.
-    func badge(now: Date = Date()) -> (percent: Int, critical: Bool)? {
-        guard badgeEnabled else { return nil }
-        let peak = AIProvider.allCases.flatMap { rows(for: $0) }.compactMap { $0.usage?.peakPercent(at: now) }.max() ?? 0
-        guard Int(peak) >= warnAt else { return nil }
-        return (Int(peak.rounded()), Int(peak) >= criticalAt)
-    }
-
     func postSystemNotification(_ text: String) {
         guard systemNotify else { return }
         let content = UNMutableNotificationContent()
@@ -174,7 +158,6 @@ final class AIUsageService {
         if isEnabled(.codex) { rows[.codex] = await refreshCodex() }
         if isEnabled(.claude) { rows[.claude] = await refreshClaude() }
         if isEnabled(.antigravity) { rows[.antigravity] = await refreshAntigravity() }
-        onBadgeChange?()
     }
 
     private func notify(_ usage: ProviderUsage) {

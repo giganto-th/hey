@@ -133,14 +133,22 @@ enum LogoArt {
 
     // MARK: menu bar
 
-    /// A template rooster head with a comb, beak and two readable eye cutouts.
+    /// The menu-bar icon. On a dark menu bar: the main coloured head with a white border. On a light one: the black rooster mark
+    /// (a template, so the system can tint it). The picture is drawn when needed, so it follows light/dark changes by itself.
     static func menuBarImage(height: CGFloat = 18) -> NSImage {
         let fm = FileManager.default
-        let marks = [Bundle.main.resourcePath.map { $0 + "/Logo/heihei_mark.png" }, fm.currentDirectoryPath + "/Resources/Logo/heihei_mark.png"].compactMap { $0 }
-        if let path = marks.first(where: { fm.fileExists(atPath: $0) }), let art = NSImage(contentsOfFile: path) {
-            art.size = NSSize(width: height, height: height)
-            art.isTemplate = true
-            return art
+        func logo(_ name: String) -> NSImage? {
+            [Bundle.main.resourcePath.map { $0 + "/Logo/" + name }, fm.currentDirectoryPath + "/Resources/Logo/" + name].compactMap { $0 }
+                .first { fm.fileExists(atPath: $0) }.flatMap { NSImage(contentsOfFile: $0) }
+        }
+        if let mark = logo("heihei_mark.png") {
+            let dark = logo("heihei_menubar_dark.png")
+            let image = NSImage(size: NSSize(width: height, height: height), flipped: false) { rect in
+                let isDark = NSAppearance.currentDrawing().bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                if isDark, let dark { dark.draw(in: rect) } else { mark.draw(in: rect) }
+                return true
+            }
+            return image
         }
         let image = NSImage(size: NSSize(width: height, height: height), flipped: false) { rect in
             guard let ctx = NSGraphicsContext.current?.cgContext else { return false }

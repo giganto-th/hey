@@ -65,7 +65,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self?.scene.announce(text, symbol: "gauge.with.dots.needle.67percent")
             self?.aiUsage.postSystemNotification(text)
         }
-        aiUsage.onBadgeChange = { [weak self] in self?.updateStatusTitle() }
         aiUsage.start()
         if WelcomeWindow.shouldShow { DispatchQueue.main.async { [weak self] in if let self { WelcomeWindow.show(model: self.model) } } }
         scene.seekTarget = { [weak self] in self?.food.target() ?? self?.bubbles.target() }
@@ -554,14 +553,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             statusItem.button?.title = " \(pomodoro.remainingText)"
         } else {
             statusItem.button?.image = LogoArt.menuBarImage()
-            if let badge = aiUsage.badge() {                // an AI quota is nearly used up
-                statusItem.button?.attributedTitle = NSAttributedString(string: " \(badge.percent)%", attributes: [
-                    .foregroundColor: badge.critical ? NSColor.systemRed : NSColor.systemOrange,
-                    .font: NSFont.menuBarFont(ofSize: 0)])
-            } else {
-                statusItem.button?.attributedTitle = NSAttributedString(string: "")
-                statusItem.button?.title = ""
-            }
+            statusItem.button?.title = ""
         }
     }
 
