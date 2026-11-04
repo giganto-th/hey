@@ -35,9 +35,9 @@ flags=()
 if [[ "${HEY_SIGN_IDENTITY:-}" == Developer\ ID* || -n "${HEY_HARDENED:-}" ]]; then
   flags=(--options runtime --timestamp)
 fi
-codesign --force "${flags[@]}" --sign "${HEY_SIGN_IDENTITY:--}" "$app/Contents/Frameworks/libheynp.dylib"
+codesign --force ${flags[@]+"${flags[@]}"} --sign "${HEY_SIGN_IDENTITY:--}" "$app/Contents/Frameworks/libheynp.dylib"
 if [ ${#flags[@]} -gt 0 ]; then
-  codesign --force "${flags[@]}" --entitlements scripts/Hey.entitlements --sign "${HEY_SIGN_IDENTITY:--}" "$app"
+  codesign --force ${flags[@]+"${flags[@]}"} --entitlements scripts/Hey.entitlements --sign "${HEY_SIGN_IDENTITY:--}" "$app"
 else
   codesign --force --deep --sign "${HEY_SIGN_IDENTITY:--}" "$app"
 fi
