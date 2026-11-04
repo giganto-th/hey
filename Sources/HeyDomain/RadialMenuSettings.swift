@@ -2,7 +2,7 @@ import Foundation
 
 /// Everything the pet's fan menu can hold.
 public enum RadialAction: String, CaseIterable, Codable, Sendable {
-    case music, files, focus, hub, feed, note, remind, shot, ocr, clip, rec, shelf, bubbles, hide
+    case music, files, focus, hub, feed, note, remind, shot, ocr, clip, rec, shelf, bubbles
 
     public var label: String {
         switch self {
@@ -19,7 +19,6 @@ public enum RadialAction: String, CaseIterable, Codable, Sendable {
         case .rec: "อัดจอ"
         case .shelf: "ถาดไฟล์"
         case .bubbles: "ฟองสบู่"
-        case .hide: "ซ่อนสัตว์เลี้ยง"
         }
     }
 
@@ -38,9 +37,42 @@ public enum RadialAction: String, CaseIterable, Codable, Sendable {
         case .rec: "record.circle"
         case .shelf: "suitcase.fill"
         case .bubbles: "bubbles.and.sparkles"
-        case .hide: "eye.slash.fill"
         }
     }
+}
+
+/// The folders on the first ring. Every action that is not pinned lives in exactly one of them, so no page is crowded.
+public enum RadialGroup: String, CaseIterable, Hashable, Sendable {
+    case capture, notes, other
+
+    public var label: String {
+        switch self {
+        case .capture: "จับภาพ"
+        case .notes: "จดและเตือน"
+        case .other: "อื่น ๆ"
+        }
+    }
+
+    public var symbol: String {
+        switch self {
+        case .capture: "camera.viewfinder"
+        case .notes: "checklist"
+        case .other: "ellipsis"
+        }
+    }
+
+    /// Every action in the group, in the order it is shown.
+    public var members: [RadialAction] {
+        switch self {
+        case .capture: [.shot, .rec, .ocr]
+        case .notes: [.note, .remind, .clip, .focus]
+        case .other: [.music, .files, .feed, .shelf, .bubbles, .hub]
+        }
+    }
+}
+
+extension RadialAction {
+    public var group: RadialGroup { RadialGroup.allCases.first { $0.members.contains(self) } ?? .other }
 }
 
 /// Which actions sit on the first ring around the pet, in order; everything else folds into "เพิ่มเติม".
@@ -63,6 +95,12 @@ public struct RadialMenuSettings: Codable, Equatable, Sendable {
 
     /// Everything not pinned, in catalogue order.
     public var rest: [RadialAction] { RadialAction.allCases.filter { !pinned.contains($0) } }
+
+    /// What is left in a group once the pinned actions have moved out to the ring.
+    public func members(of group: RadialGroup) -> [RadialAction] { group.members.filter { !pinned.contains($0) } }
+
+    /// The folders that still hold something, in order.
+    public var groups: [RadialGroup] { RadialGroup.allCases.filter { !members(of: $0).isEmpty } }
 
     public func isPinned(_ action: RadialAction) -> Bool { pinned.contains(action) }
 

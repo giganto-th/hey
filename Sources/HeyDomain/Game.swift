@@ -84,7 +84,7 @@ public struct SaveData: Codable, Equatable, Sendable {
         if version < 2, saved == nil || saved == "tok" || saved == "heihei",
            ["Hey", "ต๊อก", "Tok"].contains(pet.name) { pet.name = "Hei Hei" }
         // names this species had while it was being named
-        if species == "fluff", ["Jiab", "ฟู"].contains(pet.name) { pet.name = "Foo" }
+        if species == "fluff", ["Jiab", "ฟู", "Foo"].contains(pet.name) { pet.name = "Shams" }
         version = max(version, 2)
     }
 

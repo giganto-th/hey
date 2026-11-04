@@ -24,7 +24,7 @@ first five frames are scaled to the static egg's height and the last five ramp u
 Not played in reduced-motion mode or when the app starts with an already-hatched pet.
 
 ## Species (2026-11-04)
-Art lives in `Resources/Pets/<species>/` (`heihei`, `fluff` = "Foo"); `PetSpecies.all` lists them and the Hub picker offers whatever is installed.
+Art lives in `Resources/Pets/<species>/` (`heihei`, `fluff` = "Shams"); `PetSpecies.all` lists them and the Hub picker offers whatever is installed.
 - `fluff`: complete (all stages, 10-frame clips, hatch).
 - `heihei`: redrawn in a cinematic 3D style. The old 2D set is kept in `art-archive/heihei-2d/` (not bundled). Done: poses for every stage,
   egg, adult clips walk/type/dance/sleep/flap/fly/startled/dizzy/happy. Missing: adult idle/eat/carried, all clips for teen/child/hatchling,

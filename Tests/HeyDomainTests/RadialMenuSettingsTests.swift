@@ -46,3 +46,30 @@ import Foundation
         #expect(empty == RadialMenuSettings())
     }
 }
+
+@Test func everyActionLivesInExactlyOneGroup() {
+    for action in RadialAction.allCases {
+        let homes = RadialGroup.allCases.filter { $0.members.contains(action) }
+        #expect(homes.count == 1, "\(action) is in \(homes.count) groups")
+    }
+    #expect(Set(RadialGroup.allCases.flatMap(\.members)) == Set(RadialAction.allCases))
+}
+
+@Test func pinnedActionsLeaveTheirGroupAndEmptyGroupsDisappear() {
+    var s = RadialMenuSettings()
+    #expect(s.groups == [.capture, .notes, .other])
+    #expect(s.members(of: .notes) == [.note, .remind, .clip])        // focus is pinned by default
+    for a in [RadialAction.shot, .rec, .ocr] { _ = s.setPinned(a, true) }
+    #expect(s.pinned.count <= RadialMenuSettings.maxPinned)
+    var t = RadialMenuSettings()
+    _ = t.setPinned(.shot, true)
+    #expect(t.members(of: .capture) == [.rec, .ocr])
+}
+
+@Test func theBusiestPageStaysSmall() {
+    let s = RadialMenuSettings()
+    let main = s.pinned.count + s.groups.count
+    let biggestGroup = s.groups.map { s.members(of: $0).count + 1 }.max() ?? 0      // plus the back button
+    #expect(main <= 8)
+    #expect(biggestGroup <= 8)
+}

@@ -101,7 +101,7 @@ import Foundation
         #expect(game.species == "heihei")
         game.setSpecies("fluff")
         #expect(game.species == "fluff")
-        #expect(game.pet.state.name == "Foo")
+        #expect(game.pet.state.name == "Shams")
         game.renamePet("Mochi")
         game.setSpecies("heihei")
         #expect(game.pet.state.name == "Mochi")
@@ -112,4 +112,11 @@ import Foundation
         game.setSpecies("dragon")
         #expect(game.species == "heihei")
     }
+}
+
+@Test func anOldFooSaveIsRenamedShams() throws {
+    var save = SaveData(pet: PetState(now: Date(timeIntervalSince1970: 0), calendar: Calendar(identifier: .gregorian)))
+    save.species = "fluff"
+    save.pet.name = "Foo"
+    #expect(try SaveData.decode(save.encoded()).pet.name == "Shams")
 }

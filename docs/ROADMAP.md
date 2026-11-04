@@ -59,3 +59,4 @@ Add the new actions to `RadialAction` so they are pinnable in the existing custo
 - Food is placed anywhere on screen; it falls to the floor and the pet walks over to eat it (`FoodController`, `Seek`).
 - Bubble chase: `BubbleField` (pure) + `BubbleController`; the pet walks under the nearest bubble and pecks it.
 - Food art regenerated in the 3D animated-film style (cookie, apple, honey jar, rice bowl); the sheet is drawn on flat blue, keyed with a blue key (the apple leaf and the rice bowl clash with green).
+- Radial menu: sized for the busiest page (was a fixed 8, which clipped the old "more" page), and the unpinned actions now sit in three folders (capture, notes, other) instead of one crowded page. The hide action left the ring (still in the menu-bar menu). The fluff species is now called Shams (an old "Foo" save is renamed on load).

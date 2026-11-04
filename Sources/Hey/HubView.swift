@@ -1621,14 +1621,14 @@ private struct SettingsTab: View {
     }
 }
 
-/// Pick which commands sit on the ring around the pet and in what order; the rest wait under "เพิ่มเติม".
+/// Pick which commands sit on the ring around the pet and in what order; the rest wait in the group folders.
 private struct RadialMenuEditor: View {
     let model: GameModel
     let game: Game
 
     var body: some View {
         let menu = game.radialMenu
-        Text("เลือก \(RadialMenuSettings.minPinned)–\(RadialMenuSettings.maxPinned) คำสั่งที่อยากให้อยู่บนวงแรก ที่เหลือจะรวมอยู่ในปุ่ม เพิ่มเติม")
+        Text("เลือก \(RadialMenuSettings.minPinned)–\(RadialMenuSettings.maxPinned) คำสั่งที่อยากให้อยู่บนวงแรก ที่เหลือจะรวมอยู่ในโฟลเดอร์ จับภาพ / จดและเตือน / อื่น ๆ")
             .font(.caption).foregroundStyle(.secondary)
         ForEach(menu.pinned, id: \.self) { action in
             HStack {
@@ -1641,12 +1641,12 @@ private struct RadialMenuEditor: View {
                     .disabled(menu.pinned.last == action)
                 Button { change { $0.setPinned(action, false) } } label: { Image(systemName: "minus.circle") }
                     .disabled(action == .hub || menu.pinned.count <= RadialMenuSettings.minPinned)
-                    .help("ย้ายไปไว้ใน เพิ่มเติม")
+                    .help("ย้ายเข้าโฟลเดอร์")
             }
             .buttonStyle(.borderless)
         }
         if !menu.rest.isEmpty {
-            Text("ใน เพิ่มเติม").font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 4)
+            Text("อยู่ในโฟลเดอร์").font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 4)
             ForEach(menu.rest, id: \.self) { action in
                 HStack {
                     Image(systemName: action.symbol).frame(width: 22).foregroundStyle(.secondary)

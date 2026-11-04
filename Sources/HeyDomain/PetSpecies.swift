@@ -8,7 +8,7 @@ public struct PetSpecies: Equatable, Sendable, Identifiable {
 
     public static let all = [
         PetSpecies(id: "heihei", label: "Hei Hei (ไก่ตัวผู้)", defaultName: "Hei Hei"),
-        PetSpecies(id: "fluff", label: "Foo (ลูกเจี๊ยบขนฟู)", defaultName: "Foo"),
+        PetSpecies(id: "fluff", label: "Shams (ลูกเจี๊ยบขนฟู)", defaultName: "Shams"),
     ]
 
     public static func named(_ id: String) -> PetSpecies? { all.first { $0.id == id } }

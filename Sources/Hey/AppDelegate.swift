@@ -264,7 +264,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                         } else {
                             self.openRadial()
                         }
-                        if page != "main" { self.radial.go(page == "food" ? .food : .more) }
+                        if page != "main" {
+                            self.radial.go(page == "food" ? .food : (RadialGroup(rawValue: page).map(RadialPage.group) ?? .main))
+                        }
                         if let out = env["HEY_DEV_RADIAL_PNG"] {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
                                 MainActor.assumeIsolated { try? self.radial.snapshot()?.write(to: URL(fileURLWithPath: out)) }
@@ -668,7 +670,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .shelf:
             return RadialItem(id: "shelf", icon: "suitcase.fill", title: "ถาดไฟล์",
                               badge: game.shelf.isEmpty ? nil : "\(game.shelf.count)", badgeColor: .teal) { [weak self] in self?.toggleTray() }
-        case .hide: return RadialItem(id: "hide", icon: "eye.slash.fill", title: "ซ่อน") { [weak self] in self?.toggleVisible() }
         }
     }
 
@@ -679,11 +680,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         switch page {
         case .main:
-            var items = game.radialMenu.pinned.map(radialItem)
-            if !game.radialMenu.rest.isEmpty {
-                items.append(RadialItem(id: "more", icon: "ellipsis", title: "เพิ่มเติม", closes: false) { [weak self] in self?.radial.go(.more) })
+            // the pinned buttons, then one folder per group that still holds something
+            return game.radialMenu.pinned.map(radialItem) + game.radialMenu.groups.map { group in
+                RadialItem(id: "group-\(group.rawValue)", icon: .symbol(group.symbol), title: group.label, closes: false) { [weak self] in
+                    self?.radial.go(.group(group))
+                }
             }
-            return items
         case .food:
             return [back()] + game.pet.balance.foods.map { food in
                 let stock = game.stock(of: food)
@@ -699,8 +701,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     self?.food.begin(food)
                 }
             }
-        case .more:
-            return [back()] + game.radialMenu.rest.map(radialItem)
+        case .group(let group):
+            return [back()] + game.radialMenu.members(of: group).map(radialItem)
         }
     }
 
