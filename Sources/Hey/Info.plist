@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key><string>com.cdimac.hey</string>
+    <key>CFBundleName</key><string>Hey!</string>
+    <key>CFBundleDisplayName</key><string>Hey!</string>
+    <key>CFBundleExecutable</key><string>Hey</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
+    <key>CFBundleShortVersionString</key><string>0.7</string>
+    <key>CFBundleVersion</key><string>7</string>
+    <key>LSMinimumSystemVersion</key><string>26.0</string>
+    <key>LSUIElement</key><true/>
+    <key>NSHighResolutionCapable</key><true/>
+    <key>NSCameraUsageDescription</key>
+    <string>Hey! ใช้กล้องเมื่อคุณสั่งถ่ายรูปหรืออัดวิดีโอเท่านั้น และเก็บไฟล์ไว้ในเครื่อง</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Hey! ใช้ไมโครโฟนเมื่อคุณเปิดตัวเลือกอัดเสียงพร้อมวิดีโอเท่านั้น</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Hey! อ่านเฉพาะ URL และชื่อของแท็บหน้าสุดในเบราว์เซอร์ เพื่อเสนอเพิ่มวิดีโอ YouTube เข้าเพลย์ลิสต์ (เปิดใช้เมื่อคุณเลือกเท่านั้น)</string>
+    <key>CFBundleURLTypes</key>
+    <array><dict>
+        <key>CFBundleURLName</key><string>Hey! commands</string>
+        <key>CFBundleURLSchemes</key><array><string>hey</string></array>
+    </dict></array>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>Hey! อ่านชื่อและเวลานัดหมายใน 30 นาทีข้างหน้าเพื่อเตือนก่อนถึงเวลา ไม่แก้ไขปฏิทินและไม่เก็บข้อมูล (เปิดใช้เมื่อคุณเลือกเท่านั้น)</string>
+</dict>
+</plist>
