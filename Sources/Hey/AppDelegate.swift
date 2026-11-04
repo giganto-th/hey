@@ -8,6 +8,7 @@ import HeyDomain
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var window: PetWindow!
     private var food: FoodController!
+    private let aiUsage = AIUsageService()
     private var bubbles: BubbleController!
     private var scene: PetScene!
     private var model: GameModel!
@@ -59,6 +60,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         scene.window = window
         food = FoodController(model: model, scene: scene)
         bubbles = BubbleController(scene: scene, model: model)
+        aiUsage.onAlert = { [weak self] alert in
+            self?.scene.announce(tr("{0} ({1}) ใช้ไปแล้ว {2}% ของโควตา", alert.provider.label, alert.window.label, alert.level), symbol: "gauge.with.dots.needle.67percent")
+        }
+        aiUsage.start()
         scene.seekTarget = { [weak self] in self?.food.target() ?? self?.bubbles.target() }
         view.onEvent = { [weak scene] in scene?.send($0) }
         vault = VaultService(model: model)
@@ -658,6 +663,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return RadialItem(id: "focus", icon: pomodoro.timer.isRunning ? "pause.circle.fill" : "timer",
                               title: pomodoro.timer.isRunning ? tr("หยุดโฟกัส") : tr("โฟกัส"),
                               badge: pomodoro.timer.isRunning ? pomodoro.remainingText : nil, badgeColor: .red) { [weak self] in self?.pomodoro.toggle() }
+        case .usage:
+            return RadialItem(id: "usage", icon: "gauge.with.dots.needle.67percent", title: tr("เครดิต AI")) { [weak self] in self?.showAIUsage() }
         case .bubbles: return RadialItem(id: "bubbles", icon: "bubbles.and.sparkles", title: tr("ฟองสบู่")) { [weak self] in self?.bubbles.start() }
         case .hub:
             let questsLeft = game.quests.filter { !$0.done }.count
@@ -853,6 +860,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         info(tr("โหมด{0}{1}", power.decision.tier.label, power.decision.reason.isEmpty ? "" : " · \(power.decision.reason)"), symbol: "leaf.fill")
         let waiting = game.reminders.filter(\.isActive).count
         if waiting > 0 { info(tr("เตือนที่รออยู่ {0}", waiting), symbol: "bell.fill") }
+        for line in aiUsage.summaryLines() { info(line, symbol: "gauge.with.dots.needle.67percent") }
         menu.addItem(.separator())
 
         action(tr("เปิด Hub…   ⌃⌥H"), #selector(openHub))
@@ -887,6 +895,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(shoot)
         action(game.shelf.isEmpty ? tr("ถาดพักไฟล์ (ว่าง)") : tr("ถาดพักไฟล์ ({0})", game.shelf.count), #selector(toggleTray))
         action(tr("เป่าฟองสบู่"), #selector(blowBubbles))
+        action(tr("เช็คเครดิต AI"), #selector(showAIUsage))
         action(tr("ตั้งเตือนด่วน…   ⌃⌥R"), #selector(quickReminder))
         action(tr("โน้ตด่วน   ⌃⌥N"), #selector(quickNote))
         if let playing = music.nowPlaying { info("\(playing.title.prefix(32))", symbol: "music.note") }
@@ -929,7 +938,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if let size = ProcessInfo.processInfo.environment["HEY_DEV_HUB_SIZE"]?.split(separator: "x").compactMap({ Double($0) }),
                size.count == 2, devMode { w.setContentSize(NSSize(width: size[0], height: size[1])) }       // see a long page in one capture
             w.isReleasedWhenClosed = false
-            w.contentView = NSHostingView(rootView: HubView(model: model, pomodoro: pomodoro, clipboard: clipboard, vault: vault, shelf: shelf, music: music, capture: capture, camera: camera, power: power, gestureLog: gestureLog, detector: detector, router: router))
+            w.contentView = NSHostingView(rootView: HubView(model: model, pomodoro: pomodoro, clipboard: clipboard, vault: vault, shelf: shelf, music: music, capture: capture, camera: camera, power: power, gestureLog: gestureLog, detector: detector, aiUsage: aiUsage, router: router))
             w.center()
             hubWindow = w
         }
@@ -946,6 +955,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if model.game.shelf.isEmpty { scene.announce(tr("ถาดว่างอยู่ ลากไฟล์มาวางที่ฉันได้เลย"), symbol: "suitcase.fill") } else { tray.toggle() }
     }
     @objc private func blowBubbles() { bubbles.start() }
+
+    /// The pet reads out the AI quota; the Hub page has the details.
+    @objc private func showAIUsage() {
+        Task {
+            await aiUsage.refresh()
+            let lines = aiUsage.summaryLines()
+            if lines.isEmpty { router.section = .usage; openHub() }
+            else { lines.forEach { scene.announce($0, symbol: "gauge.with.dots.needle.67percent") } }
+        }
+    }
     @objc private func toggleMusic() { music.toggle() }
     @objc private func nextTrack() { music.next() }
     @objc private func togglePomodoro() { pomodoro.toggle() }

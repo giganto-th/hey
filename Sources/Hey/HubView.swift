@@ -5,13 +5,13 @@ import HeyDomain
 
 enum HubSection: String, CaseIterable, Identifiable {
     case today, pet, quests, shop, achievements, game
-    case vault, music, capture, reminders, focus, notes, clipboard
+    case vault, music, capture, reminders, focus, notes, clipboard, usage
     case gestures, settings
 
     /// The sidebar's groups, so twelve-plus pages stay easy to scan.
     static let groups: [(title: String, sections: [HubSection])] = [
         (tr("สัตว์เลี้ยง"), [.pet, .quests, .shop, .achievements, .game]),
-        (tr("เครื่องมือ"), [.vault, .clipboard, .music, .capture, .reminders, .focus, .notes]),
+        (tr("เครื่องมือ"), [.vault, .clipboard, .music, .capture, .reminders, .focus, .notes, .usage]),
         (tr("ตั้งค่า"), [.gestures, .settings]),
     ]
 
@@ -29,6 +29,7 @@ enum HubSection: String, CaseIterable, Identifiable {
         case .focus: tr("โฟกัส")
         case .notes: tr("โน้ต")
         case .clipboard: tr("คลิปบอร์ด")
+        case .usage: tr("เครดิต AI")
         case .game: tr("มินิเกม")
         case .achievements: tr("ความสำเร็จ")
         case .gestures: tr("ท่าทาง")
@@ -49,6 +50,7 @@ enum HubSection: String, CaseIterable, Identifiable {
         case .focus: "timer"
         case .notes: "note.text"
         case .clipboard: "doc.on.clipboard"
+        case .usage: "gauge.with.dots.needle.67percent"
         case .game: "gamecontroller"
         case .achievements: "trophy"
         case .gestures: "hand.draw"
@@ -59,7 +61,7 @@ enum HubSection: String, CaseIterable, Identifiable {
 }
 
 enum HubDestination: String, CaseIterable, Identifiable {
-    case today, music, files, productivity, pet, settings
+    case today, music, files, productivity, usage, pet, settings
     var id: Self { self }
     var sections: [HubSection] {
         switch self {
@@ -67,6 +69,7 @@ enum HubDestination: String, CaseIterable, Identifiable {
         case .music: [.music]
         case .files: [.vault, .clipboard, .notes]
         case .productivity: [.focus, .reminders]
+        case .usage: [.usage]
         case .pet: [.pet, .quests, .shop, .achievements, .game]
         case .settings: [.settings, .gestures, .capture]
         }
@@ -77,6 +80,7 @@ enum HubDestination: String, CaseIterable, Identifiable {
         case .music: tr("เพลง")
         case .files: tr("ไฟล์และโน้ต")
         case .productivity: tr("โฟกัสและเตือน")
+        case .usage: tr("เครดิต AI")
         case .pet: "Hei Hei"
         case .settings: tr("การตั้งค่า")
         }
@@ -87,6 +91,7 @@ enum HubDestination: String, CaseIterable, Identifiable {
         case .music: "music.note"
         case .files: "square.stack.3d.up"
         case .productivity: "timer"
+        case .usage: "gauge.with.dots.needle.67percent"
         case .pet: "bird"
         case .settings: "slider.horizontal.3"
         }
@@ -112,6 +117,7 @@ struct HubView: View {
     let power: PowerMonitor
     let gestureLog: GestureLog
     let detector: MusicDetector
+    let aiUsage: AIUsageService
     @Bindable var router: HubRouter
     @AppStorage("hubOpacity") private var hubOpacity = 0.8
 
@@ -155,6 +161,7 @@ struct HubView: View {
                     case .focus: PomodoroTab(pomodoro: pomodoro)
                     case .notes: NotesTab(model: model, game: game)
                     case .clipboard: ClipboardTab(service: clipboard)
+                    case .usage: UsageTab(service: aiUsage)
                     case .game: MiniGameTab(model: model, game: game)
                     case .achievements: AchievementsTab(game: game)
                     case .gestures: GesturesTab(model: model, game: game, log: gestureLog)
