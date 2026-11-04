@@ -631,6 +631,9 @@ public struct Game: Sendable {
         return events
     }
 
+    /// The pet popped `count` more bubbles; achievements read the total.
+    public mutating func recordBubbles(_ count: Int) { stats.bubblesPopped += max(count, 0) }
+
     public func miniGamePlaysLeft(at now: Date) -> Int {
         guard let day = stats.miniGameDay, day == dayKey(now) else { return MiniGame.maxRewardedPlaysPerDay }
         return max(MiniGame.maxRewardedPlaysPerDay - stats.miniGamePlaysToday, 0)

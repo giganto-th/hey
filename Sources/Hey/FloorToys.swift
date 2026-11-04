@@ -200,6 +200,7 @@ final class BubbleController {
     private static let lifetime: TimeInterval = 150
     private var field = BubbleField()
     private weak var scene: PetScene?
+    private let model: GameModel
     private var panel: NSPanel?
     private var root: NSView?
     private var layers: [Int: CALayer] = [:]
@@ -211,7 +212,7 @@ final class BubbleController {
     private var popped = 0
     private static let image: CGImage? = makeImage()
 
-    init(scene: PetScene) { self.scene = scene }
+    init(scene: PetScene, model: GameModel) { self.scene = scene; self.model = model }
 
     var isActive: Bool { !field.isEmpty }
 
@@ -262,6 +263,7 @@ final class BubbleController {
     private func pop(_ id: Int) {
         guard field.pop(id) else { return }
         popped += 1
+        model.perform { $0.recordBubbles(1); return [] }
         scene?.peck()
         if let layer = layers.removeValue(forKey: id) {
             let grow = CABasicAnimation(keyPath: "transform.scale"); grow.toValue = 1.5

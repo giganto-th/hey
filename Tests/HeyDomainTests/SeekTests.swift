@@ -89,3 +89,18 @@ import Foundation
     let paid = g.pet.balance.foods.first { $0.price > 0 }!
     if case .noStock? = g.feedRefusal(paid, at: day0) {} else { Issue.record("expected no stock") }
 }
+
+@Test func bubbleTotalsUnlockAchievementsAndOldSavesStillLoad() throws {
+    let day0 = Date(timeIntervalSince1970: 1_700_000_000)
+    var g = Game(save: SaveData(pet: PetState(now: day0, calendar: .init(identifier: .gregorian))),
+                 calendar: .init(identifier: .gregorian), rng: FixedRandom(value: 0))
+    g.recordBubbles(20)
+    let events = g.checkAchievements(at: day0)
+    #expect(events.contains { if case .achievementUnlocked(let a) = $0 { a.id == "bubble20" } else { false } })
+    #expect(g.stats.bubblesPopped == 20)
+
+    // a stats record from before the bubbles existed keeps its other totals
+    let old = #"{"feeds":7,"pets":3}"#.data(using: .utf8)!
+    let stats = try JSONDecoder().decode(LifetimeStats.self, from: old)
+    #expect(stats.feeds == 7 && stats.pets == 3 && stats.bubblesPopped == 0)
+}

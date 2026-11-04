@@ -14,7 +14,25 @@ public struct LifetimeStats: Codable, Equatable, Sendable {
     /// Plays so far in the current quest-day (see `Game.miniGameDay`).
     public var miniGamePlaysToday = 0
     public var miniGameDay: Date?
+    public var bubblesPopped = 0
     public init() {}
+
+    /// Every key is optional, so a save written before a field existed still loads with its other totals.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        feeds = try c.decodeIfPresent(Int.self, forKey: .feeds) ?? 0
+        pets = try c.decodeIfPresent(Int.self, forKey: .pets) ?? 0
+        pomodoros = try c.decodeIfPresent(Int.self, forKey: .pomodoros) ?? 0
+        questsDone = try c.decodeIfPresent(Int.self, forKey: .questsDone) ?? 0
+        remindersSet = try c.decodeIfPresent(Int.self, forKey: .remindersSet) ?? 0
+        vaultAdds = try c.decodeIfPresent(Int.self, forKey: .vaultAdds) ?? 0
+        captures = try c.decodeIfPresent(Int.self, forKey: .captures) ?? 0
+        musicMinutes = try c.decodeIfPresent(Double.self, forKey: .musicMinutes) ?? 0
+        miniGameBest = try c.decodeIfPresent(Int.self, forKey: .miniGameBest) ?? 0
+        miniGamePlaysToday = try c.decodeIfPresent(Int.self, forKey: .miniGamePlaysToday) ?? 0
+        miniGameDay = try c.decodeIfPresent(Date.self, forKey: .miniGameDay)
+        bubblesPopped = try c.decodeIfPresent(Int.self, forKey: .bubblesPopped) ?? 0
+    }
 }
 
 public struct AchievementInfo: Equatable, Sendable, Identifiable {
@@ -58,6 +76,8 @@ public struct Achievement: Sendable, Identifiable {
         .init("vault10", "นักสะสม", "ฝากของใน vault 10 ชิ้น", goal: 10, reward: 20) { Double($0.stats.vaultAdds) },
         .init("music60", "คอเพลง", "ฟังเพลงรวม 60 นาที", goal: 60, reward: 20) { $0.stats.musicMinutes },
         .init("capture5", "ช่างภาพ", "ถ่ายภาพ/อัดวิดีโอ 5 ครั้ง", goal: 5, reward: 20) { Double($0.stats.captures) },
+        .init("bubble20", "นักจิ๊กฟอง", "จิ๊กฟองสบู่ 20 ลูก", goal: 20, reward: 15) { Double($0.stats.bubblesPopped) },
+        .init("bubble200", "ราชาฟองสบู่", "จิ๊กฟองสบู่ 200 ลูก", goal: 200, reward: 60) { Double($0.stats.bubblesPopped) },
         .init("game15", "มือไว", "มินิเกมได้ 15 คะแนนขึ้นไป", goal: 15, reward: 25) { Double($0.stats.miniGameBest) },
     ]
 }

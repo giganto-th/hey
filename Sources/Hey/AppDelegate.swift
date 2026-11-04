@@ -58,7 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         scene = PetScene(size: size, model: model)
         scene.window = window
         food = FoodController(model: model, scene: scene)
-        bubbles = BubbleController(scene: scene)
+        bubbles = BubbleController(scene: scene, model: model)
         scene.seekTarget = { [weak self] in self?.food.target() ?? self?.bubbles.target() }
         view.onEvent = { [weak scene] in scene?.send($0) }
         vault = VaultService(model: model)
