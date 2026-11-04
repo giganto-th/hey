@@ -235,7 +235,12 @@ footer a{color:var(--blue)}
     <div class="step glass rv"><h3>เปิดครั้งแรก</h3><p>แอปไม่ได้ผ่านการรับรองจาก Apple ดูวิธีอนุญาตด้านล่าง ครั้งเดียวก็พอ</p></div>
   </div>
   <div class="note glass rv">
-    <h3>ถ้า macOS ขึ้นว่าเปิดไม่ได้</h3>
+    <h3>ติดตั้งด้วยคำสั่งเดียว (ไม่ขึ้นคำเตือน)</h3>
+    <p>เปิด Terminal แล้วรัน คำสั่งนี้โหลดเวอร์ชันล่าสุดด้วย curl ลงใน Applications และเปิดแอปให้เลย macOS จะไม่ถามเพราะไฟล์ที่โหลดด้วย curl ไม่ถูกติดธงกักกัน</p>
+    <pre><code>curl -fsSL https://raw.githubusercontent.com/giganto-th/hey/main/scripts/install.sh | bash</code></pre>
+  </div>
+  <div class="note glass rv">
+    <h3>ถ้าโหลด .dmg เอง แล้ว macOS ขึ้นว่าเปิดไม่ได้</h3>
     <p>Hey! เซ็นแบบ ad-hoc ไม่ได้ผ่านบัญชีนักพัฒนาของ Apple macOS จึงถามก่อนเปิดครั้งแรก เลือกวิธีใดวิธีหนึ่ง</p>
     <ol>
       <li><b>ผ่านการตั้งค่า:</b> เปิดแอปหนึ่งครั้งให้ขึ้นคำเตือน แล้วไปที่ การตั้งค่าระบบ › ความเป็นส่วนตัวและความปลอดภัย เลื่อนลงกด "เปิดต่อไป" (Open Anyway) ที่รายการ Hey</li>

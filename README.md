@@ -63,6 +63,16 @@
 
 ## ติดตั้ง
 
+**วิธีเร็วที่สุด (ไม่ขึ้นคำเตือน):** เปิด Terminal แล้วรันคำสั่งเดียว
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/giganto-th/hey/main/scripts/install.sh | bash
+```
+
+สคริปต์โหลดเวอร์ชันล่าสุดด้วย curl (ไฟล์ที่โหลดด้วย curl ไม่ถูกติดธงกักกัน macOS จึงไม่ถาม) ลงใน Applications แล้วเปิดให้เลย
+
+**หรือโหลดเอง:**
+
 1. โหลด `Hey-1.1.0.dmg` จากหน้า [Releases](https://github.com/giganto-th/hey/releases/latest)
 2. ลาก **Hey** ไปวางบน **Applications**
 3. เปิดแอป ครั้งแรกถ้า macOS เตือนว่าเปิดไม่ได้ ดูด้านล่าง
