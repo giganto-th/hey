@@ -167,6 +167,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         toast = ReminderToastController(model: model)
         stickies = StickyController(model: model)
         dock = DockController(model: model)
+        dock.start()
         model.onChange = { [weak self] in
             self?.scene.refreshMotion()
             self?.toast.sync()

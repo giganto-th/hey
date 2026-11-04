@@ -12,7 +12,38 @@ final class DockController {
     private var monitor: Any?
     private var contentSize = CGSize(width: 520, height: 150)
 
-    init(model: GameModel) { self.model = model }
+    /// Lets the Hub's settings reach the dock without threading it through every view.
+    nonisolated(unsafe) static weak var current: DockController?
+
+    init(model: GameModel) {
+        self.model = model
+        Self.current = self
+    }
+
+    /// Call once at launch: restores "always on" and follows that setting while the app runs.
+    func start() {
+        if model.game.dock.alwaysOn { show() }
+        watchAlwaysOn()
+    }
+
+    private func watchAlwaysOn() {
+        withObservationTracking { _ = model.game.dock.alwaysOn } onChange: { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                if self.model.game.dock.alwaysOn { self.show() } else if self.isVisible { self.armClickAway() }
+                self.watchAlwaysOn()
+            }
+        }
+    }
+
+    /// Adds the apps pinned in the macOS Dock to this one. Returns how many were new.
+    @discardableResult
+    func importSystemDock() -> Int {
+        let apps = DockService.systemDockApps().filter { !model.game.dock.contains($0.bundleID) }
+        guard !apps.isEmpty else { return 0 }
+        model.perform { game in game.setDock { layout in apps.forEach { layout.add($0) } }; return [] }
+        return apps.count
+    }
 
     var isVisible: Bool { panel?.isVisible ?? false }
 
@@ -23,12 +54,17 @@ final class DockController {
         service.refresh()
         position()
         panel?.orderFrontRegardless()
-        if monitor == nil {
-            monitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-                MainActor.assumeIsolated {
-                    guard let self, let panel = self.panel, !panel.frame.contains(NSEvent.mouseLocation) else { return }
-                    self.hide()
-                }
+        if !model.game.dock.alwaysOn { armClickAway() }
+    }
+
+    /// Closes the dock when you click anywhere else (unless it is set to stay on).
+    private func armClickAway() {
+        guard monitor == nil else { return }
+        monitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, !self.model.game.dock.alwaysOn, let panel = self.panel,
+                      !panel.frame.contains(NSEvent.mouseLocation) else { return }
+                self.hide()
             }
         }
     }

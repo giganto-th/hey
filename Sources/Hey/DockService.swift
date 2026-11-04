@@ -50,6 +50,16 @@ final class DockService {
 
     func info(forBundleID id: String) -> DockApp? { runningApps.first { $0.bundleID == id } }
 
+    /// The apps pinned in the macOS Dock (read only; the system Dock is never changed).
+    static func systemDockApps() -> [DockApp] {
+        let items = UserDefaults(suiteName: "com.apple.dock")?.array(forKey: "persistent-apps") as? [[String: Any]] ?? []
+        return items.compactMap { item in
+            guard let tile = item["tile-data"] as? [String: Any], let file = tile["file-data"] as? [String: Any],
+                  let text = file["_CFURLString"] as? String, let url = URL(string: text) else { return nil }
+            return app(at: url)
+        }
+    }
+
     static func app(at url: URL) -> DockApp? {
         guard url.pathExtension == "app", let bundle = Bundle(url: url), let id = bundle.bundleIdentifier else { return nil }
         let name = (bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)

@@ -78,4 +78,25 @@ struct DockTests {
         let dup = #"{"entries":[{"app":{"_0":{"bundleID":"a","name":"a","path":"/a"}}},{"app":{"_0":{"bundleID":"a","name":"a","path":"/a"}}}]}"#
         #expect(try JSONDecoder().decode(DockLayout.self, from: Data(dup.utf8)).entries.count == 1)
     }
+
+    @Test func insertReordersAndPullsAppsOutOfGroups() {
+        var d = DockLayout()
+        d.add(app("a")); d.add(app("b")); d.add(app("c"))
+        d.insert("a", at: 3)
+        #expect(d.entries.map(\.id) == ["b", "c", "a"])
+        d.insert("a", at: 0)
+        #expect(d.entries.map(\.id) == ["a", "b", "c"])
+        d.drop("c", onto: "b")
+        d.insert("c", at: 0)
+        #expect(d.entries.map(\.id).first == "c")
+        #expect(d.entries.count == 3)
+    }
+
+    @Test func iconSizeIsClampedAndSettingsSurviveOldSaves() throws {
+        var d = DockLayout()
+        d.setIconSize(500); #expect(d.iconSize == 96)
+        d.setIconSize(1); #expect(d.iconSize == 32)
+        let old = try JSONDecoder().decode(DockLayout.self, from: Data(#"{"entries":[]}"#.utf8))
+        #expect(old.iconSize == 52 && old.magnify && old.spinRunning && !old.alwaysOn)
+    }
 }

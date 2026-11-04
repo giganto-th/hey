@@ -1485,6 +1485,7 @@ private struct SettingsTab: View {
     @State private var loginMessage = ""
     @State private var loginOn = LoginItem.isEnabled
     @State private var calendarOn = CalendarService.isEnabled
+    @State private var dockImported: Int?
     @AppStorage("hubOpacity") private var hubOpacity = 0.8
 
     var body: some View {
@@ -1526,6 +1527,28 @@ private struct SettingsTab: View {
                     }.frame(maxWidth: 260)
                 }
                 Text("ลดลงเพื่อให้เห็นเดสก์ท็อปทะลุหน้าต่าง กระจกของแต่ละการ์ดยังคงอยู่")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            Section("Dock แอป  ⌃⌥D") {
+                let d = game.dock
+                LabeledContent("ขนาดไอคอน") {
+                    HStack {
+                        Slider(value: Binding(get: { d.iconSize }, set: { v in model.perform { $0.setDock { $0.setIconSize(v) }; return [] } }),
+                               in: DockLayout.iconSizeRange)
+                        Text("\(Int(d.iconSize))").monospacedDigit().foregroundStyle(.secondary).frame(width: 30, alignment: .trailing)
+                    }.frame(maxWidth: 260)
+                }
+                Toggle("แสดงตลอด ไม่ปิดเมื่อคลิกที่อื่น", isOn: Binding(
+                    get: { d.alwaysOn }, set: { v in model.perform { $0.setDock { $0.alwaysOn = v }; return [] } }))
+                Toggle("ไอคอนขยายเมื่อชี้เมาส์", isOn: Binding(
+                    get: { d.magnify }, set: { v in model.perform { $0.setDock { $0.magnify = v }; return [] } }))
+                Toggle("ไอคอนแอปที่เปิดอยู่หมุนช้า ๆ", isOn: Binding(
+                    get: { d.spinRunning }, set: { v in model.perform { $0.setDock { $0.spinRunning = v }; return [] } }))
+                HStack {
+                    Button("นำเข้าแอปจาก Dock ของระบบ") { dockImported = DockController.current?.importSystemDock() }
+                    if let n = dockImported { Text(n == 0 ? "ไม่มีแอปใหม่" : "เพิ่ม \(n) แอป").font(.caption).foregroundStyle(.secondary) }
+                }
+                Text("Dock นี้ลอยอยู่เหนือ Dock ของ macOS และไม่แก้ไข Dock ของระบบ ถ้าอยากใช้แทน ให้เปิด \"ซ่อน Dock อัตโนมัติ\" ในการตั้งค่าระบบ › เดสก์ท็อปและ Dock ลากแอปมาวางเพื่อเพิ่ม ลากไปวางระหว่างไอคอนเพื่อย้าย ลากทับไอคอนอื่นเพื่อรวมกลุ่ม ลากไปที่ถังขยะเพื่อเอาออก และลากเส้นคั่นก่อนปุ่มบวกขึ้นลงเพื่อปรับขนาด")
                     .font(.caption2).foregroundStyle(.secondary)
             }
             Section("ปฏิทิน") {

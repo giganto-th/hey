@@ -31,13 +31,31 @@ public enum DockEntry: Codable, Equatable, Sendable, Identifiable {
 /// The launcher dock's pinned apps and groups. Pure data: the app layer supplies real icons and running state.
 public struct DockLayout: Codable, Equatable, Sendable {
     public static let defaultGroupName = "กลุ่มใหม่"
+    public static let iconSizeRange: ClosedRange<Double> = 32...96
+
     public private(set) var entries: [DockEntry] = []
+    /// Icon edge in points, like the system Dock's size slider.
+    public private(set) var iconSize: Double = 52
+    /// Stays on screen instead of closing when you click elsewhere.
+    public var alwaysOn = false
+    /// Icons grow under the pointer.
+    public var magnify = true
+    /// Icons of running apps turn slowly.
+    public var spinRunning = true
 
     public init() {}
 
-    private enum CodingKeys: String, CodingKey { case entries }
+    public mutating func setIconSize(_ value: Double) {
+        iconSize = min(max(value, Self.iconSizeRange.lowerBound), Self.iconSizeRange.upperBound)
+    }
+
+    private enum CodingKeys: String, CodingKey { case entries, iconSize, alwaysOn, magnify, spinRunning }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        setIconSize(((try? c.decodeIfPresent(Double.self, forKey: .iconSize)) ?? nil) ?? 52)
+        alwaysOn = ((try? c.decodeIfPresent(Bool.self, forKey: .alwaysOn)) ?? nil) ?? false
+        magnify = ((try? c.decodeIfPresent(Bool.self, forKey: .magnify)) ?? nil) ?? true
+        spinRunning = ((try? c.decodeIfPresent(Bool.self, forKey: .spinRunning)) ?? nil) ?? true
         entries = ((try? c.decodeIfPresent([DockEntry].self, forKey: .entries)) ?? nil) ?? []
         var seen = Set<String>()                       // a hand-edited or damaged file never shows an app twice
         entries = entries.compactMap { entry in
@@ -137,6 +155,15 @@ public struct DockLayout: Codable, Equatable, Sendable {
               case .group(var g) = entries[i] else { return }
         g.name = String(trimmed.prefix(24))
         entries[i] = .group(g)
+    }
+
+    /// Puts an app at a top-level slot (0 = first, `entries.count` = last), taking it out of its group if it was in one.
+    public mutating func insert(_ bundleID: String, at index: Int) {
+        guard let app = allApps.first(where: { $0.bundleID == bundleID }) else { return }
+        var target = index
+        if let old = entries.firstIndex(where: { $0.id == bundleID }), old < target { target -= 1 }
+        remove(bundleID)
+        entries.insert(.app(app), at: min(max(target, 0), entries.count))
     }
 
     public mutating func move(_ entryID: String, by offset: Int) {
