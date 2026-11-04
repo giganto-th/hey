@@ -298,6 +298,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if let id = env["HEY_DEV_FOOD"], let f = model.game.pet.balance.foods.first(where: { $0.id == id }) {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.food.dropForDev(f) }
             }
+            if let path = env["HEY_DEV_ABOUT_PNG"] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                    MainActor.assumeIsolated { if let self { writeAboutPreview(model: self.model, to: path) } }
+                }
+            }
             if let path = env["HEY_DEV_MARQUEE"] {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
                     MainActor.assumeIsolated {
@@ -917,6 +922,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             w.backgroundColor = .clear
             w.titleVisibility = .hidden
             w.minSize = NSSize(width: 780, height: 580)
+            if let size = ProcessInfo.processInfo.environment["HEY_DEV_HUB_SIZE"]?.split(separator: "x").compactMap({ Double($0) }),
+               size.count == 2, devMode { w.setContentSize(NSSize(width: size[0], height: size[1])) }       // see a long page in one capture
             w.isReleasedWhenClosed = false
             w.contentView = NSHostingView(rootView: HubView(model: model, pomodoro: pomodoro, clipboard: clipboard, vault: vault, shelf: shelf, music: music, capture: capture, camera: camera, power: power, gestureLog: gestureLog, detector: detector, router: router))
             w.center()

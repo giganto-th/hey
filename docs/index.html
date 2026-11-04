@@ -114,6 +114,15 @@ pre{background:rgba(0,0,20,.5);border:1px solid var(--line);border-radius:16px;p
 .note p,.note li{color:var(--mute)}
 .note ol{padding-left:22px;margin-top:6px}
 
+
+/* makers */
+.makers{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+.maker{padding:26px;display:flex;align-items:center;gap:18px;transition:transform .25s}
+.maker:hover{transform:translateY(-4px)}
+.maker img{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.3)}
+.maker b{display:block;font-size:1.15rem}
+.maker span{color:var(--mute);font-size:.95rem}
+@media (max-width:900px){.makers{grid-template-columns:1fr}}
 footer{padding:50px 0 70px;border-top:1px solid var(--line);color:var(--mute);text-align:center}
 footer a{color:var(--blue)}
 
@@ -138,6 +147,7 @@ footer a{color:var(--blue)}
     <li><a href="#hub">Hub</a></li>
     <li><a href="#video">วิดีโอ</a></li>
     <li><a href="#install">ติดตั้ง</a></li>
+    <li><a href="#makers">ผู้สร้าง</a></li>
     <li><a class="btn primary" href="https://github.com/giganto-th/hey/releases/latest">ดาวน์โหลด</a></li>
   </ul>
 </div></nav>
@@ -234,6 +244,15 @@ footer a{color:var(--blue)}
       <li><b>บิลด์เอง:</b> แอปที่บิลด์บนเครื่องตัวเองไม่ถูกกัก ดูวิธีใน README (<code>bash scripts/make-app.sh</code>)</li>
     </ol>
     <p style="margin-top:12px">ถ้าสิทธิ์ (เช่น การเข้าถึงคีย์บอร์ด) ไม่ติดหลังอัปเดตเวอร์ชัน ให้ลบรายการ Hey ในการตั้งค่าระบบแล้วอนุญาตใหม่</p>
+  </div>
+</div></section>
+
+<section id="makers"><div class="wrap">
+  <div class="rv"><div class="kick">ผู้สร้าง</div><h2>ทำโดย <span class="grad">คนกลุ่มเล็ก ๆ</span></h2></div>
+  <div class="makers">
+    <a class="maker glass rv" href="https://github.com/kimookpong/"><img src="https://github.com/kimookpong.png?size=144" alt="kimookpong" loading="lazy"><div><b>Hakim Mudor</b><span>@kimookpong</span></div></a>
+    <a class="maker glass rv" href="https://github.com/siwapanD/"><img src="https://github.com/siwapanD.png?size=144" alt="siwapanD" loading="lazy"><div><b>siwapanD</b><span>@siwapanD</span></div></a>
+    <a class="maker glass rv" href="https://github.com/manitgithub/"><img src="https://github.com/manitgithub.png?size=144" alt="manitgithub" loading="lazy"><div><b>มานิต จิตต์ประไพย</b><span>@manitgithub</span></div></a>
   </div>
 </div></section>
 

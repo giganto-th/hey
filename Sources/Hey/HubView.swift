@@ -1657,6 +1657,49 @@ private struct AboutSection: View {
         }
         Text(model.directory.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
             .font(.caption2).foregroundStyle(.secondary).textSelection(.enabled)
+        let about = AboutContent.current
+        if !about.people.isEmpty {
+            Text("ผู้สร้าง").font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 6)
+            ForEach(about.people) { person in
+                HStack(spacing: 12) {
+                    Group {
+                        if let avatar = AboutContent.image(named: person.handle + ".png") {
+                            Image(nsImage: avatar).resizable().scaledToFill()
+                        } else {
+                            Image(systemName: "person.crop.circle.fill").resizable().foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(width: 44, height: 44).clipShape(Circle())
+                    .overlay(Circle().stroke(.white.opacity(0.25), lineWidth: 1))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(person.displayName).fontWeight(.semibold)
+                        Text("@\(person.handle)").font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if let url = person.profile { Link("GitHub", destination: url) }
+                }
+            }
+        }
+        if !about.donations.isEmpty {
+            Text("สนับสนุนผู้สร้าง").font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 6)
+            ForEach(about.donations) { donation in
+                HStack(spacing: 12) {
+                    if let file = donation.image, let qr = AboutContent.image(named: file) {
+                        Image(nsImage: qr).resizable().scaledToFit().frame(width: 96, height: 96)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(donation.label).fontWeight(.semibold)
+                        if let text = donation.text { Text(text).font(.callout).textSelection(.enabled).foregroundStyle(.secondary) }
+                    }
+                    Spacer()
+                    if let text = donation.text {
+                        Button("คัดลอก") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(text, forType: .string) }
+                    }
+                    if let link = donation.url.flatMap(URL.init(string:)) { Link("เปิดลิงก์", destination: link) }
+                }
+            }
+        }
         Text("ข้อมูลทั้งหมด (สัตว์เลี้ยง โน้ต ไฟล์ที่ฝาก) เก็บในเครื่องนี้เท่านั้น ไม่ส่งออกไปไหน ตัวละคร Hei Hei เป็นแฟนอาร์ตจากภาพยนตร์ Moana ของ Disney ทำไว้ใช้ส่วนตัว")
             .font(.caption2).foregroundStyle(.secondary)
     }
@@ -1706,4 +1749,16 @@ private struct RadialMenuEditor: View {
     private func change(_ edit: @escaping (inout RadialMenuSettings) -> Void) {
         model.perform { $0.setRadialMenu { edit(&$0) }; return [] }
     }
+}
+
+/// Dev hook: draw the About section on its own into a PNG (the Settings page is long, and a window capture only shows part of it).
+@MainActor
+func writeAboutPreview(model: GameModel, to path: String) {
+    let view = VStack(alignment: .leading, spacing: 8) { AboutSection(model: model) }
+        .padding(20).frame(width: 640, alignment: .leading).background(Color(red: 0.07, green: 0.12, blue: 0.3)).preferredColorScheme(.dark)
+    let renderer = ImageRenderer(content: view)
+    renderer.scale = 2
+    guard let image = renderer.nsImage, let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),
+          let png = rep.representation(using: .png, properties: [:]) else { return }
+    try? png.write(to: URL(fileURLWithPath: path))
 }
