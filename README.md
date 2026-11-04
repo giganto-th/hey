@@ -14,6 +14,8 @@
   <a href="https://www.youtube.com/watch?v=JBi-y-_I9jk"><img alt="วิดีโอ" src="https://img.shields.io/badge/ดูวิดีโอ-YouTube-ff6f91?style=for-the-badge"></a>
 </p>
 
+<p align="center"><a href="README.en.md">English</a> · ภาษาไทย</p>
+
 <p align="center">
   <img alt="macOS 26+" src="https://img.shields.io/badge/macOS-26%2B-0d1b4d?logo=apple&logoColor=white">
   <img alt="Swift 6.2" src="https://img.shields.io/badge/Swift-6.2-F05138?logo=swift&logoColor=white">

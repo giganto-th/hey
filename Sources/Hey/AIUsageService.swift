@@ -46,6 +46,22 @@ final class AIUsageService {
 
     func rows(for provider: AIProvider) -> [AccountRow] { rows[provider] ?? [] }
 
+    private func loadDemo() {
+        let now = Date()
+        func usage(_ provider: AIProvider, _ id: String, _ who: String, _ plan: String, _ windows: [(String, Double, TimeInterval)]) -> AccountRow {
+            let u = ProviderUsage(provider: provider, accountID: id, accountLabel: who, plan: plan,
+                                  windows: windows.map { UsageWindow(id: $0.0, usedPercent: $0.1, resetsAt: now.addingTimeInterval($0.2)) }, asOf: now)
+            return AccountRow(id: id, provider: provider, name: who, usage: u, error: nil, removable: false)
+        }
+        rows = [
+            .claude: [usage(.claude, "d1", "work@example.com", "Pro", [("5h", 43, 7200), ("7d", 58, 380_000)]),
+                      usage(.claude, "d2", "home@example.com", "Max", [("5h", 12, 12_000), ("7d", 91, 250_000)])],
+            .codex: [usage(.codex, "d3", "me@example.com", "Plus", [("5h", 66, 9000), ("7d", 42, 520_000)])],
+            .antigravity: [usage(.antigravity, "d4", "me@example.org", "Pro", [("Gemini 3.8 Flash +5", 18, 600_000)])],
+        ]
+        lastRefresh = now
+    }
+
     static var codexAvailable: Bool { FileManager.default.fileExists(atPath: NSHomeDirectory() + "/.codex/sessions") }
     static var antigravityAvailable: Bool {
         FileManager.default.fileExists(atPath: NSHomeDirectory() + "/.gemini/bin/agy")
@@ -151,6 +167,7 @@ final class AIUsageService {
     // MARK: refreshing
 
     func refresh() async {
+        if ProcessInfo.processInfo.environment["HEY_DEV_USAGE_DEMO"] != nil { loadDemo(); return }          // screenshots with made-up accounts
         guard !refreshing else { return }
         refreshing = true
         defer { refreshing = false; lastRefresh = Date() }
