@@ -200,18 +200,20 @@ private struct WindowRow: View {
 
     var body: some View {
         let used = window.effectivePercent(at: now)
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(window.label)
-                Spacer()
-                Text("\(Int(used.rounded()))%").monospacedDigit().foregroundStyle(color(used)).fontWeight(.semibold)
-            }
+        HStack(spacing: 10) {
+            Text(window.label).lineLimit(1).truncationMode(.tail).help(window.label)
+                .frame(width: 170, alignment: .leading)
             ProgressView(value: used, total: 100).tint(color(used))
-            if let reset = window.resetsAt {
-                Text(window.isExpired(at: now) ? tr("รีเซ็ตแล้ว") : tr("รีเซ็ตในอีก {0}", UsageText.until(reset, now: now)))
-                    .font(.caption).foregroundStyle(.secondary)
-            }
+            Text("\(Int(used.rounded()))%").monospacedDigit().fontWeight(.semibold).foregroundStyle(color(used))
+                .frame(width: 44, alignment: .trailing)
+            Text(resetText).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                .frame(width: 140, alignment: .trailing)
         }
+    }
+
+    private var resetText: String {
+        guard let reset = window.resetsAt else { return "" }
+        return window.isExpired(at: now) ? tr("รีเซ็ตแล้ว") : tr("รีเซ็ตในอีก {0}", UsageText.until(reset, now: now))
     }
 
     private func color(_ used: Double) -> Color { used >= 95 ? .red : (used >= 80 ? .orange : .green) }
