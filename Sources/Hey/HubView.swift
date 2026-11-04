@@ -1543,6 +1543,9 @@ private struct SettingsTab: View {
             Section(tr("ภาษา")) {
                 LanguageSetting()
             }
+            Section(tr("ข้อมูลและการสำรอง")) {
+                BackupSetting(model: model)
+            }
             Section(tr("หน้าตา Hub")) {
                 LabeledContent(tr("ความทึบของพื้นหลัง")) {
                     HStack {
@@ -1628,6 +1631,57 @@ private struct SettingsTab: View {
             Section(tr("เกี่ยวกับ")) {
                 AboutSection(model: model)
             }
+        }
+    }
+}
+
+/// Export everything to a .zip and restore from one.
+private struct BackupSetting: View {
+    let model: GameModel
+    @State private var message: String?
+
+    var body: some View {
+        HStack {
+            Button(tr("ส่งออกข้อมูลสำรอง…")) { export() }
+            Button(tr("นำเข้าข้อมูลสำรอง…")) { restore() }
+            Spacer()
+        }
+        if let message { Text(message).font(.caption).foregroundStyle(.orange) }
+        Text(tr("ไฟล์สำรองรวมสัตว์เลี้ยง โน้ต เพลย์ลิสต์ การตั้งค่า และไฟล์ที่ฝากไว้ การนำเข้าจะแทนที่ข้อมูลปัจจุบัน (เก็บของเดิมไว้ข้างกันในโฟลเดอร์ Hey-before-restore) แล้วเปิดแอปใหม่"))
+            .font(.caption2).foregroundStyle(.secondary)
+    }
+
+    private func export() {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "Hey-backup-\(Date().formatted(.iso8601.year().month().day())).zip"
+        panel.allowedContentTypes = [.zip]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        model.flush()
+        do { try BackupService.export(from: model.directory, to: url); message = tr("ส่งออกแล้ว: {0}", url.lastPathComponent) }
+        catch { message = (error as? BackupService.BackupError)?.message ?? error.localizedDescription }
+    }
+
+    private func restore() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.zip]
+        panel.canChooseDirectories = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let unpacked = try BackupService.prepareImport(zip: url, into: model.directory)
+            let alert = NSAlert()
+            alert.messageText = tr("แทนที่ข้อมูลปัจจุบันด้วยไฟล์สำรองนี้?")
+            alert.informativeText = tr("แอปจะเปิดใหม่ ข้อมูลเดิมถูกเก็บไว้ในโฟลเดอร์ Hey-before-restore ข้างโฟลเดอร์ข้อมูล")
+            alert.addButton(withTitle: tr("นำเข้า"))
+            alert.addButton(withTitle: tr("ยกเลิก"))
+            guard alert.runModal() == .alertFirstButtonReturn else {
+                try? FileManager.default.removeItem(at: unpacked.deletingLastPathComponent()); return
+            }
+            model.savingPaused = true
+            try BackupService.applyImport(unpacked, to: model.directory)
+            AppLanguage.relaunch()
+        } catch {
+            model.savingPaused = false
+            message = (error as? BackupService.BackupError)?.message ?? error.localizedDescription
         }
     }
 }

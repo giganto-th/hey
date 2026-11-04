@@ -62,6 +62,9 @@ final class GameModel {
         onChange?()
     }
 
+    /// Set while a restored backup is being put in place, so nothing running writes over it.
+    @ObservationIgnored var savingPaused = false
+
     /// Saves shortly, so a burst of changes (typing in a note, dragging a slider) writes the file once.
     func save() {
         saveWork?.cancel()
@@ -74,6 +77,7 @@ final class GameModel {
     func flush() {
         saveWork?.cancel()
         saveWork = nil
+        guard !savingPaused else { return }
         do {
             try game.save.encoded().write(to: url, options: .atomic)
         } catch {
