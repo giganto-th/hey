@@ -59,7 +59,6 @@ struct WelcomeView: View {
             .pickerStyle(.segmented).frame(width: 360)
             .onChange(of: language) { _, new in AppLanguage.choice = new }
             if AppLanguage.needsRestart {
-                let _ = print("[welcome] needsRestart choice=\(AppLanguage.choice) running=\(AppLanguage.runningEnglish)")
                 Button(tr("เปิดแอปใหม่ตอนนี้")) { UserDefaults.standard.set(true, forKey: WelcomeWindow.shownKey); AppLanguage.relaunch() }
                 Text(tr("ภาษาใหม่จะใช้เมื่อเปิดแอปใหม่")).font(.caption).foregroundStyle(.orange)
             }
