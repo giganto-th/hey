@@ -30,6 +30,15 @@ cp "$(swift build -c release --show-bin-path)/libheynp.dylib" "$app/Contents/Fra
 if [ -d Resources/Sprites ]; then rsync -a --exclude "_originals" Resources/Sprites/ "$app/Contents/Resources/Sprites/"; fi
 if [ -d Resources/Pets ]; then rsync -a Resources/Pets/ "$app/Contents/Resources/Pets/"; fi
 
-codesign --force --sign "${HEY_SIGN_IDENTITY:--}" "$app/Contents/Frameworks/libheynp.dylib"
-codesign --force --deep --sign "${HEY_SIGN_IDENTITY:--}" "$app"
+# A "Developer ID Application" identity (or HEY_HARDENED=1) signs for distribution: Hardened Runtime, a secure timestamp and the entitlements.
+flags=()
+if [[ "${HEY_SIGN_IDENTITY:-}" == Developer\ ID* || -n "${HEY_HARDENED:-}" ]]; then
+  flags=(--options runtime --timestamp)
+fi
+codesign --force "${flags[@]}" --sign "${HEY_SIGN_IDENTITY:--}" "$app/Contents/Frameworks/libheynp.dylib"
+if [ ${#flags[@]} -gt 0 ]; then
+  codesign --force "${flags[@]}" --entitlements scripts/Hey.entitlements --sign "${HEY_SIGN_IDENTITY:--}" "$app"
+else
+  codesign --force --deep --sign "${HEY_SIGN_IDENTITY:--}" "$app"
+fi
 echo "Built $app (signed with ${HEY_SIGN_IDENTITY:-ad-hoc})"

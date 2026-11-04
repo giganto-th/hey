@@ -86,6 +86,8 @@ curl -fsSL https://raw.githubusercontent.com/giganto-th/hey/main/scripts/install
 xattr -dr com.apple.quarantine /Applications/Hey.app
 ```
 
+ปล่อยเวอร์ชันที่เซ็นและผ่าน notarize (ต้องมี Apple Developer ID): ดูขั้นตอนในหัวไฟล์ `scripts/release-signed.sh`
+
 บิลด์เอง: `bash scripts/make-app.sh` (ได้ `build/Hey.app`) และ `bash scripts/make-dmg.sh` (ได้ไฟล์ DMG) แอปที่บิลด์เองไม่ถูกกัก
 
 ## คู่มือการใช้งาน
