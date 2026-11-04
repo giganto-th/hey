@@ -218,5 +218,5 @@ private func type(_ r: inout ActivityReactor, from: Int, seconds: Int, perSecond
     let data = try g.save.encoded()
     #expect(try SaveData.decode(data).reactions.typing == false)
     let old = try JSONDecoder().decode(ReactionSettings.self, from: Data(#"{"enabled":false}"#.utf8))
-    #expect(!old.enabled && old.typing && old.battery && old.curious)
+    #expect(!old.enabled && old.typing && old.battery && old.curious && old.appStreaks)
 }

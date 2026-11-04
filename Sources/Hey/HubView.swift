@@ -1509,6 +1509,9 @@ private struct SettingsTab: View {
                     Toggle("หันมองเมาส์ที่เข้ามาใกล้", isOn: Binding(
                         get: { r.curious },
                         set: { v in model.perform { $0.setReactions { $0.curious = v }; return [] } }))
+                    Toggle("เตือนเมื่ออยู่ในแอปเดิมนาน (เขียนโค้ด อ่าน เล่นเกม)", isOn: Binding(
+                        get: { r.appStreaks },
+                        set: { v in model.perform { $0.setReactions { $0.appStreaks = v }; return [] } }))
                 }
                 .disabled(!r.enabled)
                 Text("นับแค่จำนวนครั้งที่กดแป้น ไม่เห็นว่ากดแป้นอะไร ไม่เก็บข้อมูล และไม่ต้องขอสิทธิ์ใดๆ · หลับเองเมื่อไม่ได้ใช้เครื่อง 3 นาที · ง่วงตอนดึก · ตื่นพร้อมหาวหลังเครื่องหลับ")

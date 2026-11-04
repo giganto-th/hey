@@ -52,9 +52,11 @@ public struct ReactionSettings: Codable, Equatable, Sendable {
     public var typing = true
     public var battery = true
     public var curious = true
+    /// Gentle nudges after a long stay in one kind of app (coding, reading, gaming).
+    public var appStreaks = true
     public init() {}
 
-    private enum CodingKeys: String, CodingKey { case enabled, typing, battery, curious }
+    private enum CodingKeys: String, CodingKey { case enabled, typing, battery, curious, appStreaks }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -62,6 +64,7 @@ public struct ReactionSettings: Codable, Equatable, Sendable {
         typing = try c.decodeIfPresent(Bool.self, forKey: .typing) ?? true
         battery = try c.decodeIfPresent(Bool.self, forKey: .battery) ?? true
         curious = try c.decodeIfPresent(Bool.self, forKey: .curious) ?? true
+        appStreaks = try c.decodeIfPresent(Bool.self, forKey: .appStreaks) ?? true
     }
 }
 

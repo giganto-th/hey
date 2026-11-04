@@ -408,7 +408,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
         let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
-        switch appFocus.tick(now: now, frontBundleID: front, idleSeconds: idle) {
+        let cue = appFocus.tick(now: now, frontBundleID: front, idleSeconds: idle)
+        guard model.game.reactions.enabled, model.game.reactions.appStreaks else { return }
+        switch cue {
         case .codingStreak: scene.announce("เขียนโค้ดมานานแล้ว ยืดเส้นหน่อยไหม", symbol: "chevron.left.forwardslash.chevron.right")
         case .readingStreak: scene.announce("อ่านมาตั้งนาน พักสายตานิดนึงนะ", symbol: "book.fill")
         case .gamingStreak: scene.announce("เล่นมานานแล้ว ดื่มน้ำก่อนไหม", symbol: "gamecontroller.fill")
