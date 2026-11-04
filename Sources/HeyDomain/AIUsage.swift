@@ -40,6 +40,10 @@ public struct UsageWindow: Equatable, Sendable, Identifiable {
 /// What a provider last told us about the plan.
 public struct ProviderUsage: Equatable, Sendable {
     public var provider: AIProvider
+    /// Which account the reading belongs to (a provider can have several, e.g. two Claude logins).
+    public var accountID: String
+    /// How to tell this account apart (an email address or a name you gave it); nil for a provider with one account.
+    public var accountLabel: String?
     public var plan: String?
     public var windows: [UsageWindow]
     /// When the reading was taken (for Codex: the time of the last Codex session event).
@@ -47,9 +51,14 @@ public struct ProviderUsage: Equatable, Sendable {
     /// Extra balance (Codex credits), shown as text.
     public var creditsNote: String?
 
-    public init(provider: AIProvider, plan: String? = nil, windows: [UsageWindow], asOf: Date, creditsNote: String? = nil) {
-        self.provider = provider; self.plan = plan; self.windows = windows; self.asOf = asOf; self.creditsNote = creditsNote
+    public init(provider: AIProvider, accountID: String? = nil, accountLabel: String? = nil, plan: String? = nil,
+                windows: [UsageWindow], asOf: Date, creditsNote: String? = nil) {
+        self.provider = provider; self.accountID = accountID ?? provider.rawValue; self.accountLabel = accountLabel
+        self.plan = plan; self.windows = windows; self.asOf = asOf; self.creditsNote = creditsNote
     }
+
+    /// "Claude" or "Claude · name@example.com".
+    public var title: String { accountLabel.map { "\(provider.label) · \($0)" } ?? provider.label }
 }
 
 public enum UsageParsers {
@@ -95,7 +104,7 @@ public enum UsageParsers {
     }
 
     /// The answer of Claude's plan-usage endpoint (the one Claude Code's /usage reads).
-    public static func claude(json data: Data, plan: String?, now: Date) -> ProviderUsage? {
+    public static func claude(json data: Data, plan: String?, accountID: String? = nil, accountLabel: String? = nil, now: Date) -> ProviderUsage? {
         guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         var windows: [UsageWindow] = []
         for (key, id) in [("five_hour", "5h"), ("seven_day", "7d"), ("seven_day_opus", "7d-opus"), ("seven_day_sonnet", "7d-sonnet")] {
@@ -104,7 +113,7 @@ public enum UsageParsers {
             windows.append(UsageWindow(id: id, usedPercent: used, resetsAt: reset))
         }
         guard !windows.isEmpty else { return nil }
-        return ProviderUsage(provider: .claude, plan: plan, windows: windows, asOf: now)
+        return ProviderUsage(provider: .claude, accountID: accountID, accountLabel: accountLabel, plan: plan, windows: windows, asOf: now)
     }
 
     static func parseISO(_ s: String) -> Date? {
@@ -134,7 +143,7 @@ public struct UsageAlerts: Sendable {
         var alerts: [UsageAlert] = []
         for w in usage.windows where !w.isExpired(at: now) {
             let level = Self.thresholds.filter { w.usedPercent >= Double($0) }.max() ?? 0
-            let key = "\(usage.provider.rawValue).\(w.id).\(Int(w.resetsAt?.timeIntervalSince1970 ?? 0))"
+            let key = "\(usage.accountID).\(w.id).\(Int(w.resetsAt?.timeIntervalSince1970 ?? 0))"
             if level > (seen[key] ?? 0) {
                 seen[key] = level
                 alerts.append(UsageAlert(provider: usage.provider, window: w, level: level))
@@ -158,6 +167,22 @@ public enum UsageText {
         let parts = usage.windows.prefix(2).map { w in
             "\(w.label) \(Int(w.effectivePercent(at: now).rounded()))%"
         }
-        return "\(usage.provider.label): " + parts.joined(separator: " · ")
+        return "\(usage.title): " + parts.joined(separator: " · ")
+    }
+}
+
+/// A Claude login you connected by pasting a token (stored in the Keychain, never in the save file).
+public struct ConnectedAccount: Codable, Equatable, Sendable, Identifiable {
+    public var id: String
+    public var name: String
+    public init(id: String = UUID().uuidString, name: String) { self.id = id; self.name = name }
+}
+
+public enum ClaudeProfile {
+    /// The email (or name) in the answer of Claude's profile endpoint.
+    public static func label(from data: Data) -> String? {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let account = root["account"] as? [String: Any] else { return nil }
+        return (account["email"] as? String) ?? (account["full_name"] as? String) ?? (account["display_name"] as? String)
     }
 }

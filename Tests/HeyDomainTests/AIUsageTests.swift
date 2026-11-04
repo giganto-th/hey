@@ -27,6 +27,20 @@ private let now = Date(timeIntervalSince1970: 1_793_800_000)
         #expect(UsageParsers.claude(json: Data("{}".utf8), plan: nil, now: now) == nil)
     }
 
+    @Test func accountsOfOneProviderAreTrackedSeparately() throws {
+        let json = #"{"five_hour":{"utilization":95.0,"resets_at":"2026-11-04T18:10:00+00:00"}}"#
+        let a = try #require(UsageParsers.claude(json: Data(json.utf8), plan: "pro", accountID: "a", accountLabel: "a@example.com", now: now))
+        let b = try #require(UsageParsers.claude(json: Data(json.utf8), plan: "max", accountID: "b", accountLabel: "b@example.com", now: now))
+        #expect(a.title == "Claude · a@example.com")
+        var alerts = UsageAlerts()
+        let later = Date(timeIntervalSince1970: 1_793_700_000)             // before the reset time in the JSON
+        #expect(alerts.evaluate(a, now: later).map(\.level) == [80, 95].suffix(1).map { $0 })
+        #expect(alerts.evaluate(b, now: later).count == 1)                 // the other account still gets its own warning
+        #expect(alerts.evaluate(a, now: later).isEmpty)
+        #expect(UsageText.summary(a, now: later).hasPrefix("Claude · a@example.com:"))
+        #expect(ClaudeProfile.label(from: Data(#"{"account":{"email":"x@y.z","full_name":"X"}}"#.utf8)) == "x@y.z")
+    }
+
     @Test func aWindowPastItsResetCountsAsEmpty() {
         let w = UsageWindow(id: "5h", usedPercent: 90, resetsAt: now.addingTimeInterval(-60))
         #expect(w.isExpired(at: now))
