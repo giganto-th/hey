@@ -47,6 +47,8 @@ enum SpreadApps {
 final class SpreadModel {
     var apps: [SpreadApp] = []
     var open = false
+    /// The sheet last dragged out, drawn above the rest.
+    var raised: pid_t?
     var onDismiss: () -> Void = {}
 }
 
@@ -61,6 +63,7 @@ final class WindowSpreadController {
     private let model = SpreadModel()
     private var panel: NSPanel?
     private var keyMonitor: Any?
+    private var backdrop: NSVisualEffectView?
     var isShown: Bool { panel != nil }
 
     func toggle() { isShown ? dismiss() : show() }
@@ -76,7 +79,17 @@ final class WindowSpreadController {
         p.backgroundColor = .clear
         p.hasShadow = false
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        p.contentView = NSHostingView(rootView: SpreadView(model: model, refresh: { [weak self] in self?.refreshSoon() }))
+        let blur = NSVisualEffectView(frame: NSRect(origin: .zero, size: screen.frame.size))
+        blur.material = .fullScreenUI
+        blur.blendingMode = .behindWindow
+        blur.state = .active
+        blur.alphaValue = 0
+        let host = NSHostingView(rootView: SpreadView(model: model, refresh: { [weak self] in self?.refreshSoon() }))
+        host.frame = blur.bounds
+        host.autoresizingMask = [.width, .height]
+        blur.addSubview(host)
+        p.contentView = blur
+        backdrop = blur
         p.makeKeyAndOrderFront(nil)
         panel = p
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in
@@ -84,6 +97,7 @@ final class WindowSpreadController {
             return e
         }
         model.open = false
+        NSAnimationContext.runAnimationGroup { $0.duration = 0.25; blur.animator().alphaValue = 1 }
         DispatchQueue.main.async { [model] in withAnimation(.spring(response: 0.5, dampingFraction: 0.78)) { model.open = true } }
     }
 
@@ -92,6 +106,7 @@ final class WindowSpreadController {
         panel = nil
         if let m = keyMonitor { NSEvent.removeMonitor(m); keyMonitor = nil }
         withAnimation(.easeIn(duration: 0.18)) { model.open = false }
+        NSAnimationContext.runAnimationGroup { $0.duration = 0.18; backdrop?.animator().alphaValue = 0 }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { p.orderOut(nil) }
     }
 
@@ -119,8 +134,7 @@ private struct SpreadView: View {
             let layout = SpreadLayout.slots(count: apps.count, width: min(geo.size.width - 120, 1300),
                                             cardWidth: Self.card.width, cardHeight: Self.card.height)
             ZStack(alignment: .topLeading) {
-                Color.black.opacity(model.open ? 0.5 : 0)
-                    .background(.ultraThinMaterial.opacity(model.open ? 1 : 0))
+                Color.black.opacity(0.001)
                     .contentShape(Rectangle())
                     .onTapGesture { model.onDismiss() }
 
@@ -129,7 +143,7 @@ private struct SpreadView: View {
                         Image(systemName: "rectangle.stack").font(.system(size: 44, weight: .light))
                         Text(tr("ไม่มีหน้าต่างที่เปิดอยู่")).font(.title3)
                     }
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     let originX = (geo.size.width - layout.width) / 2
@@ -142,21 +156,21 @@ private struct SpreadView: View {
                         }, onQuit: {
                             app.app.terminate()
                             refresh()
-                        })
+                        }, onRaise: { model.raised = app.id })
                         .frame(width: Self.card.width, height: Self.card.height)
                         .rotationEffect(.degrees(model.open ? slot.angle : 0))
                         .offset(x: model.open ? originX + slot.x : geo.size.width / 2 - Self.card.width / 2,
                                 y: model.open ? originY + slot.y : geo.size.height / 2 - Self.card.height / 2)
                         .opacity(model.open ? 1 : 0)
                         .animation(.spring(response: 0.5, dampingFraction: 0.78).delay(Double(apps.count - 1 - i) * 0.02), value: model.open)
-                        .zIndex(Double(i))
+                        .zIndex(model.raised == app.id ? 1000 : Double(i))
                     }
                 }
 
                 VStack {
                     Spacer()
                     Text(tr("คลิกที่แอปเพื่อไปที่แอปนั้น · กดปุ่มปิดเพื่อออกจากแอป · Esc เพื่อกลับ"))
-                        .font(.callout).foregroundStyle(.white.opacity(0.75)).glassPill()
+                        .font(.callout).foregroundStyle(.secondary).glassPill()
                         .padding(.bottom, 36)
                         .opacity(model.open ? 1 : 0)
                 }
@@ -172,13 +186,14 @@ private struct SpreadCard: View {
     let isFront: Bool
     let onOpen: () -> Void
     let onQuit: () -> Void
+    var onRaise: () -> Void = {}
     @State private var hover = false
+    @State private var drag = CGSize.zero
+    @State private var base = CGSize.zero
+    @State private var dragging = false
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(LinearGradient(colors: [Color(white: 0.97), Color(white: 0.86)], startPoint: .top, endPoint: .bottom))
-                .shadow(color: .black.opacity(hover ? 0.5 : 0.3), radius: hover ? 18 : 9, y: hover ? 10 : 4)
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 10) {
                     Image(nsImage: app.icon).resizable().frame(width: 44, height: 44)
@@ -192,30 +207,33 @@ private struct SpreadCard: View {
                     Text(title).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                 }
                 Spacer(minLength: 0)
-                ForEach(0..<3, id: \.self) { n in                  // faint "text lines" so it reads as a sheet of paper
-                    Capsule().fill(Color.black.opacity(0.06)).frame(width: n == 2 ? 90 : 170, height: 5)
-                }
             }
             .padding(14)
-            .foregroundStyle(.black.opacity(0.85))
+            .padding(.top, 6)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .glassEffect(.regular, in: .rect(cornerRadius: 18))
+            .shadow(color: .black.opacity(hover || dragging ? 0.35 : 0.18), radius: hover || dragging ? 18 : 8, y: hover || dragging ? 10 : 4)
 
+            // The close button sits on the left strip, which is never covered by the sheet on top.
             if app.canQuit {
                 Button(action: onQuit) {
-                    Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(.white)
-                        .frame(width: 24, height: 24).background(Circle().fill(Color.red.opacity(0.9)))
+                    Image(systemName: "xmark").font(.system(size: 10, weight: .bold)).foregroundStyle(.white)
+                        .frame(width: 22, height: 22).background(Circle().fill(Color.red.opacity(0.92)))
                 }
                 .buttonStyle(.plain)
                 .help(tr("ปิดแอป"))
-                .opacity(hover ? 1 : 0.0)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                .padding(8)
+                .opacity(hover || dragging ? 1 : 0.55)
+                .offset(x: -6, y: -6)
             }
         }
-        .contentShape(RoundedRectangle(cornerRadius: 16))
+        .contentShape(RoundedRectangle(cornerRadius: 18))
         .onHover { hover = $0 }
-        .onTapGesture(perform: onOpen)
-        .scaleEffect(hover ? 1.04 : 1)
-        .offset(y: hover ? -10 : 0)
+        .gesture(DragGesture(minimumDistance: 6)
+            .onChanged { if !dragging { onRaise() }; drag = CGSize(width: base.width + $0.translation.width, height: base.height + $0.translation.height); dragging = true }
+            .onEnded { _ in dragging = false; base = drag })                   // stays where it was dropped
+        .simultaneousGesture(TapGesture().onEnded(onOpen))
+        .scaleEffect(hover || dragging ? 1.04 : 1)
+        .offset(x: drag.width, y: drag.height + (hover && !dragging ? -10 : 0))
         .animation(.spring(response: 0.25, dampingFraction: 0.8), value: hover)
     }
 }
