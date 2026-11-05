@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="Download" src="https://img.shields.io/badge/Download-v1.2.0-6f8cff?style=for-the-badge"></a>
+  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="Download" src="https://img.shields.io/badge/Download-v1.2.1-6f8cff?style=for-the-badge"></a>
   <a href="https://giganto-th.github.io/hey/en/"><img alt="Website" src="https://img.shields.io/badge/Website-Hey!-b79bff?style=for-the-badge"></a>
   <a href="https://www.youtube.com/watch?v=JBi-y-_I9jk"><img alt="Video" src="https://img.shields.io/badge/Watch-YouTube-ff6f91?style=for-the-badge"></a>
 </p>
@@ -46,7 +46,7 @@ curl -fsSL https://raw.githubusercontent.com/giganto-th/hey/main/scripts/install
 
 The script downloads the latest release with curl (a file downloaded with curl carries no quarantine flag, so macOS does not ask), puts it in Applications and opens it.
 
-**Or download it yourself:** get `Hey-1.2.0.dmg` from [Releases](https://github.com/giganto-th/hey/releases/latest) and drag Hey onto Applications. The app is signed with a Developer ID and notarized by Apple, so it opens with a double-click and no warning (versions up to 1.1.0 were not notarized).
+**Or download it yourself:** get `Hey-1.2.1.dmg` from [Releases](https://github.com/giganto-th/hey/releases/latest) and drag Hey onto Applications. The app is signed with a Developer ID and notarized by Apple, so it opens with a double-click and no warning (versions up to 1.1.0 were not notarized).
 
 Build it yourself with `bash scripts/make-app.sh` (gives `build/Hey.app`) and `bash scripts/make-dmg.sh` (gives the .dmg).
 

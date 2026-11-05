@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="ดาวน์โหลด" src="https://img.shields.io/badge/ดาวน์โหลด-v1.2.0-6f8cff?style=for-the-badge"></a>
+  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="ดาวน์โหลด" src="https://img.shields.io/badge/ดาวน์โหลด-v1.2.1-6f8cff?style=for-the-badge"></a>
   <a href="https://giganto-th.github.io/hey/"><img alt="เว็บไซต์" src="https://img.shields.io/badge/เว็บไซต์-Hey!-b79bff?style=for-the-badge"></a>
   <a href="https://www.youtube.com/watch?v=JBi-y-_I9jk"><img alt="วิดีโอ" src="https://img.shields.io/badge/ดูวิดีโอ-YouTube-ff6f91?style=for-the-badge"></a>
 </p>
@@ -76,7 +76,7 @@ curl -fsSL https://raw.githubusercontent.com/giganto-th/hey/main/scripts/install
 
 **หรือโหลดเอง:**
 
-1. โหลด `Hey-1.2.0.dmg` จากหน้า [Releases](https://github.com/giganto-th/hey/releases/latest)
+1. โหลด `Hey-1.2.1.dmg` จากหน้า [Releases](https://github.com/giganto-th/hey/releases/latest)
 2. ลาก **Hey** ไปวางบน **Applications**
 3. เปิดแอป
 
