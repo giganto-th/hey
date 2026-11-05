@@ -17,6 +17,95 @@ private let now = Date(timeIntervalSince1970: 1_793_800_000)
         #expect(UsageParsers.codex(line: "not json rate_limits") == nil)
     }
 
+    @Test func codexReaderFindsQuotaBeyondEightUnavailableSessions() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let sessions = home.appendingPathComponent("sessions")
+        try FileManager.default.createDirectory(at: sessions, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let quota = #"{"timestamp":"2026-11-04T14:00:00Z","payload":{"rate_limits":{"primary":{"used_percent":65,"window_minutes":300,"resets_at":1793818753}}}}"#
+        let unavailable = #"{"payload":{"rate_limits":{"primary":null,"secondary":null}}}"#
+        for index in 0..<10 {
+            let url = sessions.appendingPathComponent("session-\(index).jsonl")
+            try Data((index == 0 ? quota : unavailable).utf8).write(to: url)
+            try FileManager.default.setAttributes([.modificationDate: now.addingTimeInterval(Double(index))], ofItemAtPath: url.path)
+        }
+        let usage = try #require(CodexUsageReader.read(home: home))
+        #expect(usage.windows.first?.usedPercent == 65)
+        #expect(usage.asOf == Date(timeIntervalSince1970: 1793800800))
+    }
+
+    @Test func codexReaderReadsCompressedSessions() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let sessions = home.appendingPathComponent("sessions")
+        try FileManager.default.createDirectory(at: sessions, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: home) }
+        // zstd-compressed synthetic quota event; no real session or account information.
+        // Platforms without an installed decoder still exercise the plain-session regressions.
+        guard CodexUsageReader.zstdExecutable != nil else { return }
+        let fixture = try #require(Data(base64Encoded: "KLUv/QRYtQMAsogcHHClzgGEvpbl7CtqWYsvXarCoNi2zabNU/phPRGBGGMsjkRJSiFIkr5XvebH7kJmoX/cT7OYgpylWdCFA9F3wwGOm1r4PYf6yC1brh3qXy+2GMW97lC/rMNE2y4cIFMz1UgDI4eUBoRI4vrGth+z1YcBAE3JzEc="))
+        try fixture.write(to: sessions.appendingPathComponent("session.jsonl.zst"))
+        let usage = try #require(CodexUsageReader.read(home: home))
+        #expect(usage.windows.first?.usedPercent == 65)
+    }
+
+    @Test(arguments: [false, true])
+    func codexReaderSupportsMixedPlainAndCompressedSessions(compressedIsNewer: Bool) throws {
+        guard CodexUsageReader.zstdExecutable != nil else { return }
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let sessions = home.appendingPathComponent("sessions")
+        try FileManager.default.createDirectory(at: sessions, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let plain = sessions.appendingPathComponent("plain.jsonl")
+        let compressed = sessions.appendingPathComponent("compressed.jsonl.zst")
+        let quota = #"{"timestamp":"2026-11-04T14:00:00Z","payload":{"rate_limits":{"primary":{"used_percent":25,"window_minutes":300}}}}"#
+        try Data(quota.utf8).write(to: plain)
+        let fixture = try #require(Data(base64Encoded: "KLUv/QRYtQMAsogcHHClzgGEvpbl7CtqWYsvXarCoNi2zabNU/phPRGBGGMsjkRJSiFIkr5XvebH7kJmoX/cT7OYgpylWdCFA9F3wwGOm1r4PYf6yC1brh3qXy+2GMW97lC/rMNE2y4cIFMz1UgDI4eUBoRI4vrGth+z1YcBAE3JzEc="))
+        try fixture.write(to: compressed)
+        try FileManager.default.setAttributes([.modificationDate: now], ofItemAtPath: plain.path)
+        try FileManager.default.setAttributes([.modificationDate: now.addingTimeInterval(compressedIsNewer ? 60 : -60)], ofItemAtPath: compressed.path)
+        let usage = try #require(CodexUsageReader.read(home: home))
+        #expect(usage.windows.first?.usedPercent == (compressedIsNewer ? 65 : 25))
+    }
+
+    @Test func codexReaderFallsBackToPlainWhenCompressedSessionIsUnreadable() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let sessions = home.appendingPathComponent("sessions")
+        try FileManager.default.createDirectory(at: sessions, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let plain = sessions.appendingPathComponent("plain.jsonl")
+        let compressed = sessions.appendingPathComponent("broken.jsonl.zst")
+        try Data(#"{"payload":{"rate_limits":{"primary":{"used_percent":25,"window_minutes":300}}}}"#.utf8).write(to: plain)
+        try Data("not a zstd stream".utf8).write(to: compressed)
+        try FileManager.default.setAttributes([.modificationDate: now], ofItemAtPath: plain.path)
+        try FileManager.default.setAttributes([.modificationDate: now.addingTimeInterval(60)], ofItemAtPath: compressed.path)
+        #expect(CodexUsageReader.read(home: home)?.windows.first?.usedPercent == 25)
+    }
+
+    @Test func codexReaderKeepsQuotaWhenTailStartsInsideUTF8() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let sessions = home.appendingPathComponent("sessions")
+        try FileManager.default.createDirectory(at: sessions, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let quota = #"{"payload":{"rate_limits":{"primary":{"used_percent":65,"window_minutes":300}}}}"#
+        // The retained 400 KB starts at byte 1, in the middle of the first Thai character.
+        var data = Data("ก".utf8)
+        data.append(Data(repeating: 32, count: CodexUsageReader.tailLimit - quota.utf8.count - 3))
+        data.append(Data(("\n" + quota).utf8))
+        #expect(data.count == CodexUsageReader.tailLimit + 1)
+        try data.write(to: sessions.appendingPathComponent("session.jsonl"))
+        #expect(CodexUsageReader.read(home: home)?.windows.first?.usedPercent == 65)
+    }
+
+    @Test func codexReaderDoesNotInventQuotaForNullWindows() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let sessions = home.appendingPathComponent("sessions")
+        try FileManager.default.createDirectory(at: sessions, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: home) }
+        try Data(#"{"payload":{"rate_limits":{"primary":null,"secondary":null}}}"#.utf8)
+            .write(to: sessions.appendingPathComponent("session.jsonl"))
+        #expect(CodexUsageReader.read(home: home) == nil)
+    }
+
     @Test func parsesClaudeUsageAndIgnoresUnknownFields() throws {
         let json = #"{"five_hour":{"utilization":29.0,"resets_at":"2026-11-04T18:10:00.418138+00:00"},"seven_day":{"utilization":57.0,"resets_at":"2026-11-09T02:00:00+00:00"},"seven_day_opus":null,"mystery":{"x":1}}"#
         let usage = try #require(UsageParsers.claude(json: Data(json.utf8), plan: "pro", now: now))

@@ -72,6 +72,9 @@ struct UsageTab: View {
                         .foregroundStyle(.secondary)
                 }
                 ForEach(all) { row in AccountCard(row: row, service: service, now: now) }
+                if !service.hiddenAccountIDs.isEmpty {
+                    Button(tr("แสดงบัญชีที่ซ่อนอีกครั้ง")) { service.restoreHiddenAccounts() }
+                }
             }
             Section(tr("ผู้ให้บริการที่เช็ค")) {
                 ForEach(AIProvider.allCases) { provider in
@@ -108,6 +111,7 @@ private struct AccountCard: View {
     let row: AIUsageService.AccountRow
     let service: AIUsageService
     let now: Date
+    @State private var confirmingRemoval = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -121,10 +125,10 @@ private struct AccountCard: View {
                             .background(Color.accentColor.opacity(0.25), in: Capsule())
                     }
                     Spacer()
-                    if row.removable {
-                        Button(role: .destructive, action: remove) { Image(systemName: "xmark.circle") }
-                            .buttonStyle(.borderless).help(tr("เอาบัญชีนี้ออกจากรายการ"))
-                    }
+                    Button { confirmingRemoval = true } label: { Image(systemName: "xmark.circle") }
+                        .buttonStyle(.borderless)
+                        .help(tr("เอาบัญชีนี้ออกจากรายการ"))
+                        .accessibilityLabel(tr("เอาบัญชีนี้ออกจากรายการ"))
                 }
                 if let usage = row.usage {
                     ForEach(usage.windows) { window in WindowRow(window: window, now: now).id("\(row.id).\(window.id)") }
@@ -140,9 +144,18 @@ private struct AccountCard: View {
             }
         }
         .padding(.vertical, 4)
+        .confirmationDialog(tr("เอาบัญชีนี้ออกจากรายการ"), isPresented: $confirmingRemoval, titleVisibility: .visible) {
+            Button(tr("เอาบัญชีนี้ออกจากรายการ"), role: .destructive, action: remove)
+            Button(tr("ยกเลิก"), role: .cancel) { }
+        } message: {
+            Text(row.removable
+                 ? tr("เอา {0} ออกจาก Hey เท่านั้น ไม่ลบบัญชีหรือออกจากระบบในแอปต้นทาง", row.name)
+                 : tr("ซ่อน {0} จาก Hey และหยุดการเตือน นำกลับได้ด้วย แสดงบัญชีที่ซ่อนอีกครั้ง โดยไม่ลบข้อมูลเข้าสู่ระบบ", row.name))
+        }
     }
 
     private func remove() {
+        guard row.removable else { service.hideAccount(row.id); return }
         switch row.provider {
         case .claude: service.disconnect(row.id)
         case .codex: service.removeCodexHome(row.id)

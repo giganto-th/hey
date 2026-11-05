@@ -147,7 +147,9 @@ struct VideoSurface: NSViewRepresentable {
     }
 
     func updateNSView(_ view: NSView, context: Context) {
-        if music.videoHost !== view { music.attachVideo(to: view) }      // the picture was taken away: take it back
+        // A newly created surface owns the picture. The outgoing popover can still update
+        // during the handoff to PiP; it must not steal the web view back before dismantling.
+        (view as? VideoContainer)?.draggable = draggable
     }
 
     static func dismantleNSView(_ view: NSView, coordinator: Coordinator) { coordinator.music.detachVideo(from: view) }

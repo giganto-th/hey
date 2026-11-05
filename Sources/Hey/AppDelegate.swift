@@ -334,7 +334,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 if id == "toggle" { music.logStates = true; music.toggle() } else { music.devPlay(videoID: id) }
             }
             if let out = env["HEY_DEV_MINI"] {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in
+                DispatchQueue.main.asyncAfter(deadline: .now() + 12) { [weak self] in
                     self?.musicBar.mini.show()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 5) { self?.music.devSnapshot(to: out) }
                 }

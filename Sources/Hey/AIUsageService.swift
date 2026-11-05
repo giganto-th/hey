@@ -19,6 +19,7 @@ final class AIUsageService {
     static let connectedKey = "aiUsageConnected"
     static let codexHomesKey = "aiUsageCodexHomes"
     static let antigravityCacheKey = "aiUsageAntigravityCache"
+    static let hiddenAccountsKey = "aiUsageHiddenAccounts"
     static let keychainService = "Hey! AI accounts"
 
     struct AccountRow: Identifiable {
@@ -42,7 +43,23 @@ final class AIUsageService {
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var labels: [String: String] = [:]          // Claude login id -> email, remembered for the session
 
-    func rows(for provider: AIProvider) -> [AccountRow] { rows[provider] ?? [] }
+    private(set) var hiddenAccountIDs = Set(UserDefaults.standard.stringArray(forKey: hiddenAccountsKey) ?? [])
+
+    func rows(for provider: AIProvider) -> [AccountRow] {
+        (rows[provider] ?? []).filter { !hiddenAccountIDs.contains($0.id) }
+    }
+
+    /// Local visibility only: never delete another app's login or session files.
+    func hideAccount(_ id: String) {
+        hiddenAccountIDs.insert(id)
+        UserDefaults.standard.set(hiddenAccountIDs.sorted(), forKey: Self.hiddenAccountsKey)
+    }
+
+    func restoreHiddenAccounts() {
+        hiddenAccountIDs.removeAll()
+        UserDefaults.standard.removeObject(forKey: Self.hiddenAccountsKey)
+        Task { await refresh() }
+    }
 
     private func loadDemo() {
         let now = Date()
@@ -161,7 +178,7 @@ final class AIUsageService {
     }
 
     private func notify(_ usage: ProviderUsage) {
-        guard alertsEnabled else { return }
+        guard alertsEnabled, !hiddenAccountIDs.contains(usage.accountID) else { return }
         for alert in alerts.evaluate(usage, now: Date()) { onAlert?(alert) }
     }
 
@@ -171,6 +188,7 @@ final class AIUsageService {
         var result: [AccountRow] = []
         var seen = Set<String>()
         for home in homes {
+            guard !hiddenAccountIDs.contains("codex:\(home.url.path)") else { continue }
             if let email = home.email, !seen.insert(email).inserted { continue }
             let name = home.email ?? home.url.lastPathComponent
             var row = AccountRow(id: "codex:\(home.url.path)", provider: .codex, name: name, usage: nil, error: nil, removable: home.custom)
@@ -197,6 +215,7 @@ final class AIUsageService {
         var result: [AccountRow] = []
         var seenEmails = Set<String>()
         for login in logins {
+            guard !hiddenAccountIDs.contains(login.id) else { continue }
             var row = AccountRow(id: login.id, provider: .claude, name: login.name ?? labels[login.id] ?? tr("บัญชี Claude"),
                                  usage: nil, error: nil, removable: login.removable)
             if let expires = login.expiresAt, expires < Date() {
@@ -313,24 +332,7 @@ final class AIUsageService {
     }
 
     nonisolated private static func readCodex(home: URL) -> ProviderUsage? {
-        let root = home.appendingPathComponent("sessions")
-        guard let walker = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.contentModificationDateKey, .isRegularFileKey]) else { return nil }
-        var files: [(URL, Date)] = []
-        for case let url as URL in walker where url.pathExtension == "jsonl" {
-            let date = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast
-            files.append((url, date))
-        }
-        for (url, _) in files.sorted(by: { $0.1 > $1.1 }).prefix(8) {
-            guard let handle = try? FileHandle(forReadingFrom: url) else { continue }
-            defer { try? handle.close() }
-            let size = (try? handle.seekToEnd()) ?? 0
-            try? handle.seek(toOffset: size > 400_000 ? size - 400_000 : 0)
-            guard let data = try? handle.readToEnd(), let text = String(data: data, encoding: .utf8) else { continue }
-            for line in text.split(separator: "\n", omittingEmptySubsequences: true).reversed() where line.contains("rate_limits") {
-                if let usage = UsageParsers.codex(line: String(line)) { return usage }
-            }
-        }
-        return nil
+        CodexUsageReader.read(home: home)
     }
 
     // MARK: Antigravity (the running app's local server)

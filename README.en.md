@@ -59,6 +59,11 @@ Build it yourself with `bash scripts/make-app.sh` (gives `build/Hey.app`) and `b
 - **Files:** drag anything onto the pet and drop it on a slot: *Vault* (kept) or *Park for later* (a temporary shelf you drag out of).
 - **Links:** `hey://focus/start`, `hey://note?text=…`, `hey://clip?n=0`, `hey://hub?page=…`, `hey://bubbles` work from Shortcuts' "Open URLs".
 
+### AI credits troubleshooting
+
+- **Claude says the login expired:** sign in again in Claude Code using the same account and config folder, then refresh AI credits. Hey reads the existing login; it does not renew or replace Claude Code credentials.
+- **Codex:** quota is the last reading recorded in local sessions, not a live server check. Hey reads `.jsonl` sessions and `.jsonl.zst` sessions when `zstd` is installed at `/opt/homebrew/bin/zstd`, `/usr/local/bin/zstd`, or `/usr/bin/zstd` (`brew install zstd` on Homebrew). Sessions with null quota windows are skipped in favor of an older reading; check the displayed reading time. If no session has quota, Hey cannot infer it from token counts.
+
 ## For developers
 
 ```bash
