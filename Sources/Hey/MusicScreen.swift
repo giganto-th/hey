@@ -162,6 +162,9 @@ struct VideoSurface: NSViewRepresentable {
     final class VideoContainer: NSView {
         var draggable = false
         override var mouseDownCanMoveWindow: Bool { draggable }
+        override func mouseDown(with event: NSEvent) {
+            if draggable { window?.performDrag(with: event) } else { super.mouseDown(with: event) }
+        }
         override func hitTest(_ point: NSPoint) -> NSView? { bounds.contains(convert(point, from: superview)) ? self : nil }
     }
 }

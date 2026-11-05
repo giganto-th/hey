@@ -42,6 +42,9 @@ final class MiniPlayerController: NSObject, NSWindowDelegate {
         panel?.orderFrontRegardless()
     }
 
+    /// Dev: resize the window the way a drag on its edge would, to see whether the picture survives.
+    func devResize(to size: NSSize) { panel?.setContentSize(size) }
+
     func hide() {
         panel?.orderOut(nil)
         panel?.contentView = nil           // lets the picture go back behind the scenes

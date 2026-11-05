@@ -337,6 +337,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 12) { [weak self] in
                     self?.musicBar.mini.show()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 5) { self?.music.devSnapshot(to: out) }
+                    if env["HEY_DEV_MINI_CYCLE"] != nil {        // close the small window and open it again, twice
+                        for t in [3.0, 6.0, 9.0, 12.0] {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + t) { [weak self] in
+                                guard let mini = self?.musicBar.mini else { return }
+                                if mini.isShown { mini.hide() } else { mini.show() }
+                            }
+                        }
+                    }
+                    if let sz = env["HEY_DEV_MINI_RESIZE"]?.split(separator: "x").compactMap({ Double($0) }), sz.count == 2 {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 6) { self?.musicBar.mini.devResize(to: NSSize(width: sz[0], height: sz[1])) }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 11) { self?.musicBar.mini.devResize(to: NSSize(width: 356, height: 200)) }
+                    }
                 }
             }
             if env["HEY_DEV_MUSIC_POPOVER"] != nil {
