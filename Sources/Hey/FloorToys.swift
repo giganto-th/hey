@@ -216,6 +216,13 @@ final class BubbleController {
 
     var isActive: Bool { !field.isEmpty }
 
+    /// Bubbles stay where the pet can stand over them: its window never gets closer to a screen edge than half its width,
+    /// so a bubble in the last few dozen points (the right corner, say) could never be pecked.
+    private var bounds: ClosedRange<Double> {
+        let margin = Double(PetScene.windowSize.width / 2)
+        return (area.minX + margin)...(area.maxX - margin)
+    }
+
     /// Blow a handful of bubbles across the pet's screen.
     func start() {
         guard let scene, let screen = scene.window?.screen ?? NSScreen.main else { return }
@@ -237,7 +244,7 @@ final class BubbleController {
             root = v
         }
         if field.isEmpty { popped = 0; startedAt = Date() }
-        field.spawn(8, minX: area.minX + 40, maxX: area.maxX - 40)
+        field.spawn(8, minX: bounds.lowerBound, maxX: bounds.upperBound)
         scene.announce(tr("ฟองสบู่! รอมันลงถึงพื้นแล้วจิ๊กเลย"), symbol: "bubbles.and.sparkles")
         last = Date()
         guard timer == nil else { return }
@@ -291,7 +298,7 @@ final class BubbleController {
         let dt = min(now.timeIntervalSince(last), 0.1)
         last = now
         if now.timeIntervalSince(startedAt) > Self.lifetime { field.clear(); layers.values.forEach { $0.removeFromSuperlayer() }; layers.removeAll(); finish(message: nil); return }
-        field.step(dt: dt, minX: area.minX + 20, maxX: area.maxX - 20)
+        field.step(dt: dt, minX: bounds.lowerBound, maxX: bounds.upperBound)
         guard let host = root?.layer else { return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)

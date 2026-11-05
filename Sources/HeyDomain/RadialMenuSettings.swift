@@ -2,7 +2,7 @@ import Foundation
 
 /// Everything the pet's fan menu can hold.
 public enum RadialAction: String, CaseIterable, Codable, Sendable {
-    case music, files, focus, hub, feed, note, remind, shot, ocr, clip, rec, shelf, bubbles, usage
+    case music, files, focus, hub, feed, note, remind, shot, ocr, clip, rec, shelf, bubbles, usage, windows
 
     public var label: String {
         switch self {
@@ -20,6 +20,7 @@ public enum RadialAction: String, CaseIterable, Codable, Sendable {
         case .shelf: tr("ถาดไฟล์")
         case .bubbles: tr("ฟองสบู่")
         case .usage: tr("เครดิต AI")
+        case .windows: tr("คลี่หน้าต่าง")
         }
     }
 
@@ -39,6 +40,7 @@ public enum RadialAction: String, CaseIterable, Codable, Sendable {
         case .shelf: "suitcase.fill"
         case .bubbles: "bubbles.and.sparkles"
         case .usage: "gauge.with.dots.needle.67percent"
+        case .windows: "rectangle.stack.fill"
         }
     }
 }
@@ -59,7 +61,7 @@ public struct RadialFolder: Codable, Equatable, Sendable, Identifiable {
     /// The built-in folders and what they start with.
     public static let capture = RadialFolder(id: "capture", symbol: "camera.viewfinder", actions: [.shot, .rec, .ocr])
     public static let notes = RadialFolder(id: "notes", symbol: "checklist", actions: [.note, .remind, .clip, .focus])
-    public static let other = RadialFolder(id: "other", symbol: "ellipsis", actions: [.shelf, .bubbles, .usage])
+    public static let other = RadialFolder(id: "other", symbol: "ellipsis", actions: [.shelf, .bubbles, .usage, .windows])
 
     public var defaultName: String? {
         switch id {
@@ -115,7 +117,7 @@ public struct RadialMenuSettings: Codable, Equatable, Sendable {
         .action(.music), .action(.files), .action(.focus), .action(.feed), .action(.hub),
         .folder(RadialFolder(id: "capture", symbol: "camera.viewfinder", actions: [.shot, .rec, .ocr])),
         .folder(RadialFolder(id: "notes", symbol: "checklist", actions: [.note, .remind, .clip])),
-        .folder(RadialFolder(id: "other", symbol: "ellipsis", actions: [.shelf, .bubbles, .usage])),
+        .folder(RadialFolder(id: "other", symbol: "ellipsis", actions: [.shelf, .bubbles, .usage, .windows])),
     ]
 
     public init() { ring = Self.defaultRing }

@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var food: FoodController!
     private let aiUsage = AIUsageService()
     private var bubbles: BubbleController!
+    private let windowSpread = WindowSpreadController()
     private var scene: PetScene!
     private var model: GameModel!
     private var pomodoro = PomodoroModel()
@@ -300,6 +301,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     if what == "record" { await capture.startRecording(); try? await Task.sleep(for: .seconds(3)); await capture.stopRecording() }
                 }
             }
+            if env["HEY_DEV_SPREAD"] != nil { DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.windowSpread.show() } }
             if env["HEY_DEV_BUBBLES"] != nil { DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.bubbles.start() } }
             if let id = env["HEY_DEV_PLACE"], let f = model.game.pet.balance.foods.first(where: { $0.id == id }) {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.food.begin(f) }
@@ -676,6 +678,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                               badge: pomodoro.timer.isRunning ? pomodoro.remainingText : nil, badgeColor: .red) { [weak self] in self?.pomodoro.toggle() }
         case .usage:
             return RadialItem(id: "usage", icon: "gauge.with.dots.needle.67percent", title: tr("เครดิต AI")) { [weak self] in self?.showAIUsage() }
+        case .windows: return RadialItem(id: "windows", icon: "rectangle.stack.fill", title: tr("คลี่หน้าต่าง")) { [weak self] in self?.windowSpread.show() }
         case .bubbles: return RadialItem(id: "bubbles", icon: "bubbles.and.sparkles", title: tr("ฟองสบู่")) { [weak self] in self?.bubbles.start() }
         case .hub:
             let questsLeft = game.quests.filter { !$0.done }.count
@@ -913,6 +916,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         section(tr("เครื่องมือ"))
         action(tr("เปิด Hub…"), "square.grid.2x2.fill", #selector(openHub), key: "h")
         action(tr("เช็คเครดิต AI"), "gauge.with.dots.needle.67percent", #selector(showAIUsage))
+        action(tr("คลี่หน้าต่างที่เปิดอยู่"), "rectangle.stack.fill", #selector(spreadWindows))
         action(tr("ตั้งเตือนด่วน…"), "bell.fill", #selector(quickReminder), key: "r")
         action(tr("โน้ตด่วน"), "note.text", #selector(quickNote), key: "n")
         let shoot = NSMenuItem(title: tr("ถ่าย/อัด"), action: nil, keyEquivalent: "")
@@ -965,6 +969,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         router.section = section
         openHub()
     }
+
+    @objc private func spreadWindows() { windowSpread.show() }
 
     @objc private func openHub() {
         if hubWindow == nil {

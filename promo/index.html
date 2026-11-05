@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><title>Hey! promo</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:#070d24}
+body{font-family:"Sukhumvit Set","Thonburi",system-ui,sans-serif;color:#eef3ff}
+#stage{position:absolute;inset:0;overflow:hidden;background:radial-gradient(1400px 900px at 30% 20%,#1c3a8f 0%,#0d1b4d 45%,#070d24 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55}
+.abs{position:absolute;left:0;top:0;will-change:transform,opacity}
+.glass{background:linear-gradient(160deg,rgba(255,255,255,.17),rgba(255,255,255,.05));border:1.5px solid rgba(255,255,255,.28);border-radius:34px;backdrop-filter:blur(30px);box-shadow:0 30px 80px rgba(0,0,20,.45),inset 0 1px 0 rgba(255,255,255,.35)}
+.h1{font-weight:800;font-size:128px;line-height:1.05;letter-spacing:-1px}
+.h2{font-weight:800;font-size:84px;line-height:1.1}
+.sub{font-weight:500;font-size:40px;line-height:1.35;color:#b9c9f5}
+.kick{font-weight:700;font-size:30px;letter-spacing:6px;color:#7fb0ff;text-transform:uppercase}
+.pill{font-weight:700;font-size:34px;padding:16px 34px;border-radius:999px;white-space:nowrap}
+.grad{background:linear-gradient(90deg,#8fd0ff,#b79bff 60%,#ff9fd0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.card{width:540px;height:250px;padding:34px 38px}
+.card svg{width:84px;height:84px;stroke:#9cc4ff;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.card b{display:block;font-size:44px;margin-top:14px}
+.card span{font-size:27px;color:#a9bde8}
+.shot{border-radius:26px;box-shadow:0 40px 100px rgba(0,0,20,.6),0 0 0 1.5px rgba(255,255,255,.25)}
+img{display:block}
+.line{height:16px;border-radius:8px;background:rgba(160,200,255,.45)}
+.chip{font-weight:700;font-size:38px;padding:18px 34px;border-radius:22px;white-space:nowrap}
+.bub{font-weight:700;font-size:40px;padding:22px 34px;border-radius:30px;white-space:nowrap}
+</style></head><body>
+<div id="stage">
+ <div class="blob" id="b1" style="width:700px;height:700px;background:#2b5cff"></div>
+ <div class="blob" id="b2" style="width:600px;height:600px;background:#8a4dff"></div>
+ <div class="blob" id="b3" style="width:500px;height:500px;background:#ff6fb0;opacity:.28"></div>
+
+ <!-- floor glow -->
+ <div class="abs" id="floor" style="width:1500px;height:90px;border-radius:50%;background:radial-gradient(closest-side,rgba(120,170,255,.35),transparent)"></div>
+
+ <!-- S1 -->
+ <div class="abs h2" id="s1t" style="width:900px;left:140px;top:330px">เดสก์ท็อปของคุณ<br><span class="grad">เงียบไปหน่อยไหม?</span></div>
+
+ <!-- S2 title -->
+ <div class="abs" id="s2" style="left:150px;top:300px;width:1000px">
+   <div class="kick" id="s2k">ขอแนะนำ</div>
+   <div class="h1 grad" id="s2h" style="font-size:220px;margin-top:10px">Hey!</div>
+   <div class="sub" id="s2s" style="margin-top:6px">เพื่อนตัวน้อยบนเดสก์ท็อป Mac ของคุณ</div>
+ </div>
+
+ <!-- S3 -->
+ <div class="abs" id="s3h" style="left:130px;top:90px;width:1000px"><div class="kick">รู้ใจ</div><div class="h2">สังเกตคุณ <span class="grad">ไม่รบกวน</span></div></div>
+ <div class="abs glass" id="win" style="left:130px;top:330px;width:920px;height:520px;padding:36px">
+   <div style="display:flex;gap:12px;margin-bottom:34px"><i style="width:18px;height:18px;border-radius:9px;background:#ff6b6b"></i><i style="width:18px;height:18px;border-radius:9px;background:#ffd166"></i><i style="width:18px;height:18px;border-radius:9px;background:#5be58b"></i></div>
+   <div id="lines"></div>
+ </div>
+ <div class="abs glass pill" id="timer" style="left:130px;top:880px;font-size:32px;padding:14px 30px">พิมพ์ต่อเนื่อง <span id="mins">0</span> นาที</div>
+ <div class="abs bub glass" id="bub1" style="left:0;top:0">พักสายตาหน่อยไหม?</div>
+ <div class="abs bub glass" id="bub2" style="left:0;top:0">พักเสร็จแล้ว เก่งมาก!</div>
+
+ <!-- S4 -->
+ <div class="abs" id="s4shots" style="left:110px;top:105px;width:1200px;height:850px"></div>
+ <div class="abs" id="s4r" style="left:1390px;top:200px;width:480px"><div class="kick">Hey Hub</div><div class="h2" style="font-size:96px">ศูนย์กลาง<br>ของทุกอย่าง</div><div id="chips" style="margin-top:46px;display:flex;flex-direction:column;gap:18px;align-items:flex-start"></div></div>
+
+ <!-- S5 -->
+ <div class="abs" id="s5h" style="left:130px;top:80px;width:1400px"><div class="kick">เครื่องมือ</div><div class="h2">เล็ก ๆ แต่ <span class="grad">ใช้งานจริง</span></div></div>
+ <div id="cards"></div>
+
+ <!-- S6 -->
+ <div class="abs" id="s6h" style="left:0;top:100px;width:1920px;text-align:center"><div class="kick">เติบโต</div><div class="h2">เลี้ยงไปด้วยกัน <span class="grad">ทีละวัน</span></div></div>
+ <div id="stages"></div>
+ <div class="abs glass" id="xp" style="left:360px;top:960px;width:1200px;height:28px;border-radius:14px;padding:5px"><div id="xpf" style="height:100%;border-radius:10px;background:linear-gradient(90deg,#6fb4ff,#b79bff,#ff9fd0);width:0"></div></div>
+
+ <!-- S7 -->
+ <div class="abs" id="s7h" style="left:0;top:130px;width:1920px;text-align:center"><div class="kick">ส่วนตัว</div><div class="h2">อยู่ในเครื่อง <span class="grad">เป็นของคุณ</span></div></div>
+ <div id="priv"></div>
+
+ <!-- S8 -->
+ <div class="abs" id="s8" style="left:0;top:250px;width:1920px;text-align:center">
+   <div class="h1 grad" style="font-size:300px;line-height:1">Hey!</div>
+   <div class="sub" style="font-size:58px;color:#e4ecff;margin-top:6px">เพื่อนที่นั่งทำงานอยู่ข้างคุณ</div>
+   <div class="sub" style="font-size:34px;margin-top:26px">สำหรับ macOS · Liquid Glass</div>
+ </div>
+
+ <img class="abs" id="hero" width="480" height="480">
+ <div class="abs" id="zz" style="font-size:70px;font-weight:800;color:#b9c9f5"></div>
+ <div class="abs" id="fade" style="width:1920px;height:1080px;background:#070d24;opacity:0;pointer-events:none"></div>
+</div>
+<script>
+const DUR=39.0;window.DUR=DUR;
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+const seg=(t,a,b)=>clamp((t-a)/(b-a),0,1);
+const eo=t=>1-Math.pow(1-t,3), eio=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const back=t=>{const c=1.9;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2)};
+const lerp=(a,b,t)=>a+(b-a)*t;
+const $=id=>document.getElementById(id);
+const SPR="assets/spr/", SH="assets/shots/";
+const imgs=[];
+function pre(src){const i=new Image();i.src=src;imgs.push(i);return i}
+// preload
+const ST=['hatchling','child','teen','adult'];
+for(const c of ['idle','walk','happy','dance'])for(const s of ST)for(let i=0;i<10;i++)pre(`${SPR}${s}_${c}_${i}.png`);
+for(const c of ['type','eat','sleep','startled'])for(let i=0;i<10;i++)pre(`${SPR}adult_${c}_${i}.png`);
+for(let i=0;i<10;i++)pre(`${SPR}hatch_${i}.png`);
+['today','quests','shop','focus'].forEach(n=>pre(`${SH}${n}.png`));
+for(const id of ['s1t','s2','s3h','win','timer','bub1','bub2','s4shots','s4r','s5h','s6h','s7h','s8']){const e=$(id);e.style.left='0px';e.style.top='0px'}
+window.READY=false;
+Promise.all(imgs.map(i=>i.decode().catch(()=>{}))).then(()=>document.fonts.ready).then(()=>{window.READY=true});
+
+function put(el,x,y,{s=1,o=1,r=0,ox='0',oy='0'}={}){el.style.transform=`translate(${x}px,${y}px) rotate(${r}deg) scale(${s})`;el.style.transformOrigin=`${ox} ${oy}`;el.style.opacity=o}
+function pos(el,o,s=1,x=0,y=0){put(el,x,y,{s,o})}
+
+// build static parts
+const lines=$('lines');const LW=[620,720,480,680,560,420,640,500,700,380];
+LW.forEach((w,i)=>{const d=document.createElement('div');d.className='line';d.style.cssText=`width:${w}px;margin-bottom:22px;opacity:.0;transform-origin:0 0`;lines.appendChild(d)});
+const chipsEl=$('chips');
+['สถานะ','ภารกิจ','ร้านค้า','โฟกัส'].forEach(n=>{const d=document.createElement('div');d.className='chip glass';d.textContent=n;chipsEl.appendChild(d)});
+const shotsEl=$('s4shots');
+const SHOTNAMES=['today','quests','shop','focus'];
+SHOTNAMES.forEach(n=>{const i=document.createElement('img');i.src=`${SH}${n}.png`;i.className='shot';i.style.cssText='position:absolute;left:0;top:0;width:1200px;height:850px;opacity:0';shotsEl.appendChild(i)});
+const ICON={
+clip:'<svg viewBox="0 0 48 48"><rect x="10" y="9" width="28" height="33" rx="5"/><rect x="17" y="5" width="14" height="8" rx="3"/><path d="M16 23h16M16 30h10"/></svg>',
+ocr:'<svg viewBox="0 0 48 48"><path d="M7 15V9a2 2 0 012-2h6M33 7h6a2 2 0 012 2v6M41 33v6a2 2 0 01-2 2h-6M15 41H9a2 2 0 01-2-2v-6"/><path d="M15 17h18M24 17v16"/></svg>',
+cam:'<svg viewBox="0 0 48 48"><rect x="6" y="14" width="36" height="25" rx="6"/><path d="M17 14l3-5h8l3 5"/><circle cx="24" cy="26" r="7"/></svg>',
+note:'<svg viewBox="0 0 48 48"><path d="M12 6h18l8 8v26a2 2 0 01-2 2H12a2 2 0 01-2-2V8a2 2 0 012-2z"/><path d="M30 6v8h8M16 24h16M16 31h16"/></svg>',
+cal:'<svg viewBox="0 0 48 48"><rect x="6" y="10" width="36" height="32" rx="6"/><path d="M6 20h36M16 5v9M32 5v9"/><circle cx="17" cy="30" r="2"/><circle cx="24" cy="30" r="2"/></svg>',
+rec:'<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><circle cx="24" cy="24" r="7" fill="#9cc4ff"/></svg>',
+lock:'<svg viewBox="0 0 48 48"><rect x="9" y="21" width="30" height="21" rx="5"/><path d="M16 21v-6a8 8 0 0116 0v6"/><circle cx="24" cy="32" r="3"/></svg>',
+mac:'<svg viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="25" rx="4"/><path d="M16 41h16M24 33v8"/></svg>',
+ban:'<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><path d="M12 36L36 12"/></svg>'};
+const CARDS=[['clip','คลิปบอร์ด','ย้อนดูสิ่งที่คัดลอก'],['ocr','อ่านข้อความ','จากหน้าจอ ไทยและอังกฤษ'],['cam','แคปภาพ','ลากเลือกพื้นที่'],['note','โน้ต','จดไว้ทันที'],['cal','ปฏิทิน','เตือนก่อนนัด 10 นาที'],['rec','อัดจอ','บันทึกสั้น ๆ']];
+const CT=[19.2,20.5,22.1,22.9,23.6,24.1];
+const cardsEl=$('cards');const cardEls=CARDS.map((c,i)=>{const d=document.createElement('div');d.className='abs glass card';d.innerHTML=ICON[c[0]]+`<b>${c[1]}</b><span>${c[2]}</span>`;cardsEl.appendChild(d);return d});
+const stagesEl=$('stages');
+const SG=[['ไข่','hatch_0.png'],['ลูกไก่','hatchling_idle_0.png'],['เด็ก','child_idle_0.png'],['วัยรุ่น','teen_idle_0.png'],['ตัวเต็มวัย','adult_idle_0.png']];
+const ST_T=[25.6,26.4,27.2,28.0,28.8];
+const stEls=SG.map((g,i)=>{const d=document.createElement('div');d.className='abs';d.style.cssText='width:480px;height:600px';d.innerHTML=`<img src="${SPR}${g[1]}" width="480" height="480" style="position:absolute;left:0;top:0"><div class="pill glass" style="position:absolute;left:50%;top:500px;transform:translateX(-50%);font-size:34px">${g[0]}</div>`;stagesEl.appendChild(d);return d});
+const privEl=$('priv');
+const PV=[['mac','ทำงานบนเครื่อง'],['ban','ไม่ต้องสมัคร'],['lock','ไม่ส่งข้อมูลออก']];
+const PT=[30.3,31.2,32.1];
+const pvEls=PV.map(p=>{const d=document.createElement('div');d.className='abs glass';d.style.cssText='width:480px;height:300px;padding:44px;text-align:center';d.innerHTML=`<div style="display:flex;justify-content:center">${ICON[p[0]].replace('<svg','<svg style="width:110px;height:110px;stroke:#9cc4ff;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round"')}</div><div style="font-size:46px;font-weight:800;margin-top:20px">${p[1]}</div>`;privEl.appendChild(d);return d});
+
+const hero=$('hero');
+function setHero(src,x,floor,scale,o=1,flip=false,rot=0){ // x = centre of feet, floor = y of feet
+  if(hero.dataset.s!==src){hero.src=src;hero.dataset.s=src}
+  hero.style.transformOrigin='50% 100%';
+  hero.style.transform=`translate(${x-240}px,${floor-480}px) rotate(${rot}deg) scale(${flip?-scale:scale},${scale})`;
+  hero.style.opacity=o;
+}
+const fr=(t,t0,fps=10)=>((Math.floor((t-t0)*fps)%10)+10)%10;
+const vis=(t,a,b,f=.45)=>Math.min(seg(t,a,a+f),1-seg(t,b-f,b));
+
+const OLD=[0,.8,3.1,6.9,12.7,18.3,25.2,30,34,39],NEW=[0,.8,3.7,8.06,15.94,23.0,32.64,39.5,44.2,48.2];
+function warp(t){if(t<=0)return 0;if(t>=NEW[9])return OLD[9];for(let i=0;i<9;i++)if(t<=NEW[i+1])return lerp(OLD[i],OLD[i+1],(t-NEW[i])/(NEW[i+1]-NEW[i]));return 39}
+function render0(t){
+  // background drift
+  put($('b1'),lerp(-100,300,Math.sin(t*.2)*.5+.5)+0,lerp(-150,100,Math.cos(t*.17)*.5+.5));
+  put($('b2'),1200+Math.sin(t*.23)*220,500+Math.cos(t*.19)*160);
+  put($('b3'),700+Math.cos(t*.15)*260,700+Math.sin(t*.21)*120);
+  // hide everything by default
+  for(const id of ['s1t','s2','s3h','win','timer','bub1','bub2','s4shots','s4r','s5h','s6h','xp','s7h','s8','zz','floor'])$(id).style.opacity=0;
+  cardEls.forEach(e=>e.style.opacity=0);stEls.forEach(e=>e.style.opacity=0);pvEls.forEach(e=>e.style.opacity=0);
+  hero.style.opacity=0;
+
+  const FLOOR=960;
+  // ---------- S1 ----------
+  if(t<3.2){
+    const o=seg(t,.3,1.0)*(1-seg(t,2.7,3.2));
+    put($('s1t'),140+eo(seg(t,.3,1.2))*0-40*seg(t,2.7,3.2),330+30*(1-eo(seg(t,.3,1.2))),{o});
+  }
+  // ---------- hero timeline ----------
+  const glow=$('floor');
+  let flo=0;
+  if(t<3.7){ // egg / hatch
+    const wob=t<2.6?Math.sin(t*(8+t*6))*(1+t*1.5):0;
+    let f;
+    if(t<2.6)f=Math.min(4,Math.floor(seg(t,.9,2.6)*5)); else f=5+Math.min(4,Math.floor(seg(t,2.6,3.6)*5));
+    const pop=back(seg(t,.5,1.1));
+    setHero(`${SPR}hatch_${f}.png`,1380+lerp(0,90,eio(seg(t,3.3,4.2))),FLOOR+20,1.6*pop,1,false,wob);
+    flo=1;
+  }else if(t<6.7){
+    const x=lerp(1380,1470,eio(seg(t,3.3,4.2)));
+    setHero(`${SPR}hatchling_idle_${fr(t,3.6)}.png`,x,FLOOR+20,1.6,1-seg(t,6.4,6.7));
+    flo=1;
+  }
+  // ---------- S2 ----------
+  if(t>=3.3&&t<6.9){
+    const p=eo(seg(t,3.5,4.3));
+    put($('s2'),150-40*seg(t,6.4,6.9),300+30*(1-p),{o:p*(1-seg(t,6.4,6.9))});
+    $('s2h').style.transform=`scale(${lerp(.92,1,eo(seg(t,3.5,4.6)))})`;$('s2h').style.transformOrigin='0 50%';
+  }
+  // ---------- S3 : 6.8 - 12.7 ----------
+  if(t>=6.6&&t<12.9){
+    const o=vis(t,6.8,12.7,.5);
+    put($('s3h'),130,90+20*(1-eo(seg(t,6.9,7.6))),{o});
+    put($('win'),130,330+30*(1-eo(seg(t,7.1,7.9))),{o});
+    put($('timer'),130,880,{o:o*seg(t,7.6,8.2)});
+    // typing lines
+    const tt=clamp((t-7.4)/3.0,0,1)*LW.length;
+    [...lines.children].forEach((d,i)=>{const p=clamp(tt-i,0,1);d.style.opacity=p>0?1:0;d.style.transform=`scaleX(${p})`});
+    $('mins').textContent=Math.round(lerp(0,40,seg(t,7.6,9.4)));
+    // hero adult
+    const fl=FLOOR+10;
+    const hop=t<7.0?seg(t,6.6,7.0):1;
+    const enter=back(seg(t,6.6,7.4));
+    let clip='type',t0=7.0;
+    if(t>=11.0){clip='happy'}
+    if(t>=9.4&&t<11.0){clip='idle'}
+    setHero(`${SPR}adult_${clip==='type'?'type':clip==='happy'?'happy':'idle'}_${fr(t,t0)}.png`.replace('adult_happy','adult_happy'),1480,fl,1.75*enter,o);
+    // bubbles
+    const b1=$('bub1'),b2=$('bub2');
+    const p1=seg(t,9.4,9.8)*(1-seg(t,10.9,11.2));
+    put(b1,780,230+8*Math.sin(t*3),{o:p1,s:.9+.1*back(seg(t,9.4,9.9))});
+    const p2=seg(t,11.2,11.6)*(1-seg(t,12.3,12.7));
+    put(b2,740,230,{o:p2,s:.9+.1*back(seg(t,11.2,11.7))});
+    flo=1;
+  }
+  // ---------- S4 : 12.6 - 18.4 ----------
+  if(t>=12.5&&t<18.6){
+    const o=vis(t,12.7,18.3,.5);
+    const slide=eo(seg(t,12.7,13.4));
+    put($('s4shots'),110-70*(1-slide),105,{o});
+    put($('s4r'),1390+40*(1-slide),200,{o});
+    const sch=[12.8,14.0,15.2,16.4,18.3];
+    SHOTNAMES.forEach((n,i)=>{
+      const el=shotsEl.children[i];
+      const a=sch[i],b=sch[i+1];
+      const on=Math.min(seg(t,a-.01,a+.35),1-seg(t,b-.01,b+.35));
+      const inn=eo(seg(t,a,a+.5));
+      el.style.opacity=i===0?Math.min(1,on+(t<a+.35?1:0))*(t<b+.35?1:0)+0:on;
+      el.style.transform=`translateY(${(1-inn)*30}px) scale(${lerp(.98,1,inn)})`;
+      el.style.zIndex=i;
+    });
+    // chips highlight
+    [...chipsEl.children].forEach((c,i)=>{
+      const a=sch[i],b=sch[i+1];const act=Math.min(seg(t,a,a+.3),1-seg(t,b-.2,b+.1));
+      c.style.opacity=seg(t,12.9+i*.12,13.4+i*.12);
+      c.style.background=`linear-gradient(160deg,rgba(120,170,255,${.17+act*.55}),rgba(255,255,255,.05))`;
+      c.style.transform=`translateX(${act*18}px)`;
+    });
+    setHero(`${SPR}adult_walk_${fr(t,12.7)}.png`,1700,FLOOR+55,.72,seg(t,13.2,13.7)*vis(t,12.7,18.3,.5),false);
+    flo=0;
+  }
+  // ---------- S5 : 18.3 - 24.9 ----------
+  if(t>=18.2&&t<25.1){
+    const o=vis(t,18.4,24.8,.5);
+    put($('s5h'),130,80+20*(1-eo(seg(t,18.5,19.2))),{o});
+    const cx=[130,690,1250], cy=[290,570];
+    cardEls.forEach((el,i)=>{
+      const p=back(seg(t,CT[i],CT[i]+.55));const op=seg(t,CT[i],CT[i]+.3)*o;
+      put(el,cx[i%3]+(1-p)*0,cy[Math.floor(i/3)]+40*(1-p),{s:.85+.15*p,o:op,ox:'50%',oy:'50%'});
+      // gentle idle bob
+      el.style.marginTop=Math.sin(t*2+i)*4+'px';
+    });
+    const wx=lerp(300,1650,seg(t,18.6,24.8));
+    const dir=1;
+    setHero(`${SPR}adult_walk_${fr(t,18.3)}.png`,wx,1062,.62,o);
+    flo=0;
+  }
+  // ---------- S6 : 25.0 - 29.9 ----------
+  if(t>=24.9&&t<30.2){
+    const o=vis(t,25.1,29.9,.5);
+    put($('s6h'),0,100+20*(1-eo(seg(t,25.1,25.8))),{o});
+    const names=[['hatch',4],['hatchling_idle',0],['child_idle',0],['teen_idle',0],['adult_dance',0]];
+    stEls.forEach((el,i)=>{
+      const p=back(seg(t,ST_T[i],ST_T[i]+.5));const op=seg(t,ST_T[i],ST_T[i]+.3)*o;
+      const sc=.82;
+      put(el,250+i*355-240*sc,330+ (1-p)*60,{s:sc*(.8+.2*p),o:op,ox:'50% 100%'.split(' ')[0],oy:'100%'});
+      const im=el.querySelector('img');
+      const [nm]=names[i];
+      let src;
+      if(i===0)src=`${SPR}hatch_${Math.min(9,Math.floor(seg(t,ST_T[0],ST_T[1]+.4)*0)+0)}.png`;
+      else if(i===4)src=`${SPR}adult_dance_${fr(t,ST_T[4])}.png`;
+      else src=`${SPR}${nm.replace('_idle','')}_idle_${fr(t,ST_T[i])}.png`;
+      if(im.dataset.s!==src){im.src=src;im.dataset.s=src}
+    });
+    $('xp').style.opacity=o*seg(t,25.4,25.9);$('xp').style.transform='translate(0,0)';
+    $('xpf').style.width=(seg(t,25.6,29.2)*100)+'%';
+    $('xp').style.left='360px';$('xp').style.top='990px';
+    flo=0;
+  }
+  // ---------- S7 : 29.9 - 33.9 ----------
+  if(t>=29.8&&t<34.2){
+    const o=vis(t,30.0,33.8,.5);
+    put($('s7h'),0,110+20*(1-eo(seg(t,30.0,30.7))),{o});
+    pvEls.forEach((el,i)=>{
+      const p=back(seg(t,PT[i],PT[i]+.55));
+      put(el,180+i*555,330+40*(1-p),{s:.85+.15*p,o:seg(t,PT[i],PT[i]+.3)*o,ox:'50%',oy:'50%'});
+    });
+    // sleeping hero
+    setHero(`${SPR}adult_sleep_${fr(t,30.0,5)}.png`,960,1070,.95,o*seg(t,30.4,31.0));
+    const z=$('zz');
+    const zp=(t*0.6)%1;z.textContent='z';
+    put(z,1060+zp*50,740-zp*110,{o:o*(1-zp)*seg(t,30.8,31.2)*.9,s:.8+zp*.8});
+    flo=0;
+  }
+  // ---------- S8 : 33.9 - 39 ----------
+  if(t>=33.8){
+    const p=eo(seg(t,34.0,34.9));
+    put($('s8'),0,250+20*(1-p),{o:p});
+    setHero(`${SPR}adult_dance_${fr(t,34.2)}.png`,1650,FLOOR+40,1.85,seg(t,34.0,34.5));
+    flo=1;
+  }
+  // floor glow
+  if(flo){put(glow,210,FLOOR-30,{o:.8})}
+  // global fades
+  $('fade').style.opacity=Math.max(1-seg(t,0,.5),seg(t,38.2,39.0));
+}
+window.render=t=>render0(warp(t));
+window.DUR=48.2;
+</script></body></html>
