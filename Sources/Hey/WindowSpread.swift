@@ -63,7 +63,6 @@ final class WindowSpreadController {
     private let model = SpreadModel()
     private var panel: NSPanel?
     private var keyMonitor: Any?
-    private var backdrop: NSVisualEffectView?
     var isShown: Bool { panel != nil }
 
     func toggle() { isShown ? dismiss() : show() }
@@ -79,17 +78,12 @@ final class WindowSpreadController {
         p.backgroundColor = .clear
         p.hasShadow = false
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        let blur = NSVisualEffectView(frame: NSRect(origin: .zero, size: screen.frame.size))
-        blur.material = .fullScreenUI
-        blur.blendingMode = .behindWindow
-        blur.state = .active
-        blur.alphaValue = 0
+        let root = NSView(frame: NSRect(origin: .zero, size: screen.frame.size))
         let host = NSHostingView(rootView: SpreadView(model: model, refresh: { [weak self] in self?.refreshSoon() }))
-        host.frame = blur.bounds
+        host.frame = root.bounds
         host.autoresizingMask = [.width, .height]
-        blur.addSubview(host)
-        p.contentView = blur
-        backdrop = blur
+        root.addSubview(host)
+        p.contentView = root
         p.makeKeyAndOrderFront(nil)
         panel = p
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in
@@ -97,7 +91,6 @@ final class WindowSpreadController {
             return e
         }
         model.open = false
-        NSAnimationContext.runAnimationGroup { $0.duration = 0.25; blur.animator().alphaValue = 1 }
         DispatchQueue.main.async { [model] in withAnimation(.spring(response: 0.5, dampingFraction: 0.78)) { model.open = true } }
     }
 
@@ -106,7 +99,6 @@ final class WindowSpreadController {
         panel = nil
         if let m = keyMonitor { NSEvent.removeMonitor(m); keyMonitor = nil }
         withAnimation(.easeIn(duration: 0.18)) { model.open = false }
-        NSAnimationContext.runAnimationGroup { $0.duration = 0.18; backdrop?.animator().alphaValue = 0 }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { p.orderOut(nil) }
     }
 
