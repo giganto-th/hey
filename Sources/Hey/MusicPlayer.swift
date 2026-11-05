@@ -42,9 +42,6 @@ private final class YouTubeBackend: NSObject, Backend, WKScriptMessageHandler, W
     override init() {
         let config = WKWebViewConfiguration()
         config.mediaTypesRequiringUserActionForPlayback = []
-        // The IFrame API ignores quality requests, but the player inside the embed frame still honours them.
-        let lowest = WKUserScript(source: Self.lowestQualityScript, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
-        config.userContentController.addUserScript(lowest)
         webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 200, height: 200), configuration: config)
         // The player refuses to start in a view smaller than 200×200, so we give it that, off-screen.
         window = NSWindow(contentRect: NSRect(x: -10_000, y: -10_000, width: 200, height: 200),
@@ -176,20 +173,6 @@ private final class YouTubeBackend: NSObject, Backend, WKScriptMessageHandler, W
     /// YouTube wants embeds to identify themselves with a real https origin; apps use their bundle id as a host.
     private static let origin = ProcessInfo.processInfo.environment["HEY_DEV_YT_ORIGIN"] ?? "https://com.cdimac.hey"
 
-    private static let lowestQualityScript = """
-    (function () {
-      if (location.hostname.indexOf('youtube') < 0) return;
-      setInterval(function () {
-        var p = document.querySelector('.html5-video-player');
-        if (!p || !p.setPlaybackQualityRange) return;
-        try {
-          if (p.getPlaybackQuality && p.getPlaybackQuality() !== 'tiny') { p.setPlaybackQualityRange('tiny', 'tiny'); p.setPlaybackQuality('tiny'); }
-          window.webkit.messageHandlers.hey.postMessage({t: 'quality', v: p.getPlaybackQuality ? p.getPlaybackQuality() : null});
-        } catch (e) {}
-      }, 1000);
-    })();
-    """
-
     private static var html: String { htmlTemplate.replacingOccurrences(of: "ORIGIN", with: "'\(origin)'") }
 
     private static let htmlTemplate = """
@@ -203,11 +186,11 @@ private final class YouTubeBackend: NSObject, Backend, WKScriptMessageHandler, W
         playerVars: { origin: ORIGIN, autoplay: 1, controls: 0, playsinline: 1, rel: 0, modestbranding: 1 },
         events: {
           onReady: function () { ready = true; send({t: 'ready'}); if (pendingId) { heyLoad(pendingId); pendingId = null; } },
-          onStateChange: function (e) { if (e.data === 1 || e.data === 3) heyLow(); send({t: 'state', v: e.data}); },
+          onStateChange: function (e) { send({t: 'state', v: e.data}); },
           onError: function (e) { send({t: 'error', v: e.data}); } } });
     }
-    function heyLow() { try { player.setPlaybackQualityRange('tiny', 'tiny'); player.setPlaybackQuality('tiny'); } catch (e) {} }
-    function heyLoad(id) { if (!ready) { pendingId = id; return; } player.loadVideoById({videoId: id, suggestedQuality: 'tiny'}); heyLow(); }
+    // Let YouTube adapt quality to the video surface and available bandwidth.
+    function heyLoad(id) { if (!ready) { pendingId = id; return; } player.loadVideoById({videoId: id}); }
     function heyPlay() { if (ready) player.playVideo(); }
     function heyPause() { if (ready) player.pauseVideo(); }
     function heyStop() { if (ready) player.stopVideo(); }
