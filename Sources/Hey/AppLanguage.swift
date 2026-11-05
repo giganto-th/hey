@@ -35,7 +35,7 @@ enum AppLanguage {
     static var needsRestart: Bool { choice.isEnglish(systemLanguages: Locale.preferredLanguages) != runningEnglish }
 
     /// Start a fresh copy of the app and quit this one (only when running from Hey.app).
-    static func relaunch() {
+    @MainActor static func relaunch() {
         guard Bundle.main.bundleURL.pathExtension == "app" else { NSApp.terminate(nil); return }
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/bin/sh")

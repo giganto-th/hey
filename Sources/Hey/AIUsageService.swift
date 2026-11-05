@@ -144,7 +144,7 @@ final class AIUsageService {
     func start() {
         Task { await refresh() }
         timer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { Task { await self?.refresh() } }
+            Task { @MainActor in await self?.refresh() }
         }
     }
 
