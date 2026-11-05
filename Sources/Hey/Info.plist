@@ -2,31 +2,53 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleDevelopmentRegion</key><string>en</string>
-    <key>CFBundleLocalizations</key><array><string>en</string><string>th</string></array>
-    <key>CFBundleIdentifier</key><string>com.cdimac.hey</string>
-    <key>CFBundleName</key><string>Hey!</string>
-    <key>CFBundleDisplayName</key><string>Hey!</string>
-    <key>CFBundleExecutable</key><string>Hey</string>
-    <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleIconFile</key><string>AppIcon</string>
-    <key>CFBundleShortVersionString</key><string>1.1.0</string>
-    <key>CFBundleVersion</key><string>2</string>
-    <key>LSMinimumSystemVersion</key><string>26.0</string>
-    <key>LSUIElement</key><true/>
-    <key>NSHighResolutionCapable</key><true/>
-    <key>NSCameraUsageDescription</key>
-    <string>Hey! uses the camera only when you ask it to take a photo or record a video, and keeps the files on this Mac.</string>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>Hey! uses the microphone only when you turn on recording sound with a video.</string>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>Hey! reads only the URL and title of the front browser tab, to offer adding a YouTube video to a playlist (only when you turn it on).</string>
-    <key>CFBundleURLTypes</key>
-    <array><dict>
-        <key>CFBundleURLName</key><string>Hey! commands</string>
-        <key>CFBundleURLSchemes</key><array><string>hey</string></array>
-    </dict></array>
-    <key>NSCalendarsFullAccessUsageDescription</key>
-    <string>Hey! reads the title and time of appointments in the next 30 minutes to remind you in time. It never edits your calendar and stores nothing (only when you turn it on).</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Hey!</string>
+	<key>CFBundleExecutable</key>
+	<string>Hey</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.cdimac.hey</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>th</string>
+	</array>
+	<key>CFBundleName</key>
+	<string>Hey!</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.2.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Hey! commands</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>hey</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>3</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>26.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Hey! reads only the URL and title of the front browser tab, to offer adding a YouTube video to a playlist (only when you turn it on).</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Hey! reads the title and time of appointments in the next 30 minutes to remind you in time. It never edits your calendar and stores nothing (only when you turn it on).</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Hey! uses the camera only when you ask it to take a photo or record a video, and keeps the files on this Mac.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Hey! uses the microphone only when you turn on recording sound with a video.</string>
 </dict>
 </plist>

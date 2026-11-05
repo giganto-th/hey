@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="ดาวน์โหลด" src="https://img.shields.io/badge/ดาวน์โหลด-v1.1.0-6f8cff?style=for-the-badge"></a>
+  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="ดาวน์โหลด" src="https://img.shields.io/badge/ดาวน์โหลด-v1.2.0-6f8cff?style=for-the-badge"></a>
   <a href="https://giganto-th.github.io/hey/"><img alt="เว็บไซต์" src="https://img.shields.io/badge/เว็บไซต์-Hey!-b79bff?style=for-the-badge"></a>
   <a href="https://www.youtube.com/watch?v=JBi-y-_I9jk"><img alt="วิดีโอ" src="https://img.shields.io/badge/ดูวิดีโอ-YouTube-ff6f91?style=for-the-badge"></a>
 </p>
@@ -76,18 +76,11 @@ curl -fsSL https://raw.githubusercontent.com/giganto-th/hey/main/scripts/install
 
 **หรือโหลดเอง:**
 
-1. โหลด `Hey-1.1.0.dmg` จากหน้า [Releases](https://github.com/giganto-th/hey/releases/latest)
+1. โหลด `Hey-1.2.0.dmg` จากหน้า [Releases](https://github.com/giganto-th/hey/releases/latest)
 2. ลาก **Hey** ไปวางบน **Applications**
-3. เปิดแอป ครั้งแรกถ้า macOS เตือนว่าเปิดไม่ได้ ดูด้านล่าง
+3. เปิดแอป
 
-แอปเซ็นแบบ ad-hoc ไม่ได้ผ่าน Apple notarization (ไม่มีบัญชี Apple Developer) macOS จึงถามก่อนเปิดครั้งแรก เลือกวิธีใดวิธีหนึ่ง:
-
-- ไปที่ **การตั้งค่าระบบ › ความเป็นส่วนตัวและความปลอดภัย** แล้วกด "เปิดต่อไป" (Open Anyway) ที่รายการ Hey
-- หรือรันคำสั่งนี้ แล้วเปิดแอปตามปกติ
-
-```bash
-xattr -dr com.apple.quarantine /Applications/Hey.app
-```
+แอปเซ็นด้วย Developer ID และผ่าน Apple notarization แล้ว ดับเบิลคลิกเปิดได้เลย ไม่มีคำเตือน (ถ้าใช้เวอร์ชันเก่า 1.1.0 ลงไป ให้โหลดเวอร์ชันนี้ใหม่)
 
 ปล่อยเวอร์ชันที่เซ็นและผ่าน notarize (ต้องมี Apple Developer ID): ดูขั้นตอนในหัวไฟล์ `scripts/release-signed.sh`
 
