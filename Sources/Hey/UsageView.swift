@@ -5,6 +5,28 @@ import HeyDomain
 @MainActor
 enum ProviderLogo {
     private static var cache: [AIProvider: NSImage] = [:]
+    private static var menuBarCache: [AIProvider: NSImage] = [:]
+
+    static func fallbackSymbol(_ provider: AIProvider) -> String {
+        switch provider {
+        case .claude: "asterisk.circle.fill"
+        case .codex: "bubble.left.fill"
+        case .antigravity: "sparkles"
+        }
+    }
+
+    static func menuBarImage(_ provider: AIProvider) -> NSImage? {
+        if let hit = menuBarCache[provider] { return hit }
+        let icon: NSImage?
+        if let installed = image(provider) {
+            icon = installed.copy() as? NSImage
+        } else {
+            icon = NSImage(systemSymbolName: fallbackSymbol(provider), accessibilityDescription: provider.label)
+        }
+        icon?.size = NSSize(width: 16, height: 16)
+        menuBarCache[provider] = icon
+        return icon
+    }
 
     private static func candidates(_ provider: AIProvider) -> [String] {
         switch provider {
@@ -34,7 +56,7 @@ struct ProviderLogoView: View {
             if let image = ProviderLogo.image(provider) {
                 Image(nsImage: image).resizable().scaledToFit()
             } else {
-                Image(systemName: provider == .claude ? "asterisk.circle.fill" : (provider == .codex ? "bubble.left.fill" : "sparkles"))
+                Image(systemName: ProviderLogo.fallbackSymbol(provider))
                     .resizable().scaledToFit().foregroundStyle(.secondary).padding(size * 0.15)
             }
         }
@@ -66,6 +88,7 @@ struct UsageTab: View {
                         .buttonStyle(.borderedProminent)
                 }
             }
+            UsageMenuBarSection(service: service, accounts: all)
             Section {
                 if all.isEmpty {
                     Text(service.refreshing ? tr("กำลังอ่านข้อมูล…") : tr("ยังไม่มีบัญชี — กด เพิ่มบัญชี AI เพื่อเริ่ม"))
@@ -103,6 +126,102 @@ struct UsageTab: View {
         .scrollContentBackground(.hidden)
         .task { await service.refresh() }
         .sheet(isPresented: $adding) { AddAccountSheet(service: service) { adding = false } }
+    }
+}
+
+/// Compact menu-bar preferences live beside the accounts they describe.
+private struct UsageMenuBarSection: View {
+    @Bindable var service: AIUsageService
+    let accounts: [AIUsageService.AccountRow]
+
+    private var selectedUsages: [ProviderUsage] {
+        service.menuBarSettings.usages(from: accounts.compactMap(\.usage))
+    }
+
+    private var windows: [UsageWindow] {
+        var seen = Set<String>()
+        let candidates = accounts.filter { service.menuBarSettings.accountIDs.isEmpty || service.menuBarSettings.accountIDs.contains($0.id) }
+            .compactMap(\.usage).flatMap(\.windows)
+        let available = candidates.filter { seen.insert($0.id).inserted }
+        if available.contains(where: { $0.id == service.menuBarSettings.windowID }) { return available }
+        return [UsageWindow(id: service.menuBarSettings.windowID, usedPercent: 0, resetsAt: nil)] + available
+    }
+
+    var body: some View {
+        Section(tr("แถบเมนู")) {
+            Toggle(tr("แสดงโควตา AI บนแถบเมนู"), isOn: $service.menuBarSettings.enabled)
+            Group {
+                Text(tr("เลือกบัญชีที่แสดง (เลือกได้หลายบัญชี)")).font(.subheadline)
+                ForEach(accounts.indices, id: \.self) { index in
+                    let row = accounts[index]
+                    Toggle(isOn: Binding(
+                        get: { service.menuBarSettings.accountIDs.contains(row.id) },
+                        set: { selected in
+                            if selected { service.menuBarSettings.accountIDs.append(row.id) }
+                            else { service.menuBarSettings.accountIDs.removeAll { $0 == row.id } }
+                        })) {
+                            HStack(spacing: 6) {
+                                ProviderLogoView(provider: row.provider, size: 18)
+                                Text("\(row.provider.label) · \(row.name)")
+                            }
+                        }
+                        .id("menuBarSelection.\(row.id)")
+                }
+                ForEach(service.menuBarSettings.accountIDs.filter { id in !accounts.contains { $0.id == id } }, id: \.self) { id in
+                    HStack {
+                        Text(tr("บัญชีที่เลือกไม่พร้อมใช้งาน")).foregroundStyle(.secondary)
+                        Spacer()
+                        Button(tr("เอาบัญชีนี้ออกจากรายการ")) { service.menuBarSettings.accountIDs.removeAll { $0 == id } }
+                    }
+                }
+                if service.menuBarSettings.accountIDs.isEmpty {
+                    Text(tr("อัตโนมัติ (บัญชีแรกที่มีช่วงโควตานี้)")).font(.caption).foregroundStyle(.secondary)
+                }
+                Picker(tr("ช่วงโควตา"), selection: $service.menuBarSettings.windowID) {
+                    ForEach(windows) { window in Text(window.label).tag(window.id) }
+                }
+                Picker(tr("เปอร์เซ็นต์ที่แสดง"), selection: $service.menuBarSettings.percentMode) {
+                    ForEach(UsageMenuBarSettings.PercentMode.allCases, id: \.self) { mode in
+                        Text(mode.label).tag(mode)
+                    }
+                }
+                Toggle(tr("แสดงเวลานับถอยหลังจนรีเซ็ต"), isOn: $service.menuBarSettings.showReset)
+            }
+            .disabled(!service.menuBarSettings.enabled)
+            if service.menuBarSettings.enabled {
+                TimelineView(.periodic(from: .now, by: 60)) { context in
+                    if !selectedUsages.isEmpty {
+                        Text(tr("ตัวอย่าง")).font(.subheadline)
+                        ForEach(selectedUsages, id: \.accountID) { usage in
+                            if let window = usage.windows.first(where: { $0.id == service.menuBarSettings.windowID }) {
+                                HStack(spacing: 5) {
+                                    if let icon = ProviderLogo.menuBarImage(usage.provider) {
+                                        Image(nsImage: icon).accessibilityLabel(usage.provider.label)
+                                    }
+                                    Text(service.menuBarSettings.text(for: window, now: context.date)).monospacedDigit()
+                                    Spacer()
+                                    Text(accounts.first { $0.id == usage.accountID }?.name ?? usage.title)
+                                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                }
+                                .accessibilityLabel("\(usage.title) · \(service.menuBarSettings.percentMode.label) \(service.menuBarSettings.text(for: window, now: context.date))")
+                                if service.menuBarSettings.showReset && window.resetsAt == nil {
+                                    Text(tr("ไม่มีเวลารีเซ็ตสำหรับช่วงโควตานี้")).font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        if !Set(service.menuBarSettings.accountIDs).isSubset(of: Set(selectedUsages.map(\.accountID))) {
+                            Text(tr("บางบัญชีไม่มีข้อมูลของช่วงโควตาที่เลือก จะแสดงเฉพาะบัญชีที่มีข้อมูล"))
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Text(service.refreshing ? tr("กำลังอ่านข้อมูล…") : tr("ยังไม่มีข้อมูลของบัญชีหรือช่วงโควตาที่เลือก — เลือกบัญชีอื่นหรือกดรีเฟรช"))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            Text(tr("แสดงพร้อมไอคอนผู้ให้บริการ โดยสถานะอัดหน้าจอและ Pomodoro จะแสดงก่อน · ↻ คือเวลาที่เหลือจนรีเซ็ตของช่วงที่เลือก"))
+                .font(.caption2).foregroundStyle(.secondary)
+        }
     }
 }
 

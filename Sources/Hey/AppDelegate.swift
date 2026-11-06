@@ -147,6 +147,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 self?.reactToContext()
                 self?.showGuideTip()
                 self?.announceCalendar()
+                self?.updateStatusTitle()
             }
         }
         t.tolerance = 3
@@ -558,8 +559,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         scene.setMusicPlaying(music.isPlaying || detector.systemSong?.isPlaying == true)
     }
 
-    /// Recording wins the menu-bar item, then the Pomodoro countdown, then the plain logo.
+    /// Recording wins, then Pomodoro, then the optional AI quota, then the plain logo.
     private func updateStatusTitle() {
+        guard statusItem != nil else { return }
+        statusItem.button?.attributedTitle = NSAttributedString(string: "")
+        statusItem.button?.toolTip = "Hey!"
+        statusItem.button?.setAccessibilityLabel("Hey!")
         func symbol(_ name: String) -> NSImage? { NSImage(systemSymbolName: name, accessibilityDescription: nil) }
         if capture.isRecording {
             let s = Int(capture.elapsed)
@@ -571,6 +576,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         } else {
             statusItem.button?.image = LogoArt.menuBarImage()
             statusItem.button?.title = ""
+            let settings = aiUsage.menuBarSettings
+            if settings.enabled {
+                let accounts = AIProvider.allCases.flatMap { aiUsage.rows(for: $0) }
+                let usages = settings.usages(from: accounts.compactMap(\.usage))
+                if !usages.isEmpty {
+                    let now = Date()
+                    let title = NSMutableAttributedString()
+                    var details: [String] = []
+                    for usage in usages {
+                        guard let window = usage.windows.first(where: { $0.id == settings.windowID }) else { continue }
+                        if title.length > 0 { title.append(NSAttributedString(string: "   ")) }
+                        if let icon = ProviderLogo.menuBarImage(usage.provider) {
+                            let attachment = NSTextAttachment()
+                            attachment.image = icon
+                            attachment.bounds = NSRect(x: 0, y: -3, width: 16, height: 16)
+                            title.append(NSAttributedString(attachment: attachment))
+                        }
+                        let text = settings.text(for: window, now: now)
+                        title.append(NSAttributedString(string: " \(text)"))
+                        let name = accounts.first(where: { $0.id == usage.accountID })?.name ?? usage.title
+                        var detail = "\(usage.provider.label) · \(name) · \(window.label)\n\(settings.percentMode.label) \(text)"
+                        detail += "\n" + tr("อัปเดตล่าสุด {0}", usage.asOf.formatted(date: .abbreviated, time: .shortened))
+                        if let reset = window.resetsAt {
+                            detail += "\n" + (window.isExpired(at: now) ? tr("รีเซ็ตแล้ว") : tr("รีเซ็ตในอีก {0}", UsageText.until(reset, now: now)))
+                        }
+                        details.append(detail)
+                    }
+                    title.addAttribute(.font, value: NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize(for: .small), weight: .regular), range: NSRange(location: 0, length: title.length))
+                    statusItem.button?.image = nil
+                    statusItem.button?.attributedTitle = title
+                    let detail = details.joined(separator: "\n\n")
+                    statusItem.button?.toolTip = detail
+                    statusItem.button?.setAccessibilityLabel("Hey! · \(detail)")
+                } else {
+                    let message = aiUsage.refreshing ? tr("กำลังอ่านข้อมูล…") : tr("ยังไม่มีข้อมูลของบัญชีหรือช่วงโควตาที่เลือก — เลือกบัญชีอื่นหรือกดรีเฟรช")
+                    statusItem.button?.title = " AI —"
+                    statusItem.button?.toolTip = message
+                    statusItem.button?.setAccessibilityLabel("Hey! · \(message)")
+                }
+            }
         }
     }
 
@@ -838,6 +883,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.button?.target = self
         statusItem.button?.action = #selector(statusClicked)
         statusItem.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        aiUsage.onChange = { [weak self] in self?.updateStatusTitle() }
+        updateStatusTitle()
     }
 
     @objc private func statusClicked() {

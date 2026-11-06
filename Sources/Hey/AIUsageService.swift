@@ -20,6 +20,7 @@ final class AIUsageService {
     static let codexHomesKey = "aiUsageCodexHomes"
     static let antigravityCacheKey = "aiUsageAntigravityCache"
     static let hiddenAccountsKey = "aiUsageHiddenAccounts"
+    static let menuBarKey = "aiUsageMenuBar"
     static let keychainService = "Hey! AI accounts"
 
     struct AccountRow: Identifiable {
@@ -34,16 +35,33 @@ final class AIUsageService {
         var stale = false
     }
 
-    private(set) var rows: [AIProvider: [AccountRow]] = [:]
-    private(set) var refreshing = false
+    private(set) var rows: [AIProvider: [AccountRow]] = [:] {
+        didSet { onChange?() }
+    }
+    var menuBarSettings: UsageMenuBarSettings = {
+        guard let data = UserDefaults.standard.data(forKey: menuBarKey),
+              let settings = try? JSONDecoder().decode(UsageMenuBarSettings.self, from: data) else { return UsageMenuBarSettings() }
+        return settings
+    }() {
+        didSet {
+            UserDefaults.standard.set(try? JSONEncoder().encode(menuBarSettings), forKey: Self.menuBarKey)
+            onChange?()
+        }
+    }
+    private(set) var refreshing = false {
+        didSet { onChange?() }
+    }
     private(set) var lastRefresh: Date?
 
     @ObservationIgnored var onAlert: ((UsageAlert) -> Void)?
+    @ObservationIgnored var onChange: (() -> Void)?
     @ObservationIgnored private lazy var alerts = UsageAlerts(thresholds: thresholds)
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var labels: [String: String] = [:]          // Claude login id -> email, remembered for the session
 
-    private(set) var hiddenAccountIDs = Set(UserDefaults.standard.stringArray(forKey: hiddenAccountsKey) ?? [])
+    private(set) var hiddenAccountIDs = Set(UserDefaults.standard.stringArray(forKey: hiddenAccountsKey) ?? []) {
+        didSet { onChange?() }
+    }
 
     func rows(for provider: AIProvider) -> [AccountRow] {
         (rows[provider] ?? []).filter { !hiddenAccountIDs.contains($0.id) }
@@ -171,7 +189,7 @@ final class AIUsageService {
         if ProcessInfo.processInfo.environment["HEY_DEV_USAGE_DEMO"] != nil { loadDemo(); return }          // screenshots with made-up accounts
         guard !refreshing else { return }
         refreshing = true
-        defer { refreshing = false; lastRefresh = Date() }
+        defer { lastRefresh = Date(); refreshing = false }
         if isEnabled(.codex) { rows[.codex] = await refreshCodex() }
         if isEnabled(.claude) { rows[.claude] = await refreshClaude() }
         if isEnabled(.antigravity) { rows[.antigravity] = await refreshAntigravity() }

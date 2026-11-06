@@ -699,5 +699,21 @@
  "ไม่เอา": "No thanks",
  "ไม่ใช่ลิงก์ YouTube ที่รู้จัก": "Not a recognised YouTube link",
  "ไม่ได้ใช้เครื่องนาน": "Not used for a long time",
- "ไว้ทีหลัง": "Later"
+ "ไว้ทีหลัง": "Later",
+ "แถบเมนู": "Menu bar",
+ "แสดงโควตา AI บนแถบเมนู": "Show AI quota in the menu bar",
+ "บัญชีที่แสดง": "Account to display",
+ "เลือกบัญชีที่แสดง (เลือกได้หลายบัญชี)": "Accounts to display (select multiple)",
+ "บางบัญชีไม่มีข้อมูลของช่วงโควตาที่เลือก จะแสดงเฉพาะบัญชีที่มีข้อมูล": "Some accounts have no data for the selected quota window; only accounts with data are shown",
+ "อัตโนมัติ (บัญชีแรกที่มีช่วงโควตานี้)": "Automatic (first account with this quota window)",
+ "บัญชีที่เลือกไม่พร้อมใช้งาน": "Selected account unavailable",
+ "ช่วงโควตา": "Quota window",
+ "เปอร์เซ็นต์ที่แสดง": "Percentage to display",
+ "ใช้ไป": "Used",
+ "คงเหลือ": "Left",
+ "แสดงเวลานับถอยหลังจนรีเซ็ต": "Show reset countdown",
+ "ตัวอย่าง": "Preview",
+ "ไม่มีเวลารีเซ็ตสำหรับช่วงโควตานี้": "No reset time is available for this quota window",
+ "ยังไม่มีข้อมูลของบัญชีหรือช่วงโควตาที่เลือก — เลือกบัญชีอื่นหรือกดรีเฟรช": "No data for the selected account or quota window — choose another account or press Refresh",
+ "แสดงพร้อมไอคอนผู้ให้บริการ โดยสถานะอัดหน้าจอและ Pomodoro จะแสดงก่อน · ↻ คือเวลาที่เหลือจนรีเซ็ตของช่วงที่เลือก": "Shown with the provider icon; recording and Pomodoro take priority · ↻ is the time until the selected window resets"
 }
