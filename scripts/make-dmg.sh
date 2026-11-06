@@ -18,12 +18,14 @@ hdiutil create -volname "Hey!" -srcfolder "$STAGE" -ov -format UDRW "$RW" >/dev/
 rm -rf "$STAGE"
 
 # Lay the window out through Finder (icon positions, background, no toolbar). If Finder cannot be scripted
-# (headless CI, or Automation not allowed) the disk still works, just with the default layout.
+# (headless CI, or Automation not allowed) set HEY_DMG_PLAIN=1 to accept the default layout; otherwise the build fails so a plain disk is never released by mistake.
+for stale in /Volumes/Hey!*; do [ -d "$stale" ] && hdiutil detach -force "$stale" >/dev/null 2>&1 || true; done     # a leftover mount would make this one "Hey! 1"
 MNT=$(hdiutil attach -readwrite -noverify -noautoopen "$RW" | grep -o '/Volumes/.*' | head -1)
 SetFile -a C "$MNT" 2>/dev/null || true
-osascript <<OSA || echo "note: could not style the window (Finder scripting unavailable); using the default layout"
+VOL=$(basename "$MNT")
+style() { osascript <<OSA
 tell application "Finder"
-  tell disk "Hey!"
+  tell disk "$VOL"
     open
     set current view of container window to icon view
     set toolbar visible of container window to false
@@ -42,6 +44,9 @@ tell application "Finder"
   end tell
 end tell
 OSA
+}
+for try in 1 2 3; do style 2>&1 && [ -f "$MNT/.DS_Store" ] && break; echo "note: Finder did not style the window (try $try), retrying"; sleep 3; done
+[ -f "$MNT/.DS_Store" ] || { echo "ERROR: the window layout was not saved; the DMG would open as a plain list" >&2; [ "${HEY_DMG_PLAIN:-}" = 1 ] || { hdiutil detach -force "$MNT" >/dev/null 2>&1; exit 1; }; }
 sync; sleep 1
 hdiutil detach "$MNT" >/dev/null || { sleep 3; hdiutil detach -force "$MNT" >/dev/null; }
 hdiutil convert "$RW" -format UDZO -imagekey zlib-level=9 -o "$OUT" >/dev/null
