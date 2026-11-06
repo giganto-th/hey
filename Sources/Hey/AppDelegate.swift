@@ -337,6 +337,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 12) { [weak self] in
                     self?.musicBar.mini.show()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 5) { self?.music.devSnapshot(to: out) }
+                    if env["HEY_DEV_MINI_CRASH"] != nil {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in self?.music.devCrash() }
+                    }
                     if env["HEY_DEV_MINI_CYCLE"] != nil {        // close the small window and open it again, twice
                         for t in [3.0, 6.0, 9.0, 12.0] {
                             DispatchQueue.main.asyncAfter(deadline: .now() + t) { [weak self] in

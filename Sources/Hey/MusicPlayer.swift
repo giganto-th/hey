@@ -31,6 +31,8 @@ private final class YouTubeBackend: NSObject, Backend, WKScriptMessageHandler, W
     var onEnded: (() -> Void)?
     var onTime: ((Double, Double) -> Void)?
     var onError: ((String) -> Void)?
+    /// The web content process died (memory pressure, a long sleep): the picture is blank until the page is loaded again.
+    var onCrashed: (() -> Void)?
 
     private let webView: WKWebView
     private let window: NSWindow
@@ -158,15 +160,25 @@ private final class YouTubeBackend: NSObject, Backend, WKScriptMessageHandler, W
     func webView(_ w: WKWebView, didFinish n: WKNavigation!) { if Self.debug { print("[yt] page loaded") } }
     func webView(_ w: WKWebView, didFail n: WKNavigation!, withError e: Error) { pageLost(tr("เชื่อมต่อ YouTube ไม่ได้ ตรวจอินเทอร์เน็ตนะ")) }
     func webView(_ w: WKWebView, didFailProvisionalNavigation n: WKNavigation!, withError e: Error) { pageLost(tr("เชื่อมต่อ YouTube ไม่ได้ ตรวจอินเทอร์เน็ตนะ")) }
-    func webViewWebContentProcessDidTerminate(_ w: WKWebView) { pageLost(tr("ตัวเล่น YouTube หยุดทำงาน ลองเล่นใหม่อีกครั้ง")) }
+    func webViewWebContentProcessDidTerminate(_ w: WKWebView) {
+        resetPage()
+        if let onCrashed { onCrashed() } else { onError?(tr("ตัวเล่น YouTube หยุดทำงาน ลองเล่นใหม่อีกครั้ง")) }
+    }
 
-    /// The page is gone: start it afresh next time instead of queueing commands for it forever.
-    private func pageLost(_ message: String) {
+    /// Dev: kill the web content process the way the system would, to check the player recovers.
+    func devCrash() { _ = webView.perform(NSSelectorFromString("_killWebContentProcessAndResetState")) }
+
+    private func resetPage() {
         started = false
         ready = false
         pending.removeAll()
         holdAwake(false)
         onPlaying?(false)
+    }
+
+    /// The page is gone: start it afresh next time instead of queueing commands for it forever.
+    private func pageLost(_ message: String) {
+        resetPage()
         onError?(message)
     }
 
@@ -287,6 +299,8 @@ final class MusicPlayer {
     @ObservationIgnored private var queuePlaylistID: UUID?
     @ObservationIgnored private var loadWatchdog: DispatchWorkItem?
     @ObservationIgnored private var skipWork: DispatchWorkItem?
+    @ObservationIgnored private var crashRetries = 0
+    @ObservationIgnored private var resumeAt: Double?
 
     init(model: GameModel) {
         self.model = model
@@ -305,6 +319,7 @@ final class MusicPlayer {
     func detachVideo(from container: NSView) { youtube?.detachVideo(from: container) }
     var videoHost: NSView? { youtube?.videoHost }
     func devSnapshot(to path: String) { youtube?.devSnapshot(to: path) }
+    func devCrash() { youtube?.devCrash() }
 
     var currentPlaylist: Playlist? { model.game.currentPlaylist }
     var volume: Double { model.game.music.volume }
@@ -456,7 +471,7 @@ final class MusicPlayer {
         let backend: any Backend
         switch track.source {
         case .youtube:
-            if youtube == nil { let y = YouTubeBackend(); wire(y); youtube = y }
+            if youtube == nil { let y = YouTubeBackend(); wire(y); y.onCrashed = { [weak self] in self?.recoverFromCrash() }; youtube = y }
             backend = youtube!
         case .file:
             backend = files
@@ -494,7 +509,10 @@ final class MusicPlayer {
         backend.onPlaying = { [weak self] playing in
             guard let self else { return }
             isPlaying = playing
-            if playing { isLoading = false; consecutiveFailures = 0 }
+            if playing {
+                isLoading = false; consecutiveFailures = 0
+                if let at = resumeAt { resumeAt = nil; active?.seek(to: at) }
+            }
             if logStates { print("[music] playing=\(playing) t=\(position)") }
             updateNowPlaying()
             onChange?()
@@ -503,12 +521,24 @@ final class MusicPlayer {
         backend.onTime = { [weak self] pos, dur in
             guard let self else { return }
             position = pos
+            if pos > 10 { crashRetries = 0 }
             if dur > 0, dur != duration { duration = dur; learnDuration(dur) }
             if logStates { print("[music] t=\(Int(pos))/\(Int(dur))") }
             countListening()
             updateNowPlaying()
         }
         backend.onError = { [weak self] message in self?.failed(message) }
+    }
+
+    /// The picture went blank because the web page's process died: load the song again and carry on from where it was.
+    private func recoverFromCrash() {
+        guard let track = nowPlaying, case .youtube = track.source, crashRetries < 3 else {
+            failed(tr("ตัวเล่น YouTube หยุดทำงาน ลองเล่นใหม่อีกครั้ง")); return
+        }
+        crashRetries += 1
+        let at = position
+        start(track)
+        resumeAt = at > 3 ? at : nil
     }
 
     private func failed(_ message: String) {

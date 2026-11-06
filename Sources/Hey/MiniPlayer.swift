@@ -68,6 +68,16 @@ private struct MiniPlayerView: View {
     var body: some View {
         ZStack {
             VideoSurface(music: music, draggable: true)
+            if let error = music.errorText {                       // a blank picture says nothing; say why
+                VStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill").font(.title2)
+                    Text(error).font(.callout).multilineTextAlignment(.center)
+                }
+                .foregroundStyle(.white).padding(16).frame(maxWidth: .infinity, maxHeight: .infinity).background(.black.opacity(0.85))
+                .allowsHitTesting(false)
+            } else if music.isLoading {
+                ProgressView().controlSize(.large).tint(.white).allowsHitTesting(false)
+            }
             VStack {
                 HStack {
                     Spacer()
