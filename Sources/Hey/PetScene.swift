@@ -50,6 +50,8 @@ final class PetScene: SKScene {
     }
     /// Asked every frame; nil means nothing to go for.
     var seekTarget: (() -> SeekTarget?)?
+    /// Every pet event, for things outside the scene (notifications, the Hub) that care about a death or a warning.
+    var onPetEvent: ((PetEngineEvent) -> Void)?
 
     private var stage: PetStage { model.game.pet.state.stage }
     private var queue: [(text: String, symbol: String?)] = []
@@ -252,7 +254,10 @@ final class PetScene: SKScene {
         lookAtPointer(dt: dt)
         refreshSurfaces(dt: dt)
         pursueTarget()
-        fsm.tick(dt: dt)
+        let dead = model.game.pet.state.isDead
+        flipNode.alpha = dead ? 0.55 : 1
+        if dead, fsm.pose != .sleep { fsm.send(.tired) }                     // a pet that has died lies still
+        if !(dead && fsm.pose == .sleep) { fsm.tick(dt: dt) }
         if !presentation.holdsPosition || fsm.pose == .carried || fsm.pose == .falling || fsm.pose == .fly { move(dt: CGFloat(dt)) }
         render(dt: dt)
     }
@@ -357,6 +362,7 @@ final class PetScene: SKScene {
     }
 
     private func handle(pet event: PetEngineEvent) {
+        onPetEvent?(event)
         switch event {
         case .hatched: say(tr("ฟักแล้ว!"), symbol: "sparkles"); fsm.send(.clicked)
         case .evolved(let stage): say(tr("โตขึ้นแล้ว: {0}", stage.displayName), symbol: "sparkles"); fsm.send(.clicked)
@@ -368,6 +374,11 @@ final class PetScene: SKScene {
             let text = tr("อุ่นแล้ว {0}/{1}", Int(progress), Int(needed))
             if bubbleModel.text != nil, queue.isEmpty { bubbleModel.symbol = "flame.fill"; bubbleModel.text = text } else { say(text, symbol: "flame.fill") }
         case .eggWarmEnoughToday: say(tr("วันนี้อุ่นด้วยมือครบแล้ว เปิดแอปไว้ก็อุ่นต่อเองนะ"), symbol: "flame.fill")
+        case .neglect(let level):
+            say(level >= 2 ? tr("{0} แย่มากแล้ว ช่วยดูแลด่วนนะ", model.game.pet.state.name) : tr("{0} เริ่มแย่แล้ว ดูแลหน่อยนะ", model.game.pet.state.name),
+                symbol: "exclamationmark.triangle.fill")
+        case .died(let cause): say(tr("{0} จากไปแล้ว เพราะ{1}", model.game.pet.state.name, cause.label), symbol: "heart.slash.fill")
+        case .refusedDead: say(tr("{0} จากไปแล้ว ฟักไข่ใหม่ได้ที่ Hub", model.game.pet.state.name), symbol: "heart.slash.fill")
         case .dailyCheckIn:
             let greeting = Greeting.line(hour: Calendar.current.component(.hour, from: Date()))
             say(greeting.text, symbol: greeting.symbol)

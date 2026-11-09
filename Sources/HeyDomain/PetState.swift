@@ -65,6 +65,13 @@ public struct Balance: Sendable {
     public var clickWarmDailyCap = 10.0
 
     public var dailyCheckInXP = 5.0
+
+    // Neglect: time spent with a stat at zero. It builds up, eases off twice as fast once everything is above zero again,
+    // and the pet dies when it reaches `deathAfterNeglectHours`. Closed-app gaps count for at most `offlineCapHours`.
+    public var warnAfterNeglectHours = 3.0
+    public var dangerAfterNeglectHours = 8.0
+    public var deathAfterNeglectHours = 12.0
+    public var neglectRecoveryFactor = 2.0
     public var petBondDailyCap = 20.0
 
     /// XP needed to leave a stage.
@@ -88,6 +95,33 @@ public struct Balance: Sendable {
     public static let standard = Balance()
 }
 
+/// The three needs that can run out.
+public enum PetNeed: String, Codable, CaseIterable, Sendable {
+    case hunger, mood, energy
+
+    public var label: String {
+        switch self {
+        case .hunger: tr("หิว")
+        case .mood: tr("เศร้า")
+        case .energy: tr("หมดแรง")
+        }
+    }
+}
+
+/// A pet that has died, kept so the player can look back.
+public struct PetMemorial: Codable, Equatable, Sendable, Identifiable {
+    public var id = UUID()
+    public var name: String
+    public var species: String
+    public var stage: PetStage
+    public var bornAt: Date
+    public var diedAt: Date
+    public var cause: PetNeed?
+    public var xp: Double
+
+    public var daysLived: Int { max(Int(diedAt.timeIntervalSince(bornAt) / 86_400), 0) }
+}
+
 public struct PetState: Codable, Equatable, Sendable {
     public var name = "Hei Hei"
     public var stage: PetStage = .egg
@@ -109,6 +143,15 @@ public struct PetState: Codable, Equatable, Sendable {
     public var lastCheckIn: Date?
 
     public var lastFed: [String: Date] = [:]
+
+    // Written only after a stat has hit zero; optional so a save from an older build still loads.
+    /// Seconds spent with a stat at zero that have not been made up yet.
+    public var neglectSeconds: Double?
+    /// Set when the pet has died; nil while it lives.
+    public var diedAt: Date?
+    public var deathCause: PetNeed?
+
+    public var isDead: Bool { diedAt != nil }
 
     public init(now: Date = Date(), calendar: Calendar = .current) {
         bornAt = now

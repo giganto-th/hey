@@ -68,6 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         aiUsage.start()
         if WelcomeWindow.shouldShow { DispatchQueue.main.async { [weak self] in if let self { WelcomeWindow.show(model: self.model) } } }
+        scene.onPetEvent = { [weak self] event in self?.petEvent(event) }
         scene.seekTarget = { [weak self] in self?.food.target() ?? self?.bubbles.target() }
         view.onEvent = { [weak scene] in scene?.send($0) }
         vault = VaultService(model: model)
@@ -936,7 +937,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // 1. the pet at a glance
         let xpNeeded = game.pet.balance.xpToLeave(s.stage)
         card(PetMenuCard(data: PetCardData(
-            name: s.name, stage: s.stage.displayName, isEgg: s.stage == .egg,
+            name: s.name, stage: s.isDead ? tr("จากไปแล้ว") : s.stage.displayName, isEgg: s.stage == .egg && !s.isDead,
             hatch: (s.hatchProgress, game.pet.balance.hatchNeeded), xp: (s.xp, xpNeeded),
             hunger: s.hunger, mood: s.mood, energy: s.energy, coins: game.coins, streak: game.streak.current,
             questsDone: game.quests.filter(\.done).count, questsTotal: game.quests.count,
@@ -958,6 +959,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         // 3. the pet
         section(tr("สัตว์เลี้ยง"))
+        if s.isDead { action(tr("ฟักไข่ใหม่…"), "egg.fill", #selector(openPetPage)) }
         let feedItem = NSMenuItem(title: tr("ให้อาหาร"), action: nil, keyEquivalent: "")
         feedItem.image = NSImage(systemSymbolName: "fork.knife", accessibilityDescription: nil)
         let feedMenu = NSMenu()
@@ -1035,6 +1037,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         router.section = section
         openHub()
     }
+
+    /// Warnings and a death matter even when Hey! is behind other windows: notify, and on a death open the Hub where a new egg can be chosen.
+    private func petEvent(_ event: PetEngineEvent) {
+        let name = model.game.pet.state.name
+        switch event {
+        case .neglect(let level):
+            SystemNotice.post(level >= 2 ? tr("{0} แย่มากแล้ว ช่วยดูแลด่วนนะ", name) : tr("{0} เริ่มแย่แล้ว ดูแลหน่อยนะ", name))
+        case .died(let cause):
+            SystemNotice.post(tr("{0} จากไปแล้ว เพราะ{1}", name, cause.label))
+            showHub(section: .pet)
+        default: break
+        }
+    }
+
+    @objc private func openPetPage() { showHub(section: .pet) }
 
     @objc private func spreadWindows() { windowSpread.show() }
 

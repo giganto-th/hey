@@ -5,13 +5,13 @@ import HeyDomain
 
 enum HubSection: String, CaseIterable, Identifiable {
     case today, pet, quests, shop, achievements, game
-    case vault, music, capture, reminders, focus, notes, clipboard, usage
+    case vault, music, capture, reminders, focus, notes, clipboard, usage, system
     case gestures, settings
 
     /// The sidebar's groups, so twelve-plus pages stay easy to scan.
     static let groups: [(title: String, sections: [HubSection])] = [
         (tr("สัตว์เลี้ยง"), [.pet, .quests, .shop, .achievements, .game]),
-        (tr("เครื่องมือ"), [.vault, .clipboard, .music, .capture, .reminders, .focus, .notes, .usage]),
+        (tr("เครื่องมือ"), [.vault, .clipboard, .music, .capture, .reminders, .focus, .notes, .usage, .system]),
         (tr("ตั้งค่า"), [.gestures, .settings]),
     ]
 
@@ -30,6 +30,7 @@ enum HubSection: String, CaseIterable, Identifiable {
         case .notes: tr("โน้ต")
         case .clipboard: tr("คลิปบอร์ด")
         case .usage: tr("เครดิต AI")
+        case .system: tr("เครื่องของฉัน")
         case .game: tr("มินิเกม")
         case .achievements: tr("ความสำเร็จ")
         case .gestures: tr("ท่าทาง")
@@ -51,6 +52,7 @@ enum HubSection: String, CaseIterable, Identifiable {
         case .notes: "note.text"
         case .clipboard: "doc.on.clipboard"
         case .usage: "gauge.with.dots.needle.67percent"
+        case .system: "cpu"
         case .game: "gamecontroller"
         case .achievements: "trophy"
         case .gestures: "hand.draw"
@@ -61,7 +63,7 @@ enum HubSection: String, CaseIterable, Identifiable {
 }
 
 enum HubDestination: String, CaseIterable, Identifiable {
-    case today, music, files, productivity, usage, pet, settings
+    case today, music, files, productivity, usage, system, pet, settings
     var id: Self { self }
     var sections: [HubSection] {
         switch self {
@@ -70,6 +72,7 @@ enum HubDestination: String, CaseIterable, Identifiable {
         case .files: [.vault, .clipboard, .notes]
         case .productivity: [.focus, .reminders]
         case .usage: [.usage]
+        case .system: [.system]
         case .pet: [.pet, .quests, .shop, .achievements, .game]
         case .settings: [.settings, .gestures, .capture]
         }
@@ -81,6 +84,7 @@ enum HubDestination: String, CaseIterable, Identifiable {
         case .files: tr("ไฟล์และโน้ต")
         case .productivity: tr("โฟกัสและเตือน")
         case .usage: tr("เครดิต AI")
+        case .system: tr("เครื่องของฉัน")
         case .pet: "Hei Hei"
         case .settings: tr("การตั้งค่า")
         }
@@ -92,6 +96,7 @@ enum HubDestination: String, CaseIterable, Identifiable {
         case .files: "square.stack.3d.up"
         case .productivity: "timer"
         case .usage: "gauge.with.dots.needle.67percent"
+        case .system: "cpu"
         case .pet: "bird"
         case .settings: "slider.horizontal.3"
         }
@@ -162,6 +167,7 @@ struct HubView: View {
                     case .notes: NotesTab(model: model, game: game)
                     case .clipboard: ClipboardTab(service: clipboard)
                     case .usage: UsageTab(service: aiUsage)
+                    case .system: SystemTab(power: power)
                     case .game: MiniGameTab(model: model, game: game)
                     case .achievements: AchievementsTab(game: game)
                     case .gestures: GesturesTab(model: model, game: game, log: gestureLog)
@@ -268,6 +274,38 @@ private struct ShopTab: View {
     }
 }
 
+/// Shown in place of the pet's care when it has died: a goodbye and a choice of the next egg.
+private struct RebirthCard: View {
+    let model: GameModel
+    let game: Game
+    @State private var species = ""
+
+    var body: some View {
+        let s = game.pet.state
+        let installed = PetSpecies.all.filter { SpritePet.installedSpecies().contains($0.id) }
+        VStack(alignment: .leading, spacing: 10) {
+            Label(tr("{0} จากไปแล้ว", s.name), systemImage: "heart.slash.fill").font(.headline)
+            Text(tr("{0} {1} ตอนอายุ {2} วัน", s.deathCause.map { tr("จากไปเพราะ{0}", $0.label) } ?? "",
+                    s.stage.displayName, Int((s.diedAt ?? Date()).timeIntervalSince(s.bornAt) / 86_400)))
+                .font(.callout).foregroundStyle(.secondary)
+            Text(tr("เหรียญ ของในคลัง เควส และความสำเร็จของคุณยังอยู่ครบ ฟักไข่ใหม่เพื่อเริ่มต้นอีกครั้ง"))
+                .font(.caption).foregroundStyle(.secondary)
+            if installed.count > 1 {
+                Picker(tr("ตัวใหม่"), selection: $species) {
+                    ForEach(installed) { Text($0.label).tag($0.id) }
+                }
+                .pickerStyle(.segmented)
+            }
+            Button {
+                model.perform { $0.hatchNewEgg(at: Date(), species: species.isEmpty ? nil : species); return [] }
+            } label: { Label(tr("ฟักไข่ใหม่"), systemImage: "egg.fill") }
+                .buttonStyle(.borderedProminent)
+        }
+        .padding(.vertical, 6)
+        .onAppear { species = game.species }
+    }
+}
+
 private struct PetTab: View {
     let model: GameModel
     let game: Game
@@ -276,9 +314,18 @@ private struct PetTab: View {
     var body: some View {
         let s = game.pet.state
         List {
+            if s.isDead {
+                Section { RebirthCard(model: model, game: game) }
+            } else if let left = game.pet.hoursUntilDeath {
+                Section {
+                    Label(tr("{0} ถูกปล่อยปละละเลย จะจากไปในอีกประมาณ {1} ชั่วโมงถ้าไม่ดูแล", s.name, Int(left.rounded(.up))),
+                          systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                }
+            }
             Section {
                 let installed = SpritePet.installedSpecies()
-                if installed.count > 1 {
+                if installed.count > 1, !s.isDead {
                     Picker(tr("หน้าตา"), selection: Binding(
                         get: { game.species },
                         set: { id in model.perform { $0.setSpecies(id); return [] } })) {
@@ -293,6 +340,22 @@ private struct PetTab: View {
                     Spacer()
                 }
                 .listRowBackground(Color.clear)
+            }
+            Section(tr("ขนาดสัตว์เลี้ยง")) {
+                let scale = game.gestures.petScale
+                HStack {
+                    Slider(value: Binding(
+                        get: { game.gestures.petScale },
+                        set: { v in model.performQuietly { $0.setGestures { $0.petScale = v }; return [] } }),
+                        in: GestureSettings.minScale...GestureSettings.maxScale) { editing in
+                        if !editing { model.save() }
+                    }
+                    Text("\(Int(scale * 100))%").monospacedDigit().frame(width: 48, alignment: .trailing)
+                    Button(tr("ค่าเริ่มต้น")) {
+                        model.perform { $0.setGestures { $0.petScale = 1.0 }; return [] }
+                    }.disabled(scale == 1.0)
+                }
+                Text(tr("เปลี่ยนขนาดได้ทันที หรือ pinch สองนิ้วบนตัวสัตว์")).font(.caption).foregroundStyle(.secondary)
             }
             Section(s.stage == .egg ? tr("ไข่") : "\(s.name) — \(s.stage.displayName)") {
                 if s.stage == .egg {
@@ -311,7 +374,27 @@ private struct PetTab: View {
                     Label(tr("ผูกพัน {0}", Int(s.bond)), systemImage: "heart.fill").font(.callout)
                 }
             }
-            if s.stage != .egg {
+            Section(tr("การดูแล")) {
+                Toggle(tr("ให้สัตว์เลี้ยงจากไปได้ถ้าถูกปล่อยปละละเลย"), isOn: Binding(
+                    get: { game.care.mortal }, set: { v in model.perform { $0.setCare { $0.mortal = v }; return [] } }))
+                Text(tr("ถ้าความหิว อารมณ์ หรือพลังงานเป็น 0 นานรวมกัน 12 ชั่วโมง สัตว์เลี้ยงจะจากไป ตอนปิดแอปนับไม่เกิน 8 ชั่วโมงต่อครั้ง และจะเตือนล่วงหน้า"))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if !game.memorials.isEmpty {
+                Section(tr("ที่ระลึก")) {
+                    ForEach(game.memorials) { m in
+                        HStack {
+                            Image(systemName: "heart.slash").foregroundStyle(.secondary)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("\(m.name) · \(m.stage.displayName)").fontWeight(.medium)
+                                Text(tr("อยู่ด้วยกัน {0} วัน · จากไปเพราะ{1}", m.daysLived, m.cause?.label ?? "-"))
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+            if s.stage != .egg, !s.isDead {
                 Section(tr("ให้อาหาร")) {
                     ForEach(game.pet.balance.foods) { food in
                         let stock = game.stock(of: food)

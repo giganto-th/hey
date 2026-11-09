@@ -34,12 +34,14 @@ public struct SaveData: Codable, Equatable, Sendable {
     public var stats = LifetimeStats()
     public var achievements: [String: Date] = [:]
     public var guide = GuideState()
+    public var care = PetCareSettings()
+    public var memorials: [PetMemorial] = []
 
     public init(pet: PetState) { self.pet = pet }
 
     // Hand-written so a file saved by an older build (missing newer keys) still loads.
     private enum CodingKeys: String, CodingKey {
-        case version, pet, coins, inventory, quests, questDay, streak, reminders, notes, vault, vaultSettings, playlists, music, media, capture, power, gestures, species, reactions, motion, radialMenu, shelf, files, stats, achievements, guide
+        case version, pet, coins, inventory, quests, questDay, streak, reminders, notes, vault, vaultSettings, playlists, music, media, capture, power, gestures, species, reactions, motion, radialMenu, shelf, files, stats, achievements, guide, care, memorials
     }
 
     public init(from decoder: Decoder) throws {
@@ -77,6 +79,8 @@ public struct SaveData: Codable, Equatable, Sendable {
         stats = value(LifetimeStats.self, .stats, default: LifetimeStats())
         achievements = value([String: Date].self, .achievements, default: [:])
         guide = value(GuideState.self, .guide, default: GuideState())
+        care = value(PetCareSettings.self, .care, default: PetCareSettings())
+        memorials = list(PetMemorial.self, .memorials)
         let saved = (try? c.decodeIfPresent(String.self, forKey: .species)) ?? nil
         // v2 restores Hei Hei. Keep custom names and unknown species intact.
         let migrate = saved == nil || (version < 2 && saved == "tok")
@@ -101,6 +105,19 @@ public struct SaveData: Codable, Equatable, Sendable {
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         return try encoder.encode(self)
+    }
+}
+
+public struct PetCareSettings: Codable, Equatable, Sendable {
+    public static let maxMemorials = 30
+    /// A pet that is neglected long enough dies. Off keeps the old gentle behaviour.
+    public var mortal = true
+    public init() {}
+
+    private enum CodingKeys: String, CodingKey { case mortal }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        mortal = try c.decodeIfPresent(Bool.self, forKey: .mortal) ?? true
     }
 }
 
@@ -137,6 +154,8 @@ public struct Game: Sendable {
     public private(set) var stats: LifetimeStats
     public private(set) var achievements: [String: Date]
     public private(set) var guide: GuideState
+    public private(set) var care: PetCareSettings
+    public private(set) var memorials: [PetMemorial]
 
     private var calendar: Calendar
     private var rng: any RandomSource
@@ -172,6 +191,9 @@ public struct Game: Sendable {
         stats = save.stats
         achievements = save.achievements
         guide = save.guide
+        care = save.care
+        memorials = save.memorials
+        pet.mortal = save.care.mortal
         self.calendar = calendar
         self.rng = rng
     }
@@ -202,6 +224,8 @@ public struct Game: Sendable {
         s.stats = stats
         s.achievements = achievements
         s.guide = guide
+        s.care = care
+        s.memorials = memorials
         return s
     }
 
@@ -601,6 +625,25 @@ public struct Game: Sendable {
         if pet.state.name == PetSpecies.named(species)?.defaultName { pet.rename(next.defaultName) }
         species = id
     }
+    public mutating func setCare(_ change: (inout PetCareSettings) -> Void) {
+        change(&care)
+        pet.mortal = care.mortal
+    }
+
+    /// After a death: the pet goes into the memorial list and a new egg takes its place (the same kind unless another is chosen).
+    /// The player's coins, stock, quests and achievements are kept.
+    @discardableResult
+    public mutating func hatchNewEgg(at now: Date, species newSpecies: String? = nil) -> Bool {
+        guard pet.state.isDead else { return false }
+        let s = pet.state
+        memorials.insert(PetMemorial(name: s.name, species: species, stage: s.stage, bornAt: s.bornAt, diedAt: s.diedAt ?? now,
+                                     cause: s.deathCause, xp: s.xp), at: 0)
+        if memorials.count > PetCareSettings.maxMemorials { memorials.removeLast(memorials.count - PetCareSettings.maxMemorials) }
+        if let id = newSpecies, PetSpecies.named(id) != nil { species = id }
+        pet.startOver(at: now, name: PetSpecies.named(species)?.defaultName ?? "Hei Hei")
+        return true
+    }
+
     public mutating func setMotion(_ change: (inout MotionSettings) -> Void) { change(&motion) }
 
     public mutating func setPower(_ change: (inout PowerSettings) -> Void) {
