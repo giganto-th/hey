@@ -79,6 +79,9 @@ final class SpritePet: SKNode {
         var oneShot: Bool { self == .startled || self == .happy }
     }
 
+    /// Typing clips whose art has no keyboard in it (every other set draws its own), so the code-made one is shown instead.
+    private static let typingClipsWithoutKeyboard: Set<String> = ["shishi/child"]
+
     private static var clips: [String: [SKTexture]] = [:]
 
     private static func frames(of clip: Clip, species: String, stage: PetStage) -> [SKTexture]? {
@@ -515,7 +518,8 @@ final class SpritePet: SKNode {
 
     private func updateProps(activity: CompanionActivity, presentation: CompanionPresentation, frame: Pose, reduced: Bool, dt: Double) {
         // the drawn typing frames already include their keyboard
-        let desired: CGFloat = presentation.showsKeyboard && shownClip?.clip != .type ? 1 : 0
+        let drawnKeyboard = shownClip?.clip == .type && !Self.typingClipsWithoutKeyboard.contains("\(species)/\(stage.rawValue)")
+        let desired: CGFloat = presentation.showsKeyboard && !drawnKeyboard ? 1 : 0
         if [.carried, .falling, .attentive, .dormant].contains(activity) || reduced { keyboardOpacity = desired }
         else { keyboardOpacity += (desired - keyboardOpacity) * min(1, CGFloat(dt) * 12) }
         keyboard.alpha = keyboardOpacity
