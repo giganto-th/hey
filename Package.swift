@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "Hey",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS(.v15)],
     products: [
         .library(name: "heynp", type: .dynamic, targets: ["HeyNowPlaying"]),
     ],

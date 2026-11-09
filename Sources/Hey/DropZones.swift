@@ -156,7 +156,7 @@ private struct ZonesView: View {
     let model: DropZonesController.ZoneModel
 
     var body: some View {
-        GlassEffectContainer(spacing: 10) {
+        GlassGroup(spacing: 10) {
             HStack(spacing: 10) {
                 ForEach(DropDestination.allCases, id: \.self) { dest in zone(dest) }
             }
@@ -173,8 +173,7 @@ private struct ZonesView: View {
                 .font(.caption).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .glassEffect(hot ? .regular.tint(dest == .vault ? .teal.opacity(0.55) : .orange.opacity(0.55)) : .regular,
-                     in: .rect(cornerRadius: 24))
+        .heyGlass(.rect(cornerRadius: 24), tint: hot ? (dest == .vault ? .teal.opacity(0.55) : .orange.opacity(0.55)) : nil)
         .scaleEffect(hot ? 1.05 : 1)
         .animation(.spring(duration: 0.25), value: hot)
     }

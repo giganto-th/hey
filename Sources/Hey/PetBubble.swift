@@ -31,7 +31,7 @@ struct PetBubbleView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .frame(maxWidth: 184)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 16))
+                    .heyGlass(.rect(cornerRadius: 16))
                     .transition(.scale(scale: 0.8, anchor: .bottom).combined(with: .opacity))
                     .id(text)
             }

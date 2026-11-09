@@ -37,7 +37,7 @@ private struct CountdownView: View {
             .font(.system(size: 120, weight: .bold, design: .rounded))
             .foregroundStyle(.primary)
             .frame(width: 200, height: 200)
-            .glassEffect(.regular, in: .rect(cornerRadius: 44))
+            .heyGlass(.rect(cornerRadius: 44))
             .contentTransition(.numericText())
             .animation(.spring, value: model.value)
     }

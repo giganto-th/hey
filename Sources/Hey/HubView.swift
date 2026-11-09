@@ -588,13 +588,13 @@ private struct PomodoroTab: View {
                 .monospacedDigit()
             ProgressView(value: t.duration(of: t.phase) - t.remaining(at: pomodoro.now), total: t.duration(of: t.phase))
                 .frame(maxWidth: 260)
-            GlassEffectContainer(spacing: 10) {
+            GlassGroup(spacing: 10) {
                 HStack(spacing: 10) {
                     Button(t.isRunning ? tr("หยุดชั่วคราว") : tr("เริ่ม")) { pomodoro.toggle() }
-                        .buttonStyle(.glassProminent)
+                        .heyProminentButton()
                         .keyboardShortcut(.defaultAction)
-                    Button(tr("ข้าม")) { pomodoro.skip() }.buttonStyle(.glass)
-                    Button(tr("รีเซ็ต")) { pomodoro.reset() }.buttonStyle(.glass)
+                    Button(tr("ข้าม")) { pomodoro.skip() }.heySecondaryButton()
+                    Button(tr("รีเซ็ต")) { pomodoro.reset() }.heySecondaryButton()
                 }
             }
             }
@@ -1476,7 +1476,7 @@ private struct MiniGameTab: View {
 
             GeometryReader { geo in
                 ZStack {
-                    Color.clear.glassEffect(.regular, in: .rect(cornerRadius: 20))
+                    Color.clear.heyGlass(.rect(cornerRadius: 20))
                     TimelineView(.animation) { timeline in
                         ZStack {
                             ForEach(state.items) { item in
@@ -1498,7 +1498,7 @@ private struct MiniGameTab: View {
                                 Text(tr("อาหารทั่วไป +1 · น้ำผึ้ง +3 · ของอันตราย −2")).foregroundStyle(.secondary)
                             }
                             Button(state.finished ? tr("เล่นอีกครั้ง") : tr("เริ่ม")) { state.start() }
-                                .buttonStyle(.glassProminent)
+                                .heyProminentButton()
                         }
                     }
                 }
@@ -1671,7 +1671,7 @@ private struct UpdateBanner: View {
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
-        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .heyGlass(.rect(cornerRadius: 16))
     }
 }
 

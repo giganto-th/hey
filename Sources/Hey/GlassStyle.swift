@@ -4,12 +4,12 @@ import SwiftUI
 extension View {
     /// A floating glass card (toasts, the player bar, the timer).
     func glassCard(cornerRadius: CGFloat = 18, tint: Color? = nil) -> some View {
-        glassEffect(tint.map { Glass.regular.tint($0) } ?? .regular, in: .rect(cornerRadius: cornerRadius))
+        heyGlass(.rect(cornerRadius: cornerRadius), tint: tint)
     }
 
     /// A small glass pill (counters, badges).
     func glassPill() -> some View {
-        padding(.horizontal, 12).padding(.vertical, 6).glassEffect(.regular, in: .capsule)
+        padding(.horizontal, 12).padding(.vertical, 6).heyGlass(.capsule)
     }
 }
 
@@ -43,7 +43,7 @@ extension View {
     /// A rounded Liquid Glass panel that holds a page's content.
     func heyPanel(cornerRadius: CGFloat = 24) -> some View {
         clipShape(.rect(cornerRadius: cornerRadius))
-            .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
+            .heyGlass(.rect(cornerRadius: cornerRadius))
     }
 }
 
@@ -92,5 +92,55 @@ struct RailButton: View {
         .buttonStyle(.plain)
         .help(title)
         .accessibilityLabel(title)
+    }
+}
+
+// MARK: macOS 15 and 26
+// Liquid Glass exists from macOS 26. These wrappers use it there and a translucent material with a hairline edge on macOS 15,
+// so every screen keeps working on both.
+
+/// Dev only: `HEY_DEV=1 HEY_DEV_NO_GLASS=1` draws everything the way macOS 15 would, to check that look on a newer Mac.
+enum GlassMode {
+    static let useLiquidGlass: Bool = {
+        let env = ProcessInfo.processInfo.environment
+        if env["HEY_DEV"] != nil, env["HEY_DEV_NO_GLASS"] != nil { return false }
+        if #available(macOS 26, *) { return true } else { return false }
+    }()
+}
+
+extension View {
+    /// A glass surface in `shape`: Liquid Glass on macOS 26, a blurred material before that.
+    @ViewBuilder
+    func heyGlass<S: Shape>(_ shape: S, tint: Color? = nil, interactive: Bool = false) -> some View {
+        if #available(macOS 26, *), GlassMode.useLiquidGlass {
+            let base: Glass = interactive ? .regular.interactive() : .regular
+            self.glassEffect(tint.map { base.tint($0) } ?? base, in: shape)
+        } else {
+            self.background(.regularMaterial, in: shape)
+                .background(tint.map { $0.opacity(0.35) } ?? .clear, in: shape)
+                .overlay(shape.stroke(.white.opacity(0.14), lineWidth: 0.6))
+        }
+    }
+
+    /// The prominent (filled) button look: glass on macOS 26, the standard prominent style before.
+    @ViewBuilder
+    func heyProminentButton() -> some View {
+        if #available(macOS 26, *), GlassMode.useLiquidGlass { self.buttonStyle(.glassProminent) } else { self.buttonStyle(.borderedProminent) }
+    }
+
+    /// The secondary button look: glass on macOS 26, bordered before.
+    @ViewBuilder
+    func heySecondaryButton() -> some View {
+        if #available(macOS 26, *), GlassMode.useLiquidGlass { self.buttonStyle(.glass) } else { self.buttonStyle(.bordered) }
+    }
+}
+
+/// Groups glass surfaces so they blend (macOS 26); a plain container before.
+struct GlassGroup<Content: View>: View {
+    var spacing: CGFloat = 8
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        if #available(macOS 26, *), GlassMode.useLiquidGlass { GlassEffectContainer(spacing: spacing) { content() } } else { content() }
     }
 }

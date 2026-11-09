@@ -22,10 +22,12 @@ jobs:
       - run: python3 docs/art-tools/clip_report.py --check
 
   build:
-    # The app targets macOS 26. GitHub's macOS runners may not offer it yet, so this only compiles (the tests need macOS 26 to run);
-    # run `swift test` on your own Mac.
-    runs-on: macos-latest
-    continue-on-error: true
+    # The app runs on macOS 15 and later, so build and test on the oldest and the newest it supports.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-26]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Select the newest Xcode
@@ -33,5 +35,7 @@ jobs:
           latest=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           [ -n "$latest" ] && sudo xcode-select -s "$latest"
           xcodebuild -version
+          sw_vers
           swift --version
       - run: swift build
+      - run: swift test

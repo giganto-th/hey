@@ -198,7 +198,7 @@ struct RadialMenuView: View {
 
                 header(controller.header(), model: model, controller: controller)
 
-                GlassEffectContainer(spacing: 6) {
+                GlassGroup(spacing: 6) {
                     ZStack {
                         ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                             let target = index < centers.count ? model.inView(centers[index]) : start
@@ -250,7 +250,7 @@ struct RadialMenuView: View {
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .glassEffect(.regular.interactive(), in: .circle)
+        .heyGlass(.circle, interactive: true)
         .opacity(item.enabled ? 1 : 0.4)
     }
 
@@ -281,7 +281,7 @@ struct RadialMenuView: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 9)
         .frame(width: rect.width, height: rect.height)
-        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .heyGlass(.rect(cornerRadius: 16))
         .scaleEffect(model.shown ? 1 : 0.85)
         .opacity(model.shown ? 1 : 0)
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: model.shown)

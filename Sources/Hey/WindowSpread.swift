@@ -203,7 +203,7 @@ private struct SpreadCard: View {
             .padding(14)
             .padding(.top, 6)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .glassEffect(.regular, in: .rect(cornerRadius: 18))
+            .heyGlass(.rect(cornerRadius: 18))
             .shadow(color: .black.opacity(hover || dragging ? 0.35 : 0.18), radius: hover || dragging ? 18 : 8, y: hover || dragging ? 10 : 4)
 
             // The close button sits on the left strip, which is never covered by the sheet on top.
