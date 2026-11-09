@@ -137,6 +137,7 @@ struct HubView: View {
     let detector: MusicDetector
     let aiUsage: AIUsageService
     let updates: UpdateService
+    let machineLog: MachineLog
     @Bindable var router: HubRouter
     @AppStorage("hubOpacity") private var hubOpacity = 0.8
     @Namespace private var railSpace
@@ -191,7 +192,7 @@ struct HubView: View {
                     case .notes: NotesTab(model: model, game: game)
                     case .clipboard: ClipboardTab(service: clipboard)
                     case .usage: UsageTab(service: aiUsage)
-                    case .system: SystemTab(power: power)
+                    case .system: SystemTab(power: power, log: machineLog)
                     case .game: MiniGameTab(model: model, game: game)
                     case .achievements: AchievementsTab(game: game)
                     case .gestures: GesturesTab(model: model, game: game, log: gestureLog)

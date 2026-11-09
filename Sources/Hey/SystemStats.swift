@@ -1,3 +1,4 @@
+import AppKit
 import Darwin
 import Foundation
 import Observation
@@ -9,9 +10,10 @@ import HeyDomain
 final class SystemStats {
     struct ProcessRow: Identifiable, Equatable {
         let pid: Int32
+        var ppid: Int32 = 0
         let name: String
-        let cpu: Double          // percent of one core, as ps reports it
-        let memory: Double       // bytes resident
+        var cpu: Double          // percent of one core, as ps reports it
+        var memory: Double       // bytes resident (summed over an app's helper processes)
         var id: Int32 { pid }
     }
 
@@ -45,6 +47,9 @@ final class SystemStats {
     private(set) var topByCPU: [ProcessRow] = []
     private(set) var topByMemory: [ProcessRow] = []
     private(set) var uptime: TimeInterval = 0
+    private(set) var temperature: ThermalSensors.Reading?
+    private(set) var cpuTempHistory = History(capacity: 60)
+    private(set) var memoryPressure = MemoryPressure.normal
 
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var lastCores: [CPUTicks] = []
@@ -52,6 +57,7 @@ final class SystemStats {
     @ObservationIgnored private var lastSample: Date?
     @ObservationIgnored private var lastRusage: (cpuSeconds: Double, at: Date)?
     @ObservationIgnored private var tick = 0
+    @ObservationIgnored private var sensors: ThermalSensors?
     @ObservationIgnored private var psRunning = false
 
     init() {
@@ -67,6 +73,7 @@ final class SystemStats {
 
     func start() {
         guard timer == nil else { return }
+        sensors = ThermalSensors()
         sample()
         let t = Timer(timeInterval: 2, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.sample() } }
         RunLoop.main.add(t, forMode: .common)
@@ -75,6 +82,7 @@ final class SystemStats {
 
     func stop() {
         timer?.invalidate(); timer = nil
+        sensors = nil
         lastCores = []; lastNet = [:]; lastSample = nil; lastRusage = nil     // the next start measures from scratch
     }
 
@@ -88,6 +96,7 @@ final class SystemStats {
         sampleDisk()
         sampleNetwork(seconds: seconds)
         sampleSelf(now: now)
+        sampleHeat()
         uptime = ProcessInfo.processInfo.systemUptime
         lastSample = now
         tick += 1
@@ -132,6 +141,34 @@ final class SystemStats {
         var swap = xsw_usage()
         var size = MemoryLayout<xsw_usage>.size
         if sysctlbyname("vm.swapusage", &swap, &size, nil, 0) == 0 { swapUsed = Double(swap.xsu_used); swapTotal = Double(swap.xsu_total) }
+    }
+
+    private func sampleHeat() {
+        temperature = sensors?.read()
+        if let cpu = temperature?.cpu { cpuTempHistory.add(cpu) }
+        var level = 0
+        var size = MemoryLayout<Int>.size
+        if sysctlbyname("kern.memorystatus_vm_pressure_level", &level, &size, nil, 0) == 0 { memoryPressure = MemoryPressure(sysctl: level) }
+    }
+
+    var hasTemperature: Bool { temperature?.cpu != nil }
+
+    /// Everything the advisor needs, as of now.
+    func snapshot(reclaimable: Double, thermal: ThermalLevel) -> MachineSnapshot {
+        var s = MachineSnapshot()
+        s.cpu = cpu
+        let recent = cpuHistory.values.suffix(30)
+        s.cpuAverage = recent.isEmpty ? cpu : recent.reduce(0, +) / Double(recent.count)
+        if let top = topByCPU.first(where: { $0.name != "ps" }) { s.topCPUName = top.name; s.topCPUPercent = top.cpu }
+        s.memoryUsedFraction = totalMemory > 0 ? min(memoryUsed / totalMemory, 1) : 0
+        s.memoryPressure = memoryPressure
+        s.swapUsed = swapUsed
+        if let top = topByMemory.first { s.topMemoryName = top.name; s.topMemoryBytes = top.memory }
+        s.diskFree = diskFree; s.diskTotal = diskTotal
+        s.reclaimable = reclaimable
+        s.cpuTemperature = temperature?.cpu
+        s.thermal = thermal
+        return s
     }
 
     private func sampleDisk() {
@@ -194,6 +231,7 @@ final class SystemStats {
             let rows = Self.runPS()
             await MainActor.run {
                 self.psRunning = false
+                let rows = Self.groupedByApp(rows)
                 guard !rows.isEmpty else { return }
                 self.topByCPU = Array(rows.sorted { $0.cpu > $1.cpu }.prefix(6))
                 self.topByMemory = Array(rows.sorted { $0.memory > $1.memory }.prefix(6))
@@ -204,7 +242,7 @@ final class SystemStats {
     nonisolated private static func runPS() -> [ProcessRow] {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/bin/ps")
-        task.arguments = ["-Ao", "pid=,pcpu=,rss=,comm="]
+        task.arguments = ["-Ao", "pid=,ppid=,pcpu=,rss=,comm="]
         let pipe = Pipe()
         task.standardOutput = pipe
         task.standardError = Pipe()
@@ -213,11 +251,36 @@ final class SystemStats {
         task.waitUntilExit()
         guard let text = String(data: data, encoding: .utf8) else { return [] }
         return text.split(separator: "\n").compactMap { line in
-            let parts = line.split(separator: " ", maxSplits: 3, omittingEmptySubsequences: true)
-            guard parts.count == 4, let pid = Int32(parts[0]), let cpu = Double(parts[1]), let rss = Double(parts[2]) else { return nil }
-            let name = String(parts[3]).split(separator: "/").last.map(String.init) ?? String(parts[3])
-            return ProcessRow(pid: pid, name: name, cpu: cpu, memory: rss * 1024)
+            let parts = line.split(separator: " ", maxSplits: 4, omittingEmptySubsequences: true)
+            guard parts.count == 5, let pid = Int32(parts[0]), let ppid = Int32(parts[1]), let cpu = Double(parts[2]), let rss = Double(parts[3]) else { return nil }
+            let name = String(parts[4]).split(separator: "/").last.map(String.init) ?? String(parts[4])
+            return ProcessRow(pid: pid, ppid: ppid, name: name, cpu: cpu, memory: rss * 1024)
         }
+    }
+
+    /// Helpers (a browser's renderers, an editor's workers) are counted under the app that started them, so the list names the thing
+    /// you would actually quit. Processes with no app above them stay as they are.
+    private static func groupedByApp(_ rows: [ProcessRow]) -> [ProcessRow] {
+        let apps = Dictionary(uniqueKeysWithValues: NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular }.map { ($0.processIdentifier, $0.localizedName ?? "") })
+        let parent = Dictionary(rows.map { ($0.pid, $0.ppid) }, uniquingKeysWith: { a, _ in a })
+        func owner(of pid: Int32) -> Int32? {
+            var current = pid
+            for _ in 0..<12 {
+                if apps[current] != nil { return current }
+                guard let up = parent[current], up > 1, up != current else { return nil }
+                current = up
+            }
+            return nil
+        }
+        var grouped: [Int32: ProcessRow] = [:]
+        var loose: [ProcessRow] = []
+        for row in rows {
+            guard let app = owner(of: row.pid) else { loose.append(row); continue }
+            if var existing = grouped[app] { existing.cpu += row.cpu; existing.memory += row.memory; grouped[app] = existing }
+            else { grouped[app] = ProcessRow(pid: app, ppid: 0, name: apps[app] ?? row.name, cpu: row.cpu, memory: row.memory) }
+        }
+        return loose + Array(grouped.values)
     }
 
     // MARK: sysctl

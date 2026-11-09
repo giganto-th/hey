@@ -90,13 +90,16 @@ struct CompanionPreview: View {
     var size = CGSize(width: 224, height: 196)
     @State private var scene = CompanionPreviewScene()
     @State private var visible = false
+    @State private var appActive = NSApp?.isActive ?? true      // a preview nobody is looking at (another app in front) stops drawing
 
     var body: some View {
-        SpriteView(scene: scene, isPaused: !visible, preferredFramesPerSecond: settings.level == .reduced ? 6 : 24, options: [.allowsTransparency])
+        SpriteView(scene: scene, isPaused: !(visible && appActive), preferredFramesPerSecond: settings.level == .reduced ? 6 : 15, options: [.allowsTransparency])
             .frame(width: size.width, height: size.height)
             .accessibilityLabel(stage == .egg ? tr("ไข่ของสัตว์เลี้ยง") : tr("สัตว์เลี้ยง · {0}", mode.title))
             .onAppear { configure(); visible = true }
             .onDisappear { visible = false }
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in appActive = true }
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in appActive = false }
             .onChange(of: stage) { configure() }
             .onChange(of: species) { configure() }
             .onChange(of: mode) { configure() }

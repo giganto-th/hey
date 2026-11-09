@@ -117,6 +117,18 @@ final class SpritePet: SKNode {
     private let lift = SKNode()               // hops and flight height
     private let squash = SKNode()             // squash, stretch and tilt about the feet (or the grip when carried)
     private let body = SKSpriteNode()
+
+    /// A pet lying down is drawn wider than a standing one, and at the same scale it reads as bigger. These shrink the sleeping pose
+    /// so it is at most about 15% wider than standing (docs/art-tools/sleep_scale.py makes the table from the art).
+    private static let sleepScale: [String: CGFloat] = [
+        "fluff/hatchling": 0.90, "fluff/child": 1.00, "fluff/teen": 0.86, "fluff/adult": 0.90,
+        "heihei/hatchling": 0.79, "heihei/child": 0.88, "heihei/teen": 0.74, "heihei/adult": 0.85,
+        "shishi/hatchling": 1.00, "shishi/child": 0.99, "shishi/teen": 0.98, "shishi/adult": 0.95,
+    ]
+    private func setBodyScale(sleeping: Bool) {
+        let factor = sleeping ? (Self.sleepScale["\(species)/\(stage.rawValue)"] ?? 1) : 1
+        if body.xScale != factor { body.setScale(factor) }
+    }
     private let fx = SKNode()                 // particles, drawn over the bird
     private let keyboard = SKNode()
     private var keys: [SKShapeNode] = []
@@ -243,6 +255,7 @@ final class SpritePet: SKNode {
             let fraction = (age - start) / Self.hatchDuration
             if fraction < 1, presentation.animates, let list = Self.hatchFrames(species) {
                 body.texture = list[min(list.count - 1, Int(fraction * Double(list.count)))]
+                setBodyScale(sleeping: false)
                 shownFrame = nil; shownClip = nil
                 tilt.snap(to: 0); shiftX.snap(to: 0); sx.snap(to: 1); sy.snap(to: 1); height = 0; heightV = 0
                 squash.zRotation = 0; squash.position = .zero; squash.xScale = 1; squash.yScale = 1
@@ -266,6 +279,7 @@ final class SpritePet: SKNode {
             else { fraction = (beat.phase / (2 * Double.pi)).truncatingRemainder(dividingBy: 1) }
             let index = max(0, min(list.count - 1, Int(fraction * Double(list.count))))
             if shownClip?.clip != clip || shownClip?.index != index { body.texture = list[index]; shownClip = (clip, index); shownFrame = nil }
+            setBodyScale(sleeping: clip == .sleep)
             t.hopCycle = false
             t.sx = 1; t.shift = 0
             if ![.carried, .worried, .attentive, .focusing].contains(activity) { t.tilt = 0; t.sy = 1 }
@@ -439,6 +453,7 @@ final class SpritePet: SKNode {
         guard frame != shownFrame || body.texture == nil else { return }
         body.texture = set[frame] ?? set[.idle]
         shownFrame = frame
+        setBodyScale(sleeping: frame == .sleep)
     }
 
     /// With reduced motion there is no flapping or swapping: a still, readable pose for each state.
@@ -502,6 +517,7 @@ final class SpritePet: SKNode {
 
     private func updateEgg(reduced: Bool, dt: Double) {
         if let t = Self.egg(species: species), body.texture !== t { body.texture = t; shownFrame = nil }
+        setBodyScale(sleeping: false)
         // a gentle wobble now and then, as if something is stirring inside
         let cycle = age.truncatingRemainder(dividingBy: 5)
         let wobble = reduced || cycle > 1.2 ? 0 : sin(cycle * 22) * 0.11 * (1 - cycle / 1.2)

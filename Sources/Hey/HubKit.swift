@@ -137,15 +137,17 @@ struct StatRing: View {
     var diameter: CGFloat = 84
     /// For gauges where a high value is the bad end (CPU, disk): the colour turns warm as it fills instead of as it drains.
     var inverted = false
+    var unit = ""
+    /// Live gauges (CPU, memory) change every couple of seconds; springing each time would keep the screen redrawing, so they just move.
+    var animated = true
     @State private var shown = false
 
     private var fraction: Double { total > 0 ? min(max(value / total, 0), 1) : 0 }
     private var color: Color {
-        switch inverted ? 1 - fraction : fraction {
-        case ..<0.2: Color(red: 1.0, green: 0.38, blue: 0.36)
-        case ..<0.45: Color(red: 1.0, green: 0.72, blue: 0.30)
-        default: HeyLook.glow
-        }
+        let red = Color(red: 1.0, green: 0.38, blue: 0.36), amber = Color(red: 1.0, green: 0.72, blue: 0.30)
+        // a draining gauge (needs) turns warm as it empties; a filling one (CPU, disk) as it fills
+        if inverted { return fraction >= 0.9 ? red : fraction >= 0.75 ? amber : HeyLook.glow }
+        return fraction < 0.2 ? red : fraction < 0.45 ? amber : HeyLook.glow
     }
 
     var body: some View {
@@ -153,24 +155,26 @@ struct StatRing: View {
             ZStack {
                 Circle().stroke(.white.opacity(0.10), lineWidth: lineWidth)
                 Circle().trim(from: 0, to: shown ? fraction : 0)
+                    .stroke(color.opacity(0.22), style: StrokeStyle(lineWidth: lineWidth + 6, lineCap: .round))      // a soft glow without a blur pass
+                    .rotationEffect(.degrees(-90))
+                Circle().trim(from: 0, to: shown ? fraction : 0)
                     .stroke(LinearGradient(colors: [color.opacity(0.6), color], startPoint: .topLeading, endPoint: .bottomTrailing),
                             style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                    .shadow(color: color.opacity(0.45), radius: 5)
                 VStack(spacing: 1) {
                     Image(systemName: symbol)
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(color)
-                        .symbolEffect(.pulse, isActive: (inverted ? 1 - fraction : fraction) < 0.2)
-                    Text("\(Int(value))").font(.system(diameter < 80 ? .footnote : .callout, design: .rounded).weight(.semibold)).monospacedDigit()
-                        .contentTransition(.numericText())
+                        .symbolEffect(.pulse, isActive: animated && (inverted ? fraction >= 0.9 : fraction < 0.2))
+                    Text("\(Int(value))\(unit)").font(.system(diameter < 80 ? .footnote : .callout, design: .rounded).weight(.semibold)).monospacedDigit()
+                        .contentTransition(animated ? .numericText() : .identity)
                 }
             }
             .frame(width: diameter, height: diameter)
             Text(title).font(.footnote).foregroundStyle(.white.opacity(0.7))
         }
         .frame(maxWidth: .infinity)
-        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: fraction)
+        .animation(animated ? .spring(response: 0.6, dampingFraction: 0.8) : nil, value: fraction)
         .onAppear { withAnimation(.spring(response: 0.8, dampingFraction: 0.75).delay(0.05)) { shown = true } }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)

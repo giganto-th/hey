@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var food: FoodController!
     private let aiUsage = AIUsageService()
     private let updates = UpdateService()
+    private let machineLog = MachineLog(directory: GameModel.dataDirectory())
     private var bubbles: BubbleController!
     private let windowSpread = WindowSpreadController()
     private var scene: PetScene!
@@ -140,6 +141,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         window.orderFrontRegardless()
 
+        machineLog.onAlert = { [weak self] advice in self?.scene.announce(advice.spoken, symbol: advice.symbol) }
+        machineLog.start()
         power = PowerMonitor(model: model)
         power.onChange = { [weak self] in self?.applyPower($0) }
         applyPower(power.decision)
@@ -1087,7 +1090,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if let size = ProcessInfo.processInfo.environment["HEY_DEV_HUB_SIZE"]?.split(separator: "x").compactMap({ Double($0) }),
                size.count == 2, devMode { w.setContentSize(NSSize(width: size[0], height: size[1])) }       // see a long page in one capture
             w.isReleasedWhenClosed = false
-            w.contentView = NSHostingView(rootView: HubView(model: model, pomodoro: pomodoro, clipboard: clipboard, vault: vault, shelf: shelf, music: music, capture: capture, camera: camera, power: power, gestureLog: gestureLog, detector: detector, aiUsage: aiUsage, updates: updates, router: router))
+            w.contentView = NSHostingView(rootView: HubView(model: model, pomodoro: pomodoro, clipboard: clipboard, vault: vault, shelf: shelf, music: music, capture: capture, camera: camera, power: power, gestureLog: gestureLog, detector: detector, aiUsage: aiUsage, updates: updates, machineLog: machineLog, router: router))
             w.center()
             hubWindow = w
         }
