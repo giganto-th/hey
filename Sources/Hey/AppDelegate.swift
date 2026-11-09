@@ -213,6 +213,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 model.perform { $0.grantWarmth(10_000) }
                 model.perform { $0.grantXP(100_000) }
             }
+            if let dir = env["HEY_DEV_MOTION_MATRIX"] {
+                do { try MotionMatrix.write(to: URL(fileURLWithPath: dir)) } catch { print("[matrix] failed:", error) }
+                if env["HEY_DEV_MATRIX_EXIT"] != nil { exit(0) }
+            }
             if let dir = env["HEY_DEV_PET_FILM"] {
                 do { try PetFilm.write(to: URL(fileURLWithPath: dir)) } catch { print("[film] failed:", error) }
             }
