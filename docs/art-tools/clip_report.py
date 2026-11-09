@@ -23,6 +23,10 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Res
 KIND = {"idle": "calm", "sleep": "calm", "eat": "calm", "type": "calm", "hatch": "free",
         "happy": "hop", "dance": "hop", "startled": "hop", "flap": "hop", "fly": "free",
         "walk": "walk", "dizzy": "free", "carried": "free"}
+# Clips already over their limit when the check was added (the sleeping clip hides the feet, so it cannot be judged by colour;
+# the rest are small slides left for later). --check only fails for a clip that is over and not listed here.
+BASELINE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "clip_baseline.txt")
+
 # Largest drift (px of 480) we accept per kind, judged by eye on contact sheets (a sliding foot starts to show above ~12 px). Used by --check.
 LIMIT = {"calm": 12, "hop": 20, "walk": 14, "free": 1e9}
 
@@ -81,7 +85,8 @@ def sheet(files, torso, contact, out):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--clip"); ap.add_argument("--species"); ap.add_argument("--stage")
-    ap.add_argument("--sheets"); ap.add_argument("--check", action="store_true", help="exit 1 if a clip drifts more than its limit")
+    ap.add_argument("--write-baseline", action="store_true", help="record the clips that are over their limit now as accepted")
+    ap.add_argument("--sheets"); ap.add_argument("--check", action="store_true", help="exit 1 if a clip not in the baseline drifts more than its limit")
     args = ap.parse_args()
     rows, bad = [], 0
     for d in sorted(glob.glob(os.path.join(ROOT, "*", "*", "anim"))):
@@ -120,8 +125,14 @@ def main():
     for c in sorted(by, key=lambda c: -np.mean(by[c])):
         k = KIND.get(c, "free")
         print(f"{c:9s} {k:6s} {np.mean(by[c]):9.1f}   {sum(1 for v in by[c] if v > LIMIT[k])}/{len(by[c])}")
-    print(f"\n{bad} of {len(rows)} clips over their limit")
-    if args.check and bad: sys.exit(1)
+    over = sorted(f"{sp}/{st}/{c}" for sp, st, c, kind, ct, tr, bt, jt, drift in rows if drift > LIMIT[kind])
+    known = set(open(BASELINE).read().split()) if os.path.exists(BASELINE) else set()
+    new = [o for o in over if o not in known]
+    print(f"\n{len(over)} of {len(rows)} clips over their limit, {len(new)} not in the baseline")
+    if args.write_baseline:
+        open(BASELINE, "w").write("\n".join(over) + "\n"); print("baseline written")
+    if args.check and new:
+        print("NEW:", *new, sep="\n  "); sys.exit(1)
 
 if __name__ == "__main__":
     main()

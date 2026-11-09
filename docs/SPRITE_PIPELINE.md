@@ -32,3 +32,19 @@ Art lives in `Resources/Pets/<species>/` (`heihei`, `fluff` = "Shams"); `PetSpec
   and the hatch clip (these fall back to single poses). Prompts are in the scratch folder `/tmp/art3/anim/`; resume with `runC.sh` once Codex quota is back.
 - Slicing fur/feather art: `slice.py` unmixes the green share, clamps g<=r, erodes 1px and fills enclosed green holes. Set `KEY_MODE=hei` for Hei Hei
   (teal/emerald feathers need a stricter key).
+
+
+## Keeping clips steady (2026-11)
+
+Generated frames are never perfectly registered: the bird, its feet or the keyboard land a few pixels differently in every frame,
+and in the app that reads as sliding or shaking. Two tools in `docs/art-tools/` measure and fix it:
+
+- `clip_report.py` measures every clip (feet, torso, bottom, jitter) against a limit for its kind (calm clips such as idle and eat
+  keep the feet still; hop clips such as happy, dance and startled keep the torso still sideways; walk keeps the torso still because
+  the window carries the pet). `--sheets DIR` writes contact sheets with the anchors drawn, `--check` fails when a clip that is not in
+  `clip_baseline.txt` goes over (CI runs it).
+- `register_clips.py walk eat idle happy dance startled flap [--write]` translates frames so the anchor sits where it does in the idle
+  clip, so switching between clips does not pop. `register_type.py` pins the keyboard in the typing clips.
+
+After generating new clips run the report, look at the contact sheets, register what is over its limit and look again.
+Measurements are by colour (orange feet), so they are approximate; trust the sheets over the numbers.

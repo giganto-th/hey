@@ -13,6 +13,14 @@ jobs:
       - uses: actions/checkout@v4
       - run: python3 scripts/l10n_keys.py
 
+  pet-art:
+    # a pet clip whose frames slide around (feet, keyboard, body) shows up as jerky motion; see docs/SPRITE_PIPELINE.md
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install numpy pillow
+      - run: python3 docs/art-tools/clip_report.py --check
+
   build:
     # The app targets macOS 26. GitHub's macOS runners may not offer it yet, so this only compiles (the tests need macOS 26 to run);
     # run `swift test` on your own Mac.

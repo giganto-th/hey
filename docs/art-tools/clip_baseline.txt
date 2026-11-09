@@ -1,0 +1,5 @@
+fluff/child/type
+heihei/child/sleep
+heihei/hatchling/sleep
+shishi/adult/type
+shishi/child/type
