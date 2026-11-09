@@ -87,7 +87,7 @@ struct CompanionPreview: View {
     var mode: CompanionPreviewMode = .idle
     var settings = MotionSettings()
     var species = "heihei"
-    var size = CGSize(width: 220, height: 192)
+    var size = CGSize(width: 224, height: 196)
     @State private var scene = CompanionPreviewScene()
     @State private var visible = false
 
@@ -123,8 +123,6 @@ struct MotionSettingsControls: View {
         Toggle(tr("เดินสำรวจเมื่อไม่ได้ทำกิจกรรม"), isOn: Binding(
             get: { game.motion.roam },
             set: { value in model.perform { $0.setMotion { $0.roam = value }; return [] } }))
-        Text(tr("การเต้นใช้จังหวะอัตโนมัติจากสถานะเล่นเพลง ยังไม่ได้ตรวจจับ beat ของเสียง · พิมพ์จะเปลี่ยนเป็นจิกคีย์บอร์ด และโฟกัสจะหยุดเต้น"))
-            .font(.caption).foregroundStyle(.secondary)
         VStack(alignment: .leading, spacing: 8) {
             Picker(tr("ลองท่าทาง"), selection: $preview) {
                 ForEach(CompanionPreviewMode.allCases) { Text($0.title).tag($0) }
@@ -133,8 +131,6 @@ struct MotionSettingsControls: View {
                 CompanionPreview(stage: .adult, mode: preview, settings: game.motion, species: game.species)
                 VStack(alignment: .leading, spacing: 6) {
                     Text(tr("ลองท่าทางของ {0}", game.pet.state.name)).font(.headline)
-                    Text(tr("ใช้ตัววาดเดียวกับบนเดสก์ท็อป ตัวอย่างนี้ไม่มีเสียงและไม่เพิ่มรางวัล"))
-                        .font(.caption).foregroundStyle(.secondary)
                 }
             }
         }.padding(.vertical, 8)

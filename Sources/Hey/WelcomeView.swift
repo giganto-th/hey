@@ -73,7 +73,7 @@ struct WelcomeView: View {
         VStack(spacing: 16) {
             Text(tr("เลือกเพื่อนของคุณ")).font(.title.weight(.bold))
             Text(tr("ตั้งชื่อให้เพื่อนด้วย เลือกแล้วเปลี่ยนพันธุ์ไม่ได้ จนกว่าจะเริ่มไข่ใหม่")).font(.callout).foregroundStyle(.secondary)
-            EggChoiceView(species: $species, name: $petName, locked: model.game.speciesLocked, note: tr("ชื่อเปลี่ยนทีหลังได้ที่ Hub › สัตว์เลี้ยง"))
+            EggChoiceView(species: $species, name: $petName, locked: model.game.speciesLocked)
         }
     }
 

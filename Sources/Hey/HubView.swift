@@ -101,6 +101,19 @@ enum HubDestination: String, CaseIterable, Identifiable {
         case .settings: "slider.horizontal.3"
         }
     }
+    /// A short name for the rail, where there is room for one word.
+    var railTitle: String {
+        switch self {
+        case .today: tr("วันนี้")
+        case .music: tr("เพลง")
+        case .files: tr("ไฟล์")
+        case .productivity: tr("โฟกัส")
+        case .usage: tr("เครดิต AI")
+        case .system: tr("เครื่อง")
+        case .pet: "Hei Hei"
+        case .settings: tr("ตั้งค่า")
+        }
+    }
     static func containing(_ section: HubSection) -> Self { allCases.first { $0.sections.contains(section) } ?? .today }
 }
 
@@ -126,24 +139,30 @@ struct HubView: View {
     let updates: UpdateService
     @Bindable var router: HubRouter
     @AppStorage("hubOpacity") private var hubOpacity = 0.8
+    @Namespace private var railSpace
+    @State private var dayPart = DayPart.now
 
     var body: some View {
         let game = model.game
         let current = HubDestination.containing(router.section ?? .today)
         HStack(spacing: 14) {
-            VStack(spacing: 10) {
+            VStack(spacing: 2) {
                 ForEach(HubDestination.allCases.filter { $0 != .settings }) { destination in
                     RailButton(symbol: destination.icon,
-                               title: destination == .pet ? game.pet.state.name : destination.title,
-                               selected: current == destination) { router.section = destination.sections.first }
+                               title: destination == .pet ? game.pet.state.name : destination.railTitle,
+                               selected: current == destination, space: railSpace) {
+                        withAnimation(.snappy(duration: 0.28)) { router.section = destination.sections.first }
+                    }
                 }
                 Spacer()
-                RailButton(symbol: HubDestination.settings.icon, title: HubDestination.settings.title,
-                           selected: current == .settings) { router.section = HubDestination.settings.sections.first }
+                RailButton(symbol: HubDestination.settings.icon, title: HubDestination.settings.railTitle,
+                           selected: current == .settings, space: railSpace) {
+                    withAnimation(.snappy(duration: 0.28)) { router.section = HubDestination.settings.sections.first }
+                }
             }
-            .padding(.vertical, 12)
-            .frame(width: 66)
-            .heyPanel(cornerRadius: 33)
+            .padding(.vertical, 10)
+            .frame(width: 88)
+            .heyPanel(cornerRadius: 30)
 
             VStack(spacing: 0) {
                 header(game)
@@ -152,11 +171,12 @@ struct HubView: View {
                 }
                 let sections = current.sections
                 if sections.count > 1 {
-                    Picker(tr("หน้า"), selection: Binding<HubSection>(get: { router.section ?? .today }, set: { router.section = $0 })) {
-                        ForEach(sections) { section in Text(section.title).tag(section) }
+                    HStack {
+                        HubChips(items: sections, title: { $0.title },
+                                 selection: Binding<HubSection>(get: { router.section ?? .today }, set: { router.section = $0 }))
+                        Spacer()
                     }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, 24).padding(.bottom, 14)
+                    .padding(.horizontal, 4).padding(.bottom, 12)
                 }
                 Group {
                     switch router.section ?? .today {
@@ -179,15 +199,20 @@ struct HubView: View {
                     case .settings: SettingsTab(model: model, game: game, power: power, detector: detector, updates: updates)
                     }
                 }
+                .id(router.section ?? .today)
+                .transition(.opacity)
+                .formStyle(.grouped)
                 .scrollContentBackground(.hidden)
                 .heyPanel()
             }
         }
         .padding(.top, 38).padding([.horizontal, .bottom], 16)
-        .background(HubBackdrop(opacity: hubOpacity))
+        .background(HubBackdrop(opacity: hubOpacity, part: dayPart))
         .preferredColorScheme(.dark)
         .tint(HeyLook.glow)
         .frame(minWidth: 760, minHeight: 560)
+        .animation(.easeInOut(duration: 0.2), value: router.section)
+        .onAppear { dayPart = .now }
     }
 
     private func isInstalling(_ state: UpdateService.State) -> Bool {
@@ -195,18 +220,23 @@ struct HubView: View {
     }
 
     private func header(_ game: Game) -> some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                let destination = HubDestination.containing(router.section ?? .today)
-                Text(destination == .pet ? game.pet.state.name : destination.title).font(.system(size: 26, weight: .semibold, design: .rounded))
-                Text(tr("เพื่อนร่วมโต๊ะตัวป่วน")).font(.caption).foregroundStyle(.white.opacity(0.65))
-            }
+        HStack(spacing: 10) {
+            let destination = HubDestination.containing(router.section ?? .today)
+            Text(destination == .pet ? game.pet.state.name : destination.title)
+                .font(.system(size: 26, weight: .bold, design: .rounded))
+                .contentTransition(.interpolate)
             Spacer()
-            Label(tr("{0} เหรียญ", game.coins), systemImage: "circle.hexagongrid.fill").glassPill()
-            Label(tr("{0} วัน", game.streak.current), systemImage: "flame").glassPill()
+            Label(tr("{0} เหรียญ", game.coins), systemImage: "circle.hexagongrid.fill")
+                .contentTransition(.numericText())
+                .symbolEffect(.bounce, value: game.coins)
+                .glassPill()
+            Label(tr("{0} วัน", game.streak.current), systemImage: "flame")
+                .symbolEffect(.bounce, value: game.streak.current)
+                .glassPill()
         }
         .font(.callout)
-        .padding(.horizontal, 8).padding(.bottom, 14).padding(.top, 4)
+        .animation(.snappy, value: game.coins)
+        .padding(.horizontal, 6).padding(.bottom, 12).padding(.top, 2)
     }
 }
 
@@ -214,34 +244,30 @@ private struct QuestsTab: View {
     let game: Game
 
     var body: some View {
-        List {
-            Section(tr("ภารกิจวันนี้ (รีเซ็ตตี 4)")) {
+        ScrollView {
+            VStack(spacing: 12) {
                 if game.quests.isEmpty {
-                    Text(tr("ยังไม่มีภารกิจ")).foregroundStyle(.secondary)
+                    HubCard { Text(tr("ยังไม่มีภารกิจ")).foregroundStyle(.secondary) }
                 }
                 ForEach(game.quests) { quest in
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
+                    HubCard(padding: 14) {
+                        HStack(spacing: 10) {
                             Image(systemName: quest.done ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(quest.done ? .green : .secondary)
-                            Text(quest.title).strikethrough(quest.done)
+                                .font(.title3)
+                                .foregroundStyle(quest.done ? Color.green : .white.opacity(0.5))
+                                .contentTransition(.symbolEffect(.replace))
+                            Text(quest.title).strikethrough(quest.done).foregroundStyle(quest.done ? .secondary : .primary)
                             Spacer()
-                            Text(reward(quest)).font(.caption).foregroundStyle(.secondary)
+                            Text(reward(quest)).chipLabel(.yellow)
                         }
-                        ProgressView(value: min(quest.progress, quest.target), total: quest.target)
-                        Text("\(Int(quest.progress))/\(Int(quest.target))")
-                            .font(.caption2).foregroundStyle(.secondary)
+                        HStack(spacing: 10) {
+                            SlimBar(value: min(quest.progress, quest.target), total: quest.target, tint: quest.done ? .green : HeyLook.glow)
+                            Text("\(Int(quest.progress))/\(Int(quest.target))").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        }
                     }
-                    .padding(.vertical, 4)
                 }
             }
-            Section {
-                Label(tr("ทำครบทุกข้อ รับโบนัส {0} เหรียญ", Game.allDoneBonus), systemImage: "gift")
-                Label(tr("ทำครบต่อเนื่อง {0} วัน รับ {1} เหรียญ", Game.streakBonusEvery, Game.streakBonus), systemImage: "flame")
-                Label(tr("ขาดวัน streak ไม่รีเซ็ต แต่ลดลงครึ่งหนึ่ง"), systemImage: "info.circle")
-            }
-            .font(.callout)
-            .foregroundStyle(.secondary)
+            .padding(16)
         }
     }
 
@@ -255,30 +281,34 @@ private struct ShopTab: View {
     let game: Game
 
     var body: some View {
-        List {
-            Section(tr("อาหาร")) {
+        ScrollView {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], spacing: 12) {
                 ForEach(game.pet.balance.foods) { food in
-                    HStack {
-                        FoodIconView(food: food, size: 40)
-                        VStack(alignment: .leading) {
-                            Text(food.name)
-                            Text(tr("อิ่ม +{0}  อารมณ์ +{1}  XP +{2}", Int(food.hunger), Int(food.mood), Int(food.xp)))
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        if food.price == 0 {
-                            Text(tr("ฟรี ไม่จำกัด")).font(.caption).foregroundStyle(.secondary)
-                        } else {
-                            Text(tr("มี {0}", game.stock(of: food))).font(.caption).foregroundStyle(.secondary)
-                            Button(tr("ซื้อ {0} เหรียญ", food.price)) {
-                                model.perform { $0.buy(food) }
+                    HubCard(padding: 14) {
+                        HStack(spacing: 12) {
+                            FoodIconView(food: food, size: 44)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(food.name).font(.subheadline.weight(.semibold))
+                                Text(tr("อิ่ม +{0}  อารมณ์ +{1}  XP +{2}", Int(food.hunger), Int(food.mood), Int(food.xp)))
+                                    .font(.caption).foregroundStyle(.secondary)
                             }
-                            .disabled(game.coins < food.price)
+                        }
+                        HStack {
+                            if food.price == 0 {
+                                Text(tr("ฟรี ไม่จำกัด")).chipLabel(.green)
+                                Spacer()
+                            } else {
+                                Text(tr("มี {0}", game.stock(of: food))).chipLabel(HeyLook.glow)
+                                Spacer()
+                                Button(tr("ซื้อ {0} เหรียญ", food.price)) { model.perform { $0.buy(food) } }
+                                    .heySecondaryButton()
+                                    .disabled(game.coins < food.price)
+                            }
                         }
                     }
-                    .padding(.vertical, 2)
                 }
             }
+            .padding(16)
         }
     }
 }
@@ -292,20 +322,17 @@ private struct RebirthCard: View {
 
     var body: some View {
         let s = game.pet.state
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Label(tr("{0} จากไปแล้ว", s.name), systemImage: "heart.slash.fill").font(.headline)
             Text(tr("{0} {1} ตอนอายุ {2} วัน", s.deathCause.map { tr("จากไปเพราะ{0}", $0.label) } ?? "",
                     s.stage.displayName, Int((s.diedAt ?? Date()).timeIntervalSince(s.bornAt) / 86_400)))
                 .font(.callout).foregroundStyle(.secondary)
-            Text(tr("เหรียญ ของในคลัง เควส และความสำเร็จของคุณยังอยู่ครบ ฟักไข่ใหม่เพื่อเริ่มต้นอีกครั้ง"))
-                .font(.caption).foregroundStyle(.secondary)
             EggChoiceView(species: $species, name: $name)
             Button {
                 model.perform { $0.hatchNewEgg(at: Date(), species: species.isEmpty ? nil : species, name: name); return [] }
             } label: { Label(tr("ฟักไข่ใหม่"), systemImage: "egg.fill") }
-                .buttonStyle(.borderedProminent)
+                .heyProminentButton()
         }
-        .padding(.vertical, 6)
         .onAppear { species = game.species }
     }
 }
@@ -318,19 +345,18 @@ private struct FirstEggChoice: View {
     @State private var name = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             EggChoiceView(species: $species, name: $name)
             Button {
                 model.perform { $0.chooseEgg(species: species.isEmpty ? game.species : species, name: name); return [] }
             } label: { Label(tr("เริ่มอุ่นไข่"), systemImage: "egg.fill") }
-                .buttonStyle(.borderedProminent)
+                .heyProminentButton()
         }
-        .padding(.vertical, 6)
         .onAppear { species = game.species }
     }
 }
 
-/// The kind of pet (fixed) and its name (editable).
+/// The pet's name, editable in place.
 private struct PetNameRow: View {
     let model: GameModel
     let game: Game
@@ -338,14 +364,19 @@ private struct PetNameRow: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        HStack {
+        HStack(spacing: 8) {
             TextField(tr("ชื่อ"), text: $name)
-                .textFieldStyle(.roundedBorder).focused($focused)
+                .textFieldStyle(.plain)
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .focused($focused)
                 .onSubmit { commit() }
                 .onChange(of: name) { _, new in if new.count > PetName.maxLength { name = String(new.prefix(PetName.maxLength)) } }
                 .onChange(of: focused) { _, now in if !now { commit() } }
-            Text(PetSpecies.named(game.species)?.label ?? game.species).font(.callout).foregroundStyle(.secondary)
+            Image(systemName: "pencil").foregroundStyle(.white.opacity(focused ? 0.9 : 0.4))
         }
+        .padding(.horizontal, 10).padding(.vertical, 4)
+        .background(.white.opacity(focused ? 0.10 : 0.04), in: RoundedRectangle(cornerRadius: 10))
+        .animation(.easeOut(duration: 0.15), value: focused)
         .onAppear { name = game.pet.state.name }
         .onChange(of: game.pet.state.name) { _, new in if !focused { name = new } }
     }
@@ -362,135 +393,179 @@ private struct PetTab: View {
     let router: HubRouter
     @State private var newEgg = false
 
+    private var moodColor: Color {
+        switch game.pet.state.mood {
+        case ..<25: Color(red: 1.0, green: 0.42, blue: 0.40)
+        case ..<55: Color(red: 1.0, green: 0.76, blue: 0.35)
+        default: HeyLook.glow
+        }
+    }
+
     var body: some View {
         let s = game.pet.state
-        List {
-            if s.isDead {
-                Section { RebirthCard(model: model, game: game) }
-            } else if let left = game.pet.hoursUntilDeath {
-                Section {
-                    Label(tr("{0} ถูกปล่อยปละละเลย จะจากไปในอีกประมาณ {1} ชั่วโมงถ้าไม่ดูแล", s.name, Int(left.rounded(.up))),
-                          systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                }
-            }
-            if !game.speciesLocked, !s.isDead {
-                Section(tr("เลือกเพื่อนของคุณ")) { FirstEggChoice(model: model, game: game) }
-            }
-            Section {
-                if game.speciesLocked, !s.isDead {
-                    PetNameRow(model: model, game: game)
-                }
-                HStack {
-                    Spacer()
-                    CompanionPreview(stage: s.stage, mode: .idle, settings: game.motion, species: game.species,
-                                     size: CGSize(width: 200, height: 175))
-                    Spacer()
-                }
-                .listRowBackground(Color.clear)
-            }
-            Section(tr("ขนาดสัตว์เลี้ยง")) {
-                let scale = game.gestures.petScale
-                HStack {
-                    Slider(value: Binding(
-                        get: { game.gestures.petScale },
-                        set: { v in model.performQuietly { $0.setGestures { $0.petScale = v }; return [] } }),
-                        in: GestureSettings.minScale...GestureSettings.maxScale) { editing in
-                        if !editing { model.save() }
-                    }
-                    Text("\(Int(scale * 100))%").monospacedDigit().frame(width: 48, alignment: .trailing)
-                    Button(tr("ค่าเริ่มต้น")) {
-                        model.perform { $0.setGestures { $0.petScale = 1.0 }; return [] }
-                    }.disabled(scale == 1.0)
-                }
-                Text(tr("เปลี่ยนขนาดได้ทันที หรือ pinch สองนิ้วบนตัวสัตว์")).font(.caption).foregroundStyle(.secondary)
-            }
-            Section(s.stage == .egg ? tr("ไข่") : "\(s.name) — \(s.stage.displayName)") {
-                if s.stage == .egg {
-                    bar(tr("อุ่นไข่"), s.hatchProgress, game.pet.balance.hatchNeeded)
-                    Text(tr("คลิก/ลูบไข่ หรือเปิดแอปไว้เพื่ออุ่น ฟักแล้วจึงให้อาหารได้"))
-                        .font(.caption).foregroundStyle(.secondary)
-                } else {
-                    if let need = game.pet.balance.xpToLeave(s.stage) {
-                        bar("XP", s.xp, need)
-                    } else {
-                        Text(tr("XP {0} (ขั้นสูงสุด)", Int(s.xp))).font(.callout)
-                    }
-                    bar(tr("อิ่ม"), s.hunger, 100, symbol: "fork.knife")
-                    bar(tr("อารมณ์"), s.mood, 100, symbol: "face.smiling")
-                    bar(tr("พลังงาน"), s.energy, 100, symbol: "bolt.fill")
-                    Label(tr("ผูกพัน {0}", Int(s.bond)), systemImage: "heart.fill").font(.callout)
-                }
-            }
-            if !s.isDead {
-                Section(tr("เริ่มไข่ใหม่")) {
-                    Button { newEgg = true } label: { Label(tr("เริ่มไข่ใหม่…"), systemImage: "egg") }
-                    Text(tr("เปลี่ยนพันธุ์ได้เฉพาะตอนเริ่มไข่ใหม่ ตัวเดิมจะถูกเก็บไว้ในที่ระลึก")).font(.caption).foregroundStyle(.secondary)
-                }
-            }
-            Section(tr("การดูแล")) {
-                Toggle(tr("ให้สัตว์เลี้ยงจากไปได้ถ้าถูกปล่อยปละละเลย"), isOn: Binding(
-                    get: { game.care.mortal }, set: { v in model.perform { $0.setCare { $0.mortal = v }; return [] } }))
-                Text(tr("ถ้าความหิว อารมณ์ หรือพลังงานเป็น 0 นานรวมกัน 12 ชั่วโมง สัตว์เลี้ยงจะจากไป ตอนปิดแอปนับไม่เกิน 8 ชั่วโมงต่อครั้ง และจะเตือนล่วงหน้า"))
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            if !game.memorials.isEmpty {
-                Section(tr("ที่ระลึก")) {
-                    ForEach(game.memorials) { m in
-                        HStack {
-                            Image(systemName: m.wasReleased ? "arrow.uturn.backward.circle" : "heart.slash").foregroundStyle(.secondary)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("\(m.name) · \(m.stage.displayName)").fontWeight(.medium)
-                                Text(m.wasReleased ? tr("อยู่ด้วยกัน {0} วัน · ปล่อยไปเริ่มไข่ใหม่", m.daysLived)
-                                                   : tr("อยู่ด้วยกัน {0} วัน · จากไปเพราะ{1}", m.daysLived, m.cause?.label ?? "-"))
-                                    .font(.caption).foregroundStyle(.secondary)
-                            }
-                        }
+        ScrollView {
+            VStack(spacing: 14) {
+                if s.isDead {
+                    HubCard(tint: .red) { RebirthCard(model: model, game: game) }
+                } else if let left = game.pet.hoursUntilDeath {
+                    HubCard(tint: .orange) {
+                        Label(tr("{0} ถูกปล่อยปละละเลย จะจากไปในอีกประมาณ {1} ชั่วโมงถ้าไม่ดูแล", s.name, Int(left.rounded(.up))),
+                              systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
                     }
                 }
-            }
-            if s.stage != .egg, !s.isDead {
-                Section(tr("ให้อาหาร")) {
-                    ForEach(game.pet.balance.foods) { food in
-                        let stock = game.stock(of: food)
-                        HStack {
-                            HStack(spacing: 8) {
-                                FoodIconView(food: food, size: 24)
-                                Text("\(food.name)\(food.id == s.favoriteFood ? tr(" · ของโปรด") : "")")
-                            }
-                            Spacer()
-                            if food.price > 0 {
-                                Text(tr("มี {0}", stock)).font(.caption).foregroundStyle(.secondary)
-                            }
-                            let wait = game.pet.cooldownRemaining(food, at: Date())
-                            if stock <= 0 {
-                                Button(tr("ซื้อ")) { router.section = .shop }
-                            } else if wait > 0 {
-                                Text(tr("ให้ได้{0}", DurationText.wait(wait))).font(.caption).foregroundStyle(.secondary)
-                            } else {
-                                Button(tr("ให้")) { model.perform { $0.feed(food, at: Date()) } }
-                            }
-                        }
-                    }
+                if !game.speciesLocked, !s.isDead {
+                    HubCard(title: tr("เลือกเพื่อนของคุณ"), symbol: "pawprint") { FirstEggChoice(model: model, game: game) }
                 }
+                hero(s)
+                if !s.isDead { status(s) }
+                if s.stage != .egg, !s.isDead { feeding(s) }
+                HStack(alignment: .top, spacing: 14) {
+                    sizeCard
+                    careCard(s)
+                }
+                if !game.memorials.isEmpty { memorials }
             }
+            .padding(16)
         }
         .sheet(isPresented: $newEgg) { NewEggSheet(model: model, game: game) { newEgg = false } }
     }
 
-    private func bar(_ title: String, _ value: Double, _ total: Double, symbol: String? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                if let symbol { Label(title, systemImage: symbol) } else { Text(title) }
-                Spacer()
-                Text("\(Int(value))/\(Int(total))").foregroundStyle(.secondary)
+    private func hero(_ s: PetState) -> some View {
+        HubCard(padding: 18) {
+            HStack(spacing: 18) {
+                ZStack {
+                    Circle().fill(RadialGradient(colors: [moodColor.opacity(0.35), .clear], center: .center, startRadius: 6, endRadius: 100))
+                        .frame(width: 200, height: 200)
+                    CompanionPreview(stage: s.stage, mode: .idle, settings: game.motion, species: game.species,
+                                     size: CGSize(width: 200, height: 175))
+                }
+                .frame(width: 210, height: 180)
+                VStack(alignment: .leading, spacing: 10) {
+                    if game.speciesLocked, !s.isDead { PetNameRow(model: model, game: game) }
+                    else { Text(s.name).font(.system(size: 28, weight: .bold, design: .rounded)) }
+                    HStack(spacing: 8) {
+                        Text(PetSpecies.named(game.species)?.label ?? game.species).chipLabel(HeyLook.accent)
+                        Text(s.stage.displayName).chipLabel()
+                        if s.stage != .egg { Label("\(Int(s.bond))", systemImage: "heart.fill").chipLabel(.pink) }
+                    }
+                    if !s.isDead { progress(s) }
+                }
             }
-            .font(.callout)
-            ProgressView(value: min(max(value, 0), total), total: total)
+        }
+    }
+
+    @ViewBuilder private func progress(_ s: PetState) -> some View {
+        if s.stage == .egg {
+            VStack(alignment: .leading, spacing: 6) {
+                Label(tr("อุ่นไข่"), systemImage: "flame").font(.footnote).foregroundStyle(.secondary)
+                SlimBar(value: s.hatchProgress, total: game.pet.balance.hatchNeeded, tint: .orange)
+            }
+        } else if let need = game.pet.balance.xpToLeave(s.stage) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack { Text("XP"); Spacer(); Text("\(Int(s.xp))/\(Int(need))").monospacedDigit() }
+                    .font(.footnote).foregroundStyle(.secondary)
+                SlimBar(value: s.xp, total: need, tint: HeyLook.accent)
+            }
+        } else {
+            Text(tr("XP {0} (ขั้นสูงสุด)", Int(s.xp))).font(.footnote).foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder private func status(_ s: PetState) -> some View {
+        if s.stage != .egg {
+            HubCard {
+                HStack(spacing: 8) {
+                    StatRing(value: s.hunger, symbol: "fork.knife", title: tr("อิ่ม"))
+                    StatRing(value: s.mood, symbol: "face.smiling", title: tr("อารมณ์"))
+                    StatRing(value: s.energy, symbol: "bolt.fill", title: tr("พลังงาน"))
+                }
+            }
+        }
+    }
+
+    private func feeding(_ s: PetState) -> some View {
+        HubCard(title: tr("ให้อาหาร"), symbol: "fork.knife") {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 124), spacing: 10)], spacing: 10) {
+                ForEach(game.pet.balance.foods) { food in
+                    let stock = game.stock(of: food)
+                    let wait = game.pet.cooldownRemaining(food, at: Date())
+                    let ready = stock > 0 && wait <= 0
+                    Button {
+                        if stock <= 0 { router.section = .shop } else if wait <= 0 { model.perform { $0.feed(food, at: Date()) } }
+                    } label: {
+                        VStack(spacing: 6) {
+                            ZStack(alignment: .topTrailing) {
+                                FoodIconView(food: food, size: 38)
+                                if food.id == s.favoriteFood {
+                                    Image(systemName: "heart.fill").font(.system(size: 11)).foregroundStyle(.pink).offset(x: 8, y: -4)
+                                }
+                            }
+                            Text(food.name).font(.footnote.weight(.semibold)).lineLimit(1)
+                            Text(stock <= 0 ? tr("ซื้อ") : wait > 0 ? DurationText.wait(wait) : food.price > 0 ? "×\(stock)" : "")
+                                .font(.caption).foregroundStyle(.white.opacity(0.6)).frame(height: 14)
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .background(.white.opacity(ready ? 0.10 : 0.04), in: RoundedRectangle(cornerRadius: 14))
+                        .opacity(ready || stock <= 0 ? 1 : 0.6)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(food.name)
+                }
+            }
+        }
+    }
+
+    private var sizeCard: some View {
+        HubCard(title: tr("ขนาดสัตว์เลี้ยง"), symbol: "arrow.up.left.and.arrow.down.right") {
+            let scale = game.gestures.petScale
+            HStack {
+                Slider(value: Binding(
+                    get: { game.gestures.petScale },
+                    set: { v in model.performQuietly { $0.setGestures { $0.petScale = v }; return [] } }),
+                    in: GestureSettings.minScale...GestureSettings.maxScale) { editing in
+                    if !editing { model.save() }
+                }
+                Text("\(Int(scale * 100))%").monospacedDigit().frame(width: 46, alignment: .trailing)
+                Button { model.perform { $0.setGestures { $0.petScale = 1.0 }; return [] } } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                }
+                .buttonStyle(.plain).foregroundStyle(.white.opacity(scale == 1.0 ? 0.25 : 0.8))
+                .disabled(scale == 1.0)
+                .help(tr("ค่าเริ่มต้น"))
+            }
+        }
+    }
+
+    private func careCard(_ s: PetState) -> some View {
+        HubCard(title: tr("การดูแล"), symbol: "heart.text.square") {
+            Toggle(tr("ให้สัตว์เลี้ยงจากไปได้ถ้าถูกปล่อยปละละเลย"), isOn: Binding(
+                get: { game.care.mortal }, set: { v in model.perform { $0.setCare { $0.mortal = v }; return [] } }))
+                .toggleStyle(.switch).controlSize(.small)
+            if !s.isDead {
+                Button { newEgg = true } label: { Label(tr("เริ่มไข่ใหม่…"), systemImage: "egg") }
+                    .heySecondaryButton()
+            }
+        }
+    }
+
+    private var memorials: some View {
+        HubCard(title: tr("ที่ระลึก"), symbol: "heart.slash") {
+            ForEach(game.memorials) { m in
+                HStack(spacing: 10) {
+                    Image(systemName: m.wasReleased ? "arrow.uturn.backward.circle" : "heart.slash").foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(m.name) · \(m.stage.displayName)").fontWeight(.medium)
+                        Text(m.wasReleased ? tr("อยู่ด้วยกัน {0} วัน · ปล่อยไปเริ่มไข่ใหม่", m.daysLived)
+                                           : tr("อยู่ด้วยกัน {0} วัน · จากไปเพราะ{1}", m.daysLived, m.cause?.label ?? "-"))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
         }
     }
 }
-
 
 // MARK: reminders
 
@@ -511,7 +586,7 @@ private struct RemindersTab: View {
     }()
 
     var body: some View {
-        List {
+        Form {
             Section(tr("ตั้งเตือนใหม่")) {
                 TextField(tr("เช่น  ประชุม อีก 20 นาที  /  พรุ่งนี้ 9 โมง ส่งงาน  /  กินยา 18:30"), text: $text)
                     .onChange(of: text) { _, new in
@@ -635,7 +710,7 @@ private struct ClipboardTab: View {
             }
             .padding(12)
             Divider()
-            List {
+            Form {
                 if entries.isEmpty {
                     Text(query.isEmpty ? tr("ยังไม่มีอะไร คัดลอกข้อความแล้วจะมาอยู่ที่นี่") : tr("ไม่พบ")).foregroundStyle(.secondary)
                 }
@@ -675,11 +750,10 @@ private struct NotesTab: View {
                     Label(tr("โน้ตใหม่"), systemImage: "plus")
                 }
                 Spacer()
-                Text(tr("ปักหมุดเพื่อให้โน้ตลอยอยู่บนจอ")).font(.caption).foregroundStyle(.secondary)
             }
             .padding(12)
             Divider()
-            List {
+            Form {
                 if game.notes.isEmpty { Text(tr("ยังไม่มีโน้ต")).foregroundStyle(.secondary) }
                 ForEach(game.notes) { note in
                     HStack(alignment: .top, spacing: 10) {
@@ -725,9 +799,9 @@ private struct VaultTab: View {
         VStack(spacing: 0) {
             controls(game)
             Divider()
-            List {
+            Form {
                 if items.isEmpty {
-                    Text(game.vault.isEmpty ? tr("ลากไฟล์ โฟลเดอร์ ข้อความ หรือลิงก์มาวางที่สัตว์เลี้ยง (หรือที่หน้าต่างนี้) เพื่อฝากไว้")
+                    Text(game.vault.isEmpty ? tr("ยังไม่มีของฝาก")
                                             : tr("ไม่พบรายการที่ตรงกัน"))
                         .foregroundStyle(.secondary)
                 }
@@ -1128,8 +1202,6 @@ private struct PlayerBar: View {
                     .frame(width: 90)
             }
             .buttonStyle(.borderless)
-            Text(tr("เพลงจาก YouTube ใช้แบตมากกว่าไฟล์ในเครื่อง และต้องออนไลน์"))
-                .font(.caption2).foregroundStyle(.secondary)
         }
         .padding(14)
         .glassCard(cornerRadius: 22)
@@ -1289,7 +1361,7 @@ private struct GesturesTab: View {
 
     var body: some View {
         let g = game.gestures
-        List {
+        Form {
             Section(tr("ท่าบนตัวสัตว์เลี้ยง (ต้องใช้ทัชแพด และวางเมาส์บนตัว)")) {
                 ForEach(GestureKind.allCases, id: \.self) { kind in
                     Picker(kind.label, selection: Binding(
@@ -1301,8 +1373,6 @@ private struct GesturesTab: View {
                 LabeledContent(tr("ท่าล่าสุดที่รู้จัก")) {
                     Text(log.last).foregroundStyle(.secondary)
                 }
-                Text(tr("ลองปัด/หมุนสองนิ้วบนตัวสัตว์ ถ้าทิศกลับด้านกับที่คาดไว้ ให้สลับคำสั่งของท่านั้น หรือบอกผมเพื่อแก้ให้"))
-                    .font(.caption).foregroundStyle(.secondary)
             }
 
             Section(tr("มุมจอ")) {
@@ -1324,23 +1394,7 @@ private struct GesturesTab: View {
                             ForEach(PetAction.allCases, id: \.self) { Text($0.label).tag($0) }
                         }
                     }
-                    Text(tr("ถ้าใช้ Hot Corners ของ macOS อยู่ ให้เลือกมุมที่ไม่ชนกัน"))
-                        .font(.caption).foregroundStyle(.secondary)
                 }
-            }
-
-            Section(tr("ขนาดสัตว์เลี้ยง")) {
-                HStack {
-                    Slider(value: Binding(
-                        get: { g.petScale },
-                        set: { v in model.performQuietly { $0.setGestures { $0.petScale = v }; return [] } }),
-                        in: GestureSettings.minScale...GestureSettings.maxScale) { editing in
-                        if !editing { model.save() }
-                    }
-                    Text("\(Int(g.petScale * 100))%").monospacedDigit().frame(width: 48, alignment: .trailing)
-                }
-                Text(tr("หรือ pinch สองนิ้วบนตัวสัตว์"))
-                    .font(.caption).foregroundStyle(.secondary)
             }
 
             Section {
@@ -1360,7 +1414,7 @@ private struct AchievementsTab: View {
 
     var body: some View {
         let done = game.achievements.count
-        List {
+        Form {
             Section(tr("ปลดล็อกแล้ว {0}/{1}", done, Achievement.all.count)) {
                 ForEach(Achievement.all) { a in
                     let unlockedAt = game.achievements[a.id]
@@ -1538,9 +1592,6 @@ private struct FilesTab: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                Text(page == 0 ? tr("เก็บไว้ถาวร ค้นหา ติดแท็ก ปักหมุด — ลากไฟล์เข้าหาสัตว์เลี้ยงแล้วเลือกช่อง “ฝากเก็บ”")
-                               : tr("ที่พักชั่วคราวระหว่างทาง — ลากไฟล์เข้าหาสัตว์เลี้ยงแล้วเลือกช่อง “พักไว้ลากต่อ” จากนั้นลากออกไปวางที่ไหนก็ได้"))
-                    .font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(12)
             Divider()
@@ -1584,9 +1635,9 @@ private struct ShelfList: View {
     let shelf: ShelfService
 
     var body: some View {
-        List {
+        Form {
             if game.shelf.isEmpty {
-                Text(tr("ถาดว่างอยู่ — ลากอะไรก็ได้เข้าหาสัตว์เลี้ยง แล้วปล่อยลงช่อง “พักไว้ลากต่อ”"))
+                Text(tr("ถาดว่างอยู่"))
                     .foregroundStyle(.secondary)
             }
             ForEach(game.shelf) { item in
@@ -1708,8 +1759,6 @@ private struct UpdateSection: View {
                     Text(tr("แอปนี้อยู่ในที่ที่เขียนทับไม่ได้ ให้โหลด DMG จากหน้ารีลีสมาติดตั้งเอง")).font(.caption).foregroundStyle(.orange)
                 }
             }
-            Text(tr("กดอัปเดตแล้วจะโหลดไฟล์จาก GitHub ตรวจว่าตรงกับที่ประกาศ เซ็นโดยทีมเดียวกันและผ่าน notarize ก่อนสลับแอปและเปิดใหม่ ไม่ติดตั้งเองโดยที่คุณไม่ได้กด"))
-                .font(.caption).foregroundStyle(.secondary)
         }
         .onAppear { auto = updates.autoCheck }
     }
@@ -1740,7 +1789,7 @@ private struct SettingsTab: View {
     @AppStorage("hubOpacity") private var hubOpacity = 0.8
 
     var body: some View {
-        List {
+        Form {
             UpdateSection(updates: updates)
             Section(tr("การเคลื่อนไหวของ {0}", game.pet.state.name)) {
                 MotionSettingsControls(model: model, game: game)
@@ -1766,8 +1815,6 @@ private struct SettingsTab: View {
                         set: { v in model.perform { $0.setReactions { $0.appStreaks = v }; return [] } }))
                 }
                 .disabled(!r.enabled)
-                Text(tr("นับแค่จำนวนครั้งที่กดแป้น ไม่เห็นว่ากดแป้นอะไร ไม่เก็บข้อมูล และไม่ต้องขอสิทธิ์ใดๆ · หลับเองเมื่อไม่ได้ใช้เครื่อง 3 นาที · ง่วงตอนดึก · ตื่นพร้อมหาวหลังเครื่องหลับ"))
-                    .font(.caption2).foregroundStyle(.secondary)
             }
             Section(tr("ภาษา")) {
                 LanguageSetting()
@@ -1782,8 +1829,6 @@ private struct SettingsTab: View {
                         Text("\(Int(hubOpacity * 100))%").monospacedDigit().foregroundStyle(.secondary).frame(width: 44, alignment: .trailing)
                     }.frame(maxWidth: 260)
                 }
-                Text(tr("ลดลงเพื่อให้เห็นเดสก์ท็อปทะลุหน้าต่าง กระจกของแต่ละการ์ดยังคงอยู่"))
-                    .font(.caption2).foregroundStyle(.secondary)
             }
             Section(tr("ปฏิทิน")) {
                 Toggle(tr("เตือนก่อนนัดหมายถึง 10 นาที"), isOn: Binding(
@@ -1796,8 +1841,6 @@ private struct SettingsTab: View {
                             UserDefaults.standard.set(false, forKey: CalendarService.enabledKey)
                         } } }
                     }))
-                Text(tr("อ่านเฉพาะชื่อและเวลานัดหมายใน 30 นาทีข้างหน้า ไม่แก้ไขปฏิทิน ไม่เก็บข้อมูล และจะขอสิทธิ์ปฏิทินเมื่อเปิดสวิตช์นี้ครั้งแรก"))
-                    .font(.caption2).foregroundStyle(.secondary)
             }
             Section(tr("ประหยัดพลังงาน")) {
                 let d = power.decision
@@ -1828,8 +1871,6 @@ private struct SettingsTab: View {
                     .disabled(!LoginItem.isAvailable)
                 if !loginMessage.isEmpty { Text(loginMessage).font(.caption).foregroundStyle(.orange) }
                 if !LoginItem.isAvailable { Text(tr("ตัวเลือกนี้ใช้ได้เมื่อรันจาก Hey.app")).font(.caption).foregroundStyle(.secondary) }
-                Text(tr("ใช้แบตต่ำ/Low Power/เครื่องร้อน จะลดเฟรมเรตลงอัตโนมัติ · หน้าจอดับหรือล็อกจะหยุดวาดสัตว์ แต่เตือนและภารกิจยังทำงานต่อ"))
-                    .font(.caption2).foregroundStyle(.secondary)
             }
             Section(tr("เพลง")) {
             VStack(alignment: .leading, spacing: 4) {
@@ -1845,15 +1886,11 @@ private struct SettingsTab: View {
                 Toggle(tr("(ทดลอง) อ่านเพลงที่กำลังเล่นจากระบบ — เสนอเพิ่มเข้าเพลย์ลิสต์ และโชว์ชื่อเพลงวิ่งบนแถบเมนูแม้เล่นในเบราว์เซอร์"), isOn: Binding(
                     get: { game.music.detectNowPlaying },
                     set: { v in model.perform { $0.setMusic { $0.detectNowPlaying = v }; return [] } }))
-                if game.music.detectNowPlaying {
-                    Text(NowPlayingReader.libraryURL == nil
-                         ? tr("ไม่พบไฟล์ libheynp.dylib จึงใช้ไม่ได้")
-                         : tr("ใช้ API ส่วนตัวของ macOS (Apple ปิดได้เมื่อไรก็ได้) · รู้ว่ากำลังเล่นอะไรแล้วหาแท็บ YouTube ที่ตรงกันเพื่อเอาลิงก์ จึงต้องอนุญาตระบบอัตโนมัติ · ไม่เก็บ ไม่ส่งออกไปไหน"))
-                        .font(.caption2).foregroundStyle(NowPlayingReader.libraryURL == nil ? Color.orange : Color.secondary)
+                if game.music.detectNowPlaying, NowPlayingReader.libraryURL == nil {
+                    Text(tr("ไม่พบไฟล์ libheynp.dylib จึงใช้ไม่ได้")).font(.caption).foregroundStyle(.orange)
                 }
-                if game.music.detectBrowser {
-                    Text(detector.browserNote ?? tr("รองรับ Safari, Chrome, Arc, Brave, Edge · macOS จะถามสิทธิ์ควบคุมเบราว์เซอร์ครั้งแรก · อ่านเฉพาะ URL ของแท็บหน้าสุด และใช้เฉพาะเมื่อเป็นหน้า YouTube"))
-                        .font(.caption2).foregroundStyle(detector.browserNote == nil ? Color.secondary : Color.orange)
+                if game.music.detectBrowser, let note = detector.browserNote {
+                    Text(note).font(.caption).foregroundStyle(.orange)
                 }
             }
             }
@@ -1959,7 +1996,7 @@ private struct AboutSection: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Hey!").font(.title3.weight(.bold))
                 Text(tr("เพื่อนตัวน้อยบนเดสก์ท็อป Mac")).font(.callout).foregroundStyle(.secondary)
-                Text(tr("เวอร์ชัน {0} · ต้องใช้ macOS 26 ขึ้นไป", version)).font(.caption).foregroundStyle(.secondary)
+                Text(tr("เวอร์ชัน {0}", version)).font(.caption).foregroundStyle(.secondary)
             }
         }
         HStack(spacing: 10) {
@@ -2027,8 +2064,6 @@ private struct RadialMenuEditor: View {
     var body: some View {
         let menu = game.radialMenu
         Section(tr("เมนูรอบสัตว์เลี้ยง")) {
-            Text(tr("จัดว่าปุ่มไหนอยู่บนวงแรก ปุ่มไหนอยู่ในโฟลเดอร์ หรือซ่อนไว้ ลากแถวเพื่อเรียงลำดับ หรือใช้ปุ่ม ย้ายไป… ได้ วงแรกมีได้สูงสุด {0} ช่อง และ Hub อยู่บนวงแรกเสมอ", RadialMenuSettings.maxRing))
-                .font(.caption).foregroundStyle(.secondary)
             HStack {
                 Button(tr("เพิ่มโฟลเดอร์")) { change { _ = $0.addFolder(named: tr("โฟลเดอร์ใหม่")) } }
                     .disabled(menu.ring.count >= RadialMenuSettings.maxRing)
@@ -2038,29 +2073,29 @@ private struct RadialMenuEditor: View {
             }
         }
         Section(tr("วงแรก")) {
-            ForEach(Array(menu.ring.enumerated()), id: \.offset) { _, entry in
+            ForEach(Array(menu.ring.enumerated()), id: \.offset) { index, entry in
                 switch entry {
                 case .action(let action):
-                    ActionRow(action: action, menu: menu, change: change)
+                    ActionRow(action: action, menu: menu, change: change,
+                              order: Order(index: index, count: menu.ring.count) { from, to in change { $0.moveEntries(from: IndexSet(integer: from), to: to) } })
                 case .folder(let folder):
                     HStack {
                         Image(systemName: folder.symbol).frame(width: 22).foregroundStyle(.tint)
                         FolderNameField(folder: folder, change: change)
                         Text(tr("{0} ปุ่ม", folder.actions.count)).font(.caption).foregroundStyle(.secondary)
+                        OrderButtons(order: Order(index: index, count: menu.ring.count) { from, to in change { $0.moveEntries(from: IndexSet(integer: from), to: to) } })
                         Button(role: .destructive) { change { $0.deleteFolder(folder.id) } } label: { Image(systemName: "trash") }
                             .buttonStyle(.borderless).help(tr("ลบโฟลเดอร์ (ปุ่มข้างในจะถูกซ่อน)"))
                     }
                 }
             }
-            .onMove { from, to in change { $0.moveEntries(from: from, to: to) } }
         }
         ForEach(menu.folders) { folder in
             Section {
-                ForEach(folder.actions, id: \.self) { action in
-                    ActionRow(action: action, menu: menu, change: change)
+                ForEach(Array(folder.actions.enumerated()), id: \.offset) { index, action in
+                    ActionRow(action: action, menu: menu, change: change,
+                              order: Order(index: index, count: folder.actions.count) { from, to in change { $0.moveActions(in: folder.id, from: IndexSet(integer: from), to: to) } })
                 }
-                .onMove { from, to in change { $0.moveActions(in: folder.id, from: from, to: to) } }
-                if folder.actions.isEmpty { Text(tr("ว่างอยู่ — เพิ่มปุ่มจากรายการ ซ่อนอยู่ หรือย้ายมาจากวงแรก")).font(.caption).foregroundStyle(.secondary) }
             } header: {
                 Label(folder.displayName, systemImage: folder.symbol)
             }
@@ -2079,11 +2114,34 @@ private struct RadialMenuEditor: View {
     }
 }
 
+/// Where a row sits in its list, and how to move it; the arrows work where dragging a row in a form does not.
+private struct Order {
+    let index: Int
+    let count: Int
+    let move: (_ from: Int, _ to: Int) -> Void
+}
+
+private struct OrderButtons: View {
+    let order: Order
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Button { order.move(order.index, order.index - 1) } label: { Image(systemName: "chevron.up") }
+                .disabled(order.index == 0)
+            Button { order.move(order.index, order.index + 2) } label: { Image(systemName: "chevron.down") }
+                .disabled(order.index >= order.count - 1)
+        }
+        .buttonStyle(.borderless)
+        .font(.caption.weight(.semibold))
+    }
+}
+
 /// One action in the editor, with a menu to send it to the ring, a folder, or out of sight.
 private struct ActionRow: View {
     let action: RadialAction
     let menu: RadialMenuSettings
     let change: (@escaping (inout RadialMenuSettings) -> Void) -> Void
+    var order: Order? = nil
 
     var body: some View {
         let place = menu.place(of: action)
@@ -2092,6 +2150,7 @@ private struct ActionRow: View {
                 .foregroundStyle(place == nil ? Color.secondary : Color.accentColor)
             Text(action.label).foregroundStyle(place == nil ? Color.secondary : Color.primary)
             Spacer()
+            if let order { OrderButtons(order: order) }
             Menu(tr("ย้ายไป…")) {
                 Button(tr("วงแรก")) { change { _ = $0.place(action, in: .ring) } }
                     .disabled(place == .ring || menu.ring.count >= RadialMenuSettings.maxRing)

@@ -8,7 +8,6 @@ struct EggChoiceView: View {
     @Binding var name: String
     /// Already chosen: shown, but nothing can be changed.
     var locked = false
-    var note: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -33,8 +32,6 @@ struct EggChoiceView: View {
                 .textFieldStyle(.roundedBorder)
                 .disabled(locked)
                 .onChange(of: name) { _, new in if new.count > PetName.maxLength { name = String(new.prefix(PetName.maxLength)) } }
-            Text(locked ? tr("เลือกไว้แล้ว เปลี่ยนได้ที่ Hub › สัตว์เลี้ยง ตอนเริ่มไข่ใหม่") : (note ?? tr("เลือกแล้วเปลี่ยนพันธุ์ไม่ได้ จนกว่าจะเริ่มไข่ใหม่ ส่วนชื่อเปลี่ยนทีหลังได้")))
-                .font(.caption).foregroundStyle(.secondary)
         }
     }
 }
@@ -50,10 +47,10 @@ struct NewEggSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(tr("เริ่มไข่ใหม่")).font(.title2.weight(.bold))
-            Text(game.pet.state.stage == .egg
-                 ? tr("ไข่ฟองนี้จะถูกแทนที่ด้วยไข่ฟองใหม่")
-                 : tr("{0} จะถูกเก็บไว้ในที่ระลึกว่าปล่อยไป ไม่ใช่การจากไป เหรียญ ของในคลัง เควส และความสำเร็จยังอยู่ครบ", game.pet.state.name))
-                .font(.callout).foregroundStyle(.secondary)
+            if game.pet.state.stage != .egg {
+                Text(tr("{0} จะถูกเก็บไว้ในที่ระลึกว่าปล่อยไป ไม่ใช่การจากไป เหรียญ ของในคลัง เควส และความสำเร็จยังอยู่ครบ", game.pet.state.name))
+                    .font(.callout).foregroundStyle(.secondary)
+            }
             EggChoiceView(species: $species, name: $name)
             HStack {
                 Spacer()

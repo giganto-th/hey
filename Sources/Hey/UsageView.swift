@@ -72,7 +72,7 @@ struct UsageTab: View {
     var body: some View {
         let now = Date()
         let all = AIProvider.allCases.flatMap { service.rows(for: $0) }
-        List {
+        Form {
             Section {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {

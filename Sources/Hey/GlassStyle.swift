@@ -22,16 +22,18 @@ enum HeyLook {
     static let accent = Color(red: 0.55, green: 0.42, blue: 0.95)
 }
 
-/// The Hub's backdrop: a blue gradient with a few blurred bubbles drifting behind the glass.
+/// The Hub's backdrop: a gradient that follows the time of day, with two soft blurred blobs behind the glass. Static: it never animates.
 struct HubBackdrop: View {
-    /// 1 is the full deep blue; lower lets the desktop show through the window.
+    /// 1 is the full colour; lower lets the desktop show through the window.
     var opacity: Double = 1
+    var part: DayPart = .afternoon
 
     var body: some View {
+        let c = part.colors
         ZStack {
-            LinearGradient(colors: [HeyLook.deep, HeyLook.sky], startPoint: .topLeading, endPoint: .bottomTrailing)
-            RadialGradient(colors: [HeyLook.glow.opacity(0.45), .clear], center: .init(x: 0.62, y: 0.18), startRadius: 10, endRadius: 420)
-            Circle().fill(HeyLook.glow.opacity(0.16)).frame(width: 260).blur(radius: 30).offset(x: -260, y: 240)
+            LinearGradient(colors: [c.top, c.bottom], startPoint: .topLeading, endPoint: .bottomTrailing)
+            RadialGradient(colors: [c.glow.opacity(0.42), .clear], center: .init(x: 0.62, y: 0.16), startRadius: 10, endRadius: 440)
+            Circle().fill(c.glow.opacity(0.14)).frame(width: 260).blur(radius: 30).offset(x: -260, y: 240)
             Circle().fill(HeyLook.accent.opacity(0.18)).frame(width: 220).blur(radius: 36).offset(x: 300, y: 260)
         }
         .opacity(opacity)
@@ -65,33 +67,46 @@ struct PillButtonStyle: ButtonStyle {
     }
 }
 
-/// One round button of the Hub's left rail; the selected one sits in a glowing bubble.
+/// One button of the Hub's left rail: a symbol over a short label. The selected one sits in a glowing bubble that slides to the next.
 struct RailButton: View {
     let symbol: String
     let title: String
     let selected: Bool
+    var space: Namespace.ID
     let action: () -> Void
+    @State private var hovering = false
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(.white.opacity(selected ? 1 : 0.7))
-                .frame(width: 44, height: 44)
-                .background {
-                    if selected {
-                        Circle().fill(LinearGradient(colors: [HeyLook.glow.opacity(0.55), HeyLook.accent.opacity(0.45)],
-                                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .overlay(Circle().strokeBorder(.white.opacity(0.35), lineWidth: 1))
-                            .shadow(color: HeyLook.glow.opacity(0.6), radius: 8)
-                    }
+            VStack(spacing: 3) {
+                Image(systemName: symbol)
+                    .font(.system(size: 18, weight: .medium))
+                    .symbolVariant(selected ? .fill : .none)
+                    .frame(height: 24)
+                Text(title).font(.system(size: 10, weight: selected ? .semibold : .regular)).lineLimit(1).minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(.white.opacity(selected ? 1 : hovering ? 0.9 : 0.62))
+            .frame(width: 62, height: 50)
+            .background {
+                if selected {
+                    RoundedRectangle(cornerRadius: 18)
+                        .fill(LinearGradient(colors: [HeyLook.glow.opacity(0.5), HeyLook.accent.opacity(0.4)],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(.white.opacity(0.3), lineWidth: 1))
+                        .shadow(color: HeyLook.glow.opacity(0.5), radius: 7)
+                        .matchedGeometryEffect(id: "rail", in: space)
+                } else if hovering {
+                    RoundedRectangle(cornerRadius: 18).fill(.white.opacity(0.08))
                 }
-                .frame(width: 66, height: 52)               // the whole cell takes the click, not only the glyph
-                .contentShape(Rectangle())
+            }
+            .frame(width: 76, height: 56)                   // the whole cell takes the click
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .onHover { hovering = $0 }
         .help(title)
         .accessibilityLabel(title)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 

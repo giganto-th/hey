@@ -7,7 +7,18 @@ struct SystemTab: View {
     @State private var stats = SystemStats()
 
     var body: some View {
-        List {
+        Form {
+            Section {
+                HStack(spacing: 8) {
+                    StatRing(value: stats.cpu * 100, symbol: "cpu", title: "CPU", inverted: true)
+                    StatRing(value: stats.totalMemory > 0 ? stats.memoryUsed / stats.totalMemory * 100 : 0,
+                             symbol: "memorychip", title: tr("หน่วยความจำ"), inverted: true)
+                    StatRing(value: stats.diskTotal > 0 ? (stats.diskTotal - stats.diskFree) / stats.diskTotal * 100 : 0,
+                             symbol: "internaldrive", title: tr("ดิสก์"), inverted: true)
+                }
+                .padding(.vertical, 6)
+            }
+
             Section(tr("เครื่องนี้")) {
                 row(tr("ชิป"), stats.chip)
                 row(tr("รุ่น"), stats.model)
@@ -80,7 +91,6 @@ struct SystemTab: View {
             Section("Hey!") {
                 row(tr("CPU ที่ Hey! ใช้"), String(format: "%.1f%%", stats.heyCPU))
                 row(tr("หน่วยความจำที่ Hey! ใช้"), ByteText.size(stats.heyMemory))
-                Text(tr("ตัววัดทำงานเฉพาะตอนเปิดหน้านี้ ปิดหน้านี้แล้วไม่กินเครื่อง")).font(.caption).foregroundStyle(.secondary)
             }
 
             if !stats.topByCPU.isEmpty {
