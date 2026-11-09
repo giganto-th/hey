@@ -55,7 +55,7 @@
 | ภาพ | **2D ก่อน** (sprite) ส่วน 3D เก็บไว้เป็นอนาคต | ใช้ SpriteKit + sprite sheet; ต้องมี "สัญญา" ของ asset (7.3) เพื่อสลับสไตล์/เพิ่ม 3D ทีหลังได้ |
 | ขอบเขต | ออกแบบให้ครอบคลุมก่อน | เอกสารนี้ครอบคลุมทุกระบบ + เสนอลำดับสร้าง |
 
-**Deployment target: macOS 26 (Tahoe) ขึ้นไป** เพื่อใช้ Liquid Glass (เดิมเป็น macOS 15) เพราะต้องใช้ `SCRecordingOutput` (บันทึกจอ) และ SwiftData/Observation เวอร์ชันใหม่
+**Deployment target: macOS 15 (Sequoia) ขึ้นไป** (`SCRecordingOutput` ใช้ได้ตั้งแต่ 15) Liquid Glass ใช้บน macOS 26 ผ่านตัวห่อ `heyGlass`/`GlassGroup` ใน `GlassStyle.swift` ส่วน macOS 15 ใช้วัสดุโปร่งแสงแทน CI รัน build และเทสต์บน macos-15 และ macos-26 ดูหน้าตาแบบ macOS 15 บนเครื่องใหม่ได้ด้วย `HEY_DEV=1 HEY_DEV_NO_GLASS=1`
 
 ---
 

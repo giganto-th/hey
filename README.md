@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="ดาวน์โหลด" src="https://img.shields.io/badge/ดาวน์โหลด-v1.3.0-6f8cff?style=for-the-badge"></a>
+  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="ดาวน์โหลด" src="https://img.shields.io/badge/ดาวน์โหลด-v1.4.0-6f8cff?style=for-the-badge"></a>
   <a href="https://giganto-th.github.io/hey/"><img alt="เว็บไซต์" src="https://img.shields.io/badge/เว็บไซต์-Hey!-b79bff?style=for-the-badge"></a>
   <a href="https://www.youtube.com/watch?v=JBi-y-_I9jk"><img alt="วิดีโอ" src="https://img.shields.io/badge/ดูวิดีโอ-YouTube-ff6f91?style=for-the-badge"></a>
 </p>
@@ -17,7 +17,7 @@
 <p align="center"><a href="README.en.md">English</a> · ภาษาไทย</p>
 
 <p align="center">
-  <img alt="macOS 26+" src="https://img.shields.io/badge/macOS-26%2B-0d1b4d?logo=apple&logoColor=white">
+  <img alt="macOS 15+" src="https://img.shields.io/badge/macOS-15%2B-0d1b4d?logo=apple&logoColor=white">
   <img alt="Swift 6.2" src="https://img.shields.io/badge/Swift-6.2-F05138?logo=swift&logoColor=white">
   <img alt="Liquid Glass" src="https://img.shields.io/badge/UI-Liquid%20Glass-6f8cff">
   <img alt="ทำงานบนเครื่อง" src="https://img.shields.io/badge/ข้อมูล-อยู่ในเครื่อง-3b8f6b">
@@ -27,7 +27,7 @@
 
 **Hey!** คือสัตว์เลี้ยง 2D บนหน้าจอ macOS ตัวละครคือ **Hei Hei** ไก่ตัวน้อยที่เดินเล่นอยู่บนเดสก์ท็อป คอยสังเกตว่าคุณกำลังทำอะไรอยู่ พิมพ์นานเกินไปก็ชวนพักสายตา จบรอบโฟกัสก็ดีใจด้วย และมีเครื่องมือเล็ก ๆ ช่วยงานจริง ทุกอย่างทำงานบนเครื่องของคุณ ไม่ต้องสมัครสมาชิก
 
-> ต้องใช้ **macOS 26 (Tahoe)** ขึ้นไป เพราะหน้าตาใช้ Liquid Glass ไฟล์เดียวใช้ได้ทั้ง Apple Silicon และ Intel ตราบใดที่เครื่องลง macOS 26 ได้
+> ต้องใช้ **macOS 15 (Sequoia)** ขึ้นไป บน macOS 26 ได้หน้าตา Liquid Glass เต็มรูปแบบ บน macOS 15 ใช้วัสดุโปร่งแสงแทน ไฟล์เดียวใช้ได้ทั้ง Apple Silicon และ Intel
 
 ## ฟีเจอร์เด่น
 
@@ -79,7 +79,7 @@ curl -fsSL https://raw.githubusercontent.com/giganto-th/hey/main/scripts/install
 
 **หรือโหลดเอง:**
 
-1. โหลด `Hey-1.3.0.dmg` จากหน้า [Releases](https://github.com/giganto-th/hey/releases/latest)
+1. โหลด `Hey-1.4.0.dmg` จากหน้า [Releases](https://github.com/giganto-th/hey/releases/latest)
 2. ลาก **Hey** ไปวางบน **Applications**
 3. เปิดแอป
 

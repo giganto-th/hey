@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="Download" src="https://img.shields.io/badge/Download-v1.3.0-6f8cff?style=for-the-badge"></a>
+  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="Download" src="https://img.shields.io/badge/Download-v1.4.0-6f8cff?style=for-the-badge"></a>
   <a href="https://giganto-th.github.io/hey/en/"><img alt="Website" src="https://img.shields.io/badge/Website-Hey!-b79bff?style=for-the-badge"></a>
   <a href="https://www.youtube.com/watch?v=JBi-y-_I9jk"><img alt="Video" src="https://img.shields.io/badge/Watch-YouTube-ff6f91?style=for-the-badge"></a>
 </p>
@@ -20,7 +20,7 @@
 
 **Hey!** is a 2D pet for your macOS screen. **Hei Hei** the rooster wanders around the desktop, notices what you are doing, nudges you to rest your eyes when you type for long, cheers when a focus round ends, and brings small tools that really help. Everything runs on your Mac and needs no account.
 
-> Requires **macOS 26 (Tahoe)** or later (the look uses Liquid Glass). One download runs on both Apple Silicon and Intel Macs, as long as the Mac can run macOS 26.
+> Requires **macOS 15 (Sequoia)** or later. On macOS 26 you get the full Liquid Glass look; on macOS 15 translucent materials stand in for it. One download runs on both Apple Silicon and Intel Macs.
 
 ## Features
 
@@ -49,7 +49,7 @@ curl -fsSL https://raw.githubusercontent.com/giganto-th/hey/main/scripts/install
 
 The script downloads the latest release with curl (a file downloaded with curl carries no quarantine flag, so macOS does not ask), puts it in Applications and opens it.
 
-**Or download it yourself:** get `Hey-1.3.0.dmg` from [Releases](https://github.com/giganto-th/hey/releases/latest) and drag Hey onto Applications. The app is signed with a Developer ID and notarized by Apple, so it opens with a double-click and no warning (versions up to 1.1.0 were not notarized).
+**Or download it yourself:** get `Hey-1.4.0.dmg` from [Releases](https://github.com/giganto-th/hey/releases/latest) and drag Hey onto Applications. The app is signed with a Developer ID and notarized by Apple, so it opens with a double-click and no warning (versions up to 1.1.0 were not notarized).
 
 Build it yourself with `bash scripts/make-app.sh` (gives `build/Hey.app`) and `bash scripts/make-dmg.sh` (gives the .dmg).
 
