@@ -509,7 +509,8 @@ final class PetScene: SKScene {
     private func applyFrameRate() {
         guard let view else { return }
         let moving: Bool
-        moving = presentation.animates && ![.idle, .sleeping, .focusing, .attentive, .egg].contains(presentation.activity)
+        moving = presentation.animates && (![.idle, .sleeping, .focusing, .attentive, .egg].contains(presentation.activity)
+                                           || (presentation.activity == .idle && !art.isHidden && art.isMidIdleMove))
         let rates = tier.fps
         let override = ProcessInfo.processInfo.environment["HEY_DEV_FPS"].flatMap(Int.init)   // for measuring
         let fps = max(override ?? (moving ? rates.active : rates.still), 1)
@@ -535,7 +536,10 @@ final class PetScene: SKScene {
             if fsm.pose == .walk, !wasWalking { considerPerchChange() }
             art.position = CGPoint(x: 0, y: feetInset)
             art.setScale(spriteSide / 174)
-            art.update(presentation, dt: dt, stage: stage, species: model.game.species)
+            var shownPresentation = presentation
+            shownPresentation.cyclesPerSecond = ClipRate.limited(presentation.cyclesPerSecond, fps: view?.preferredFramesPerSecond ?? 24)
+            art.update(shownPresentation, dt: dt, stage: stage, species: model.game.species)
+            applyFrameRate()                  // an idle move switches the rate up or down
             return
         }
         if articulated {

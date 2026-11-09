@@ -211,6 +211,9 @@ final class SpritePet: SKNode {
         var reduced: Bool
     }
 
+    /// An idle move (a shake, a preen) is code-driven motion that needs the faster redraw rate to read as smooth.
+    var isMidIdleMove: Bool { idle.move != .none }
+
     func update(_ presentation: CompanionPresentation, dt: Double, stage: PetStage, species: String) {
         self.species = species
         let wasEgg = self.stage == .egg
