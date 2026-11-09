@@ -422,8 +422,8 @@ final class SpritePet: SKNode {
         case .flying: .fly
         case .carried: .carried
         case .pleased: .happy
-        case .idle, .focusing, .attentive, .worried: .idle
-        default: nil
+        case .idle, .focusing, .worried: .idle
+        default: nil          // attentive holds a still pose: its clip would run at 1 cycle/s but is drawn at the low still rate (6 fps), which stutters
         }
     }
 
