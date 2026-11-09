@@ -135,7 +135,7 @@ struct HubView: View {
                 RailButton(symbol: HubDestination.settings.icon, title: HubDestination.settings.title,
                            selected: current == .settings) { router.section = HubDestination.settings.sections.first }
             }
-            .padding(.vertical, 14).padding(.horizontal, 10)
+            .padding(.vertical, 12)
             .frame(width: 66)
             .heyPanel(cornerRadius: 33)
 

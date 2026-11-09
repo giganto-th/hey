@@ -211,6 +211,23 @@ struct RadialMenuView: View {
                     }
                     .id(model.page)
                 }
+
+                // Badges live above all the buttons; on a button they were covered by its neighbour's glass.
+                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                    if let badge = item.badge {
+                        let target = index < centers.count ? model.inView(centers[index]) : start
+                        let half = model.layout.buttonSize / 2
+                        Text(badge)
+                            .font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
+                            .padding(.horizontal, 5).padding(.vertical, 1.5)
+                            .background(item.badgeColor, in: Capsule())
+                            .position(x: (model.shown ? target.x : start.x) + half * 0.72, y: (model.shown ? target.y : start.y) - half * 0.72)
+                            .scaleEffect(model.shown ? 1 : 0.25)
+                            .opacity(model.shown ? 1 : 0)
+                            .animation(.spring(response: 0.46, dampingFraction: 0.66).delay(Double(index) * 0.04), value: model.shown)
+                            .allowsHitTesting(false)
+                    }
+                }
             }
             .frame(width: model.panelSize.width, height: model.panelSize.height)
         }
@@ -235,15 +252,6 @@ struct RadialMenuView: View {
         .buttonStyle(.plain)
         .glassEffect(.regular.interactive(), in: .circle)
         .opacity(item.enabled ? 1 : 0.4)
-        .overlay(alignment: .topTrailing) {
-            if let badge = item.badge {
-                Text(badge)
-                    .font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
-                    .padding(.horizontal, 5).padding(.vertical, 1.5)
-                    .background(item.badgeColor, in: Capsule())
-                    .offset(x: 6, y: -3)
-            }
-        }
     }
 
     private func header(_ info: RadialHeaderInfo, model: RadialModel, controller: RadialMenuController) -> some View {

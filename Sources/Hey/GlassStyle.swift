@@ -86,6 +86,8 @@ struct RailButton: View {
                             .shadow(color: HeyLook.glow.opacity(0.6), radius: 8)
                     }
                 }
+                .frame(width: 66, height: 52)               // the whole cell takes the click, not only the glyph
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(title)

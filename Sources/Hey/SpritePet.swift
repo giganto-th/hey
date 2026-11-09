@@ -401,8 +401,7 @@ final class SpritePet: SKNode {
         case .focusing:
             t.tilt = -0.02
             t.sy = 1 + 0.008 * sin(age * 1.1)
-        case .attentive:
-            t.tilt = 0.04 * sin(age * 2.2) * a
+        case .attentive: break               // standing still while its menu is open: no sway
         case .egg, .dormant: break
         }
         return t
