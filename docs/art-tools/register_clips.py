@@ -7,6 +7,7 @@
 
 walk  holds the torso still, where it sits in the idle clip (the window carries the pet across the screen, so a body that drifts inside its frame reads as sliding).
 hop clips (happy, dance, startled, flap) hold the torso still sideways and leave the height alone (the app hops the bird itself).
+idle  holds the feet still too (the head and body move, the feet do not)
 eat   holds the feet still, where they stand in the idle clip (the bird leans in to peck; its feet stay where they are).
 Frames are never cropped: a shift that would push opaque pixels off the canvas is limited to what fits.
 """
@@ -38,7 +39,10 @@ def idle_refs(d, band):
         tx = np.nonzero(a[band[0]:band[1], :, 3] > 200)[1]
         torso.append(tx.mean())
         feet.append(cr.foot_x(a, np.nonzero(a[:, :, 3] > 200)[0].max()))
-    return float(np.nanmedian(torso)), float(np.nanmedian(feet))
+    centre = float(np.nanmedian(feet))
+    # measure the feet the same way the other clips are measured (pixels near the idle feet), or every clip is shifted by the difference
+    windowed = [cr.foot_x(cr.load(f), np.nonzero(cr.load(f)[:, :, 3] > 200)[0].max(), centre) for f in sorted(glob.glob(os.path.join(d, "idle_*.png")))]
+    return float(np.nanmedian(torso)), float(np.nanmedian(windowed)), centre
 
 HOPS = ("happy", "dance", "startled", "flap")
 
@@ -61,7 +65,7 @@ def plan(clip, files, band, near, ref, floor_ref=0):
         for a in arrs:
             tx = np.nonzero(a[band[0]:band[1], :, 3] > 200)[1]
             anchor.append(tx.mean() if len(tx) else np.nan)
-    else:  # eat
+    else:  # eat, idle: the feet
         anchor = []
         for a in arrs:
             ys, _ = np.nonzero(a[:, :, 3] > 200)
@@ -78,7 +82,7 @@ def plan(clip, files, band, near, ref, floor_ref=0):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("clips", nargs="+", choices=["walk", "eat", *HOPS])
+    ap.add_argument("clips", nargs="+", choices=["walk", "eat", "idle", *HOPS])
     ap.add_argument("--species"); ap.add_argument("--stage")
     ap.add_argument("--write", action="store_true"); ap.add_argument("--sheets")
     args = ap.parse_args()
@@ -87,13 +91,12 @@ def main():
         if (args.species and sp != args.species) or (args.stage and st != args.stage): continue
         idle = sorted(glob.glob(os.path.join(d, "idle_*.png")))
         band = cr.band_rows(cr.mask(idle[0]))
-        torso_ref, feet_ref = idle_refs(d, band)
+        torso_ref, feet_ref, near = idle_refs(d, band)
         floor_ref = float(np.median([np.nonzero(cr.load(f)[:, :, 3] > 200)[0].max() for f in idle]))
-        near = feet_ref
         for clip in args.clips:
             files = sorted(glob.glob(os.path.join(d, f"{clip}_*.png")), key=lambda p: int(p.rsplit("_", 1)[1][:-4]))
             if not files: continue
-            result = plan(clip, files, band, near, feet_ref if clip == "eat" else torso_ref, floor_ref)
+            result = plan(clip, files, band, near, feet_ref if clip in ("eat", "idle") else torso_ref, floor_ref)
             if result is None:
                 print(f"{sp}/{st} {clip}: anchor not found, skipped"); continue
             arrs, anchor, dxs = result
