@@ -123,6 +123,7 @@ struct HubView: View {
     let gestureLog: GestureLog
     let detector: MusicDetector
     let aiUsage: AIUsageService
+    let updates: UpdateService
     @Bindable var router: HubRouter
     @AppStorage("hubOpacity") private var hubOpacity = 0.8
 
@@ -146,6 +147,9 @@ struct HubView: View {
 
             VStack(spacing: 0) {
                 header(game)
+                if updates.hasUpdate || isInstalling(updates.state) {
+                    UpdateBanner(updates: updates, router: router).padding(.horizontal, 8).padding(.bottom, 10)
+                }
                 let sections = current.sections
                 if sections.count > 1 {
                     Picker(tr("หน้า"), selection: Binding<HubSection>(get: { router.section ?? .today }, set: { router.section = $0 })) {
@@ -172,7 +176,7 @@ struct HubView: View {
                     case .achievements: AchievementsTab(game: game)
                     case .gestures: GesturesTab(model: model, game: game, log: gestureLog)
                     case .pet: PetTab(model: model, game: game, router: router)
-                    case .settings: SettingsTab(model: model, game: game, power: power, detector: detector)
+                    case .settings: SettingsTab(model: model, game: game, power: power, detector: detector, updates: updates)
                     }
                 }
                 .scrollContentBackground(.hidden)
@@ -184,6 +188,10 @@ struct HubView: View {
         .preferredColorScheme(.dark)
         .tint(HeyLook.glow)
         .frame(minWidth: 760, minHeight: 560)
+    }
+
+    private func isInstalling(_ state: UpdateService.State) -> Bool {
+        switch state { case .verifying, .installing: true; default: false }
     }
 
     private func header(_ game: Game) -> some View {
@@ -1584,11 +1592,100 @@ private struct ShelfList: View {
 
 // MARK: settings
 
+/// A strip across the top of the Hub while a newer version is waiting (or being installed).
+private struct UpdateBanner: View {
+    let updates: UpdateService
+    let router: HubRouter
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "arrow.down.circle.fill").font(.title3).foregroundStyle(HeyLook.glow)
+            switch updates.state {
+            case .downloading(let fraction):
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(tr("กำลังโหลด Hey! {0}…", updates.release?.version.description ?? "")).font(.callout.weight(.semibold))
+                    ProgressView(value: fraction)
+                }
+                Button(tr("ยกเลิก")) { updates.cancelDownload() }
+            case .verifying:
+                Text(tr("กำลังตรวจไฟล์…")).font(.callout.weight(.semibold)); Spacer()
+            case .installing:
+                Text(tr("กำลังติดตั้ง แอปจะเปิดใหม่เอง…")).font(.callout.weight(.semibold)); Spacer()
+            default:
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(tr("มี Hey! เวอร์ชัน {0} ใหม่", updates.release?.version.description ?? "")).font(.callout.weight(.semibold))
+                    Text(tr("ปัจจุบัน {0}", updates.currentVersion.description)).font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button(tr("ดูรายละเอียด")) { router.section = .settings }
+                Button(tr("อัปเดตเลย")) { Task { await updates.install() } }
+                    .buttonStyle(.borderedProminent).disabled(!updates.canInstallHere)
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+    }
+}
+
+private struct UpdateSection: View {
+    let updates: UpdateService
+    @State private var auto = true
+
+    var body: some View {
+        Section(tr("การอัปเดต")) {
+            HStack {
+                Text(tr("เวอร์ชันที่ใช้อยู่"))
+                Spacer()
+                Text(updates.currentVersion.description).foregroundStyle(.secondary).monospacedDigit()
+            }
+            Toggle(tr("ตรวจหาเวอร์ชันใหม่เองวันละครั้ง และแจ้งเตือน"), isOn: Binding(get: { auto }, set: { auto = $0; updates.autoCheck = $0 }))
+            HStack {
+                status
+                Spacer()
+                switch updates.state {
+                case .checking: ProgressView().controlSize(.small)
+                case .available:
+                    Button(tr("อัปเดตเลย")) { Task { await updates.install() } }
+                        .buttonStyle(.borderedProminent).disabled(!updates.canInstallHere)
+                case .downloading, .verifying, .installing: EmptyView()
+                default: Button(tr("ตรวจตอนนี้")) { Task { await updates.check() } }
+                }
+            }
+            if let release = updates.release, case .available = updates.state {
+                if !release.notes.isEmpty {
+                    Text(release.notes).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                }
+                if let page = release.pageURL { Link(tr("เปิดหน้ารีลีสบน GitHub"), destination: page).font(.caption) }
+                if !updates.canInstallHere {
+                    Text(tr("แอปนี้อยู่ในที่ที่เขียนทับไม่ได้ ให้โหลด DMG จากหน้ารีลีสมาติดตั้งเอง")).font(.caption).foregroundStyle(.orange)
+                }
+            }
+            Text(tr("กดอัปเดตแล้วจะโหลดไฟล์จาก GitHub ตรวจว่าตรงกับที่ประกาศ เซ็นโดยทีมเดียวกันและผ่าน notarize ก่อนสลับแอปและเปิดใหม่ ไม่ติดตั้งเองโดยที่คุณไม่ได้กด"))
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .onAppear { auto = updates.autoCheck }
+    }
+
+    @ViewBuilder private var status: some View {
+        switch updates.state {
+        case .idle: Text(updates.lastChecked.map { tr("ตรวจล่าสุด {0}", $0.formatted(date: .abbreviated, time: .shortened)) } ?? tr("ยังไม่เคยตรวจ")).font(.callout).foregroundStyle(.secondary)
+        case .checking: Text(tr("กำลังตรวจ…")).font(.callout).foregroundStyle(.secondary)
+        case .upToDate(let at): Label(tr("เป็นเวอร์ชันล่าสุดแล้ว ({0})", at.formatted(date: .omitted, time: .shortened)), systemImage: "checkmark.circle.fill").font(.callout).foregroundStyle(.green)
+        case .available(let v): Label(tr("มีเวอร์ชัน {0} ใหม่", v), systemImage: "arrow.down.circle.fill").font(.callout).foregroundStyle(HeyLook.glow)
+        case .downloading(let f): Text(tr("กำลังโหลด {0}%", Int(f * 100))).font(.callout)
+        case .verifying: Text(tr("กำลังตรวจไฟล์…")).font(.callout)
+        case .installing: Text(tr("กำลังติดตั้ง…")).font(.callout)
+        case .failed(let message): Label(message, systemImage: "exclamationmark.triangle.fill").font(.callout).foregroundStyle(.orange)
+        }
+    }
+}
+
 private struct SettingsTab: View {
     let model: GameModel
     let game: Game
     let power: PowerMonitor
     let detector: MusicDetector
+    let updates: UpdateService
     @State private var loginMessage = ""
     @State private var loginOn = LoginItem.isEnabled
     @State private var calendarOn = CalendarService.isEnabled
@@ -1596,6 +1693,7 @@ private struct SettingsTab: View {
 
     var body: some View {
         List {
+            UpdateSection(updates: updates)
             Section(tr("การเคลื่อนไหวของ {0}", game.pet.state.name)) {
                 MotionSettingsControls(model: model, game: game)
             }

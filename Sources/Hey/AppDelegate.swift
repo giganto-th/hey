@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var window: PetWindow!
     private var food: FoodController!
     private let aiUsage = AIUsageService()
+    private let updates = UpdateService()
     private var bubbles: BubbleController!
     private let windowSpread = WindowSpreadController()
     private var scene: PetScene!
@@ -68,6 +69,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         aiUsage.start()
         if WelcomeWindow.shouldShow { DispatchQueue.main.async { [weak self] in if let self { WelcomeWindow.show(model: self.model) } } }
+        updates.onAvailable = { [weak self] info in
+            guard let self else { return }
+            SystemNotice.post(tr("มี Hey! เวอร์ชัน {0} ใหม่ เปิด Hub เพื่ออัปเดต", info.version.description))
+            self.scene.announce(tr("มี Hey! เวอร์ชัน {0} ใหม่ อัปเดตได้ที่ Hub", info.version.description), symbol: "arrow.down.circle.fill")
+        }
+        updates.startSchedule()
+        if ProcessInfo.processInfo.environment["HEY_DEV_UPDATE_AUTO"] != nil {       // exercises check → download → verify → swap without clicking
+            Task { [updates] in
+                await updates.check()
+                print("[update] after check:", updates.state, updates.release?.tag ?? "-")
+                await updates.install()
+                print("[update] after install:", updates.state)
+            }
+        }
         scene.onPetEvent = { [weak self] event in self?.petEvent(event) }
         scene.seekTarget = { [weak self] in self?.food.target() ?? self?.bubbles.target() }
         view.onEvent = { [weak scene] in scene?.send($0) }
@@ -960,6 +975,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // 3. the pet
         section(tr("สัตว์เลี้ยง"))
         if s.isDead { action(tr("ฟักไข่ใหม่…"), "egg.fill", #selector(openPetPage)) }
+        if updates.hasUpdate, let v = updates.release?.version { action(tr("อัปเดต Hey! เป็น {0}…", v.description), "arrow.down.circle.fill", #selector(openUpdates)) }
         let feedItem = NSMenuItem(title: tr("ให้อาหาร"), action: nil, keyEquivalent: "")
         feedItem.image = NSImage(systemSymbolName: "fork.knife", accessibilityDescription: nil)
         let feedMenu = NSMenu()
@@ -1052,6 +1068,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func openPetPage() { showHub(section: .pet) }
+    @objc private func openUpdates() { showHub(section: .settings) }
 
     @objc private func spreadWindows() { windowSpread.show() }
 
@@ -1070,7 +1087,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if let size = ProcessInfo.processInfo.environment["HEY_DEV_HUB_SIZE"]?.split(separator: "x").compactMap({ Double($0) }),
                size.count == 2, devMode { w.setContentSize(NSSize(width: size[0], height: size[1])) }       // see a long page in one capture
             w.isReleasedWhenClosed = false
-            w.contentView = NSHostingView(rootView: HubView(model: model, pomodoro: pomodoro, clipboard: clipboard, vault: vault, shelf: shelf, music: music, capture: capture, camera: camera, power: power, gestureLog: gestureLog, detector: detector, aiUsage: aiUsage, router: router))
+            w.contentView = NSHostingView(rootView: HubView(model: model, pomodoro: pomodoro, clipboard: clipboard, vault: vault, shelf: shelf, music: music, capture: capture, camera: camera, power: power, gestureLog: gestureLog, detector: detector, aiUsage: aiUsage, updates: updates, router: router))
             w.center()
             hubWindow = w
         }

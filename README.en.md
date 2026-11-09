@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="Download" src="https://img.shields.io/badge/Download-v1.2.3-6f8cff?style=for-the-badge"></a>
+  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="Download" src="https://img.shields.io/badge/Download-v1.3.0-6f8cff?style=for-the-badge"></a>
   <a href="https://giganto-th.github.io/hey/en/"><img alt="Website" src="https://img.shields.io/badge/Website-Hey!-b79bff?style=for-the-badge"></a>
   <a href="https://www.youtube.com/watch?v=JBi-y-_I9jk"><img alt="Video" src="https://img.shields.io/badge/Watch-YouTube-ff6f91?style=for-the-badge"></a>
 </p>
@@ -31,6 +31,9 @@
 | **Pomodoro focus** | 25 minutes of focus, 5 of rest; coins and XP for your pet |
 | **Helpful tools** | Clipboard history · read text from the screen (Thai/English) · screenshots and screen recording · sticky notes · reminders in Thai or English · calendar heads-up |
 | **AI credits** | The plan quotas of Claude, Codex (ChatGPT) and Antigravity, several accounts each, with the provider's real logo; the pet warns you at 80% and 95%; a percentage next to the menu-bar icon when one runs low |
+| **My Mac** | CPU (total and per core), memory, disk, network, battery, temperature, the busiest processes and what Hey! itself uses, in Hub › My Mac. It only measures while the page is open |
+| **Self-update** | Checks GitHub for a new version once a day and notifies you; press Update now in the Hub and it downloads, checks (hash, same signing team, notarized), swaps the app and reopens it. Nothing installs unless you press the button |
+| **A pet that can die** | If hunger, mood or energy sits at 0 for 12 hours in total the pet dies (with warnings first; switch it off in Hub › Overview) and you choose a new egg. Everything you collected stays |
 | **File shelf and music** | Drop files, text or links onto the pet to keep them; play YouTube or audio files and the pet sways along |
 | **Three friends** | Hei Hei the rooster, Shams the fluffy chick and Shi Shi the bob-haircut chick, with poses and animations for every growth stage |
 | **Play** | Drop food anywhere and the pet walks over to eat it; blow bubbles for it to chase and peck |
@@ -46,7 +49,7 @@ curl -fsSL https://raw.githubusercontent.com/giganto-th/hey/main/scripts/install
 
 The script downloads the latest release with curl (a file downloaded with curl carries no quarantine flag, so macOS does not ask), puts it in Applications and opens it.
 
-**Or download it yourself:** get `Hey-1.2.3.dmg` from [Releases](https://github.com/giganto-th/hey/releases/latest) and drag Hey onto Applications. The app is signed with a Developer ID and notarized by Apple, so it opens with a double-click and no warning (versions up to 1.1.0 were not notarized).
+**Or download it yourself:** get `Hey-1.3.0.dmg` from [Releases](https://github.com/giganto-th/hey/releases/latest) and drag Hey onto Applications. The app is signed with a Developer ID and notarized by Apple, so it opens with a double-click and no warning (versions up to 1.1.0 were not notarized).
 
 Build it yourself with `bash scripts/make-app.sh` (gives `build/Hey.app`) and `bash scripts/make-dmg.sh` (gives the .dmg).
 

@@ -136,12 +136,14 @@ private func run(_ e: inout PetEngine, from start: Date, hours: Double, sleeping
     var now = t0
     for _ in 0..<80 { now = now.addingTimeInterval(600); _ = game.advance(to: now, sleeping: false) }
     #expect(game.pet.state.isDead)
+    let coinsBefore = game.coins                     // daily quests may have paid out while time passed; what matters is hatching changes nothing
     let reborn = game.hatchNewEgg(at: now.addingTimeInterval(60))
     #expect(reborn)
     #expect(game.pet.state.stage == .egg)
     #expect(!game.pet.state.isDead)
     #expect(game.pet.state.name == "Shi Shi")
-    #expect(game.coins == 321)
+    #expect(game.coins == coinsBefore)
+    #expect(game.coins >= 321)
     #expect(game.memorials.count == 1)
     #expect(game.memorials[0].name == "Pip" && game.memorials[0].cause == .hunger && game.memorials[0].species == "shishi")
 }
