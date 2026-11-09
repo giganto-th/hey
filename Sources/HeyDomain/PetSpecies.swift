@@ -14,3 +14,18 @@ public struct PetSpecies: Equatable, Sendable, Identifiable {
 
     public static func named(_ id: String) -> PetSpecies? { all.first { $0.id == id } }
 }
+
+
+/// What a pet may be called: trimmed, single-spaced, 1 to 20 characters, nothing that is not printable.
+public enum PetName {
+    public static let maxLength = 20
+
+    /// The cleaned name, or nil when nothing usable is left.
+    public static func clean(_ raw: String) -> String? {
+        let printable = raw.unicodeScalars.filter { !CharacterSet.controlCharacters.contains($0) && $0 != "\u{200B}" }
+        let text = String(String.UnicodeScalarView(printable))
+        let collapsed = text.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+        guard !collapsed.isEmpty else { return nil }
+        return String(collapsed.prefix(maxLength))
+    }
+}

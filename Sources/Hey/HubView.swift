@@ -197,7 +197,8 @@ struct HubView: View {
     private func header(_ game: Game) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(HubDestination.containing(router.section ?? .today).title).font(.system(size: 26, weight: .semibold, design: .rounded))
+                let destination = HubDestination.containing(router.section ?? .today)
+                Text(destination == .pet ? game.pet.state.name : destination.title).font(.system(size: 26, weight: .semibold, design: .rounded))
                 Text(tr("เพื่อนร่วมโต๊ะตัวป่วน")).font(.caption).foregroundStyle(.white.opacity(0.65))
             }
             Spacer()
@@ -287,10 +288,10 @@ private struct RebirthCard: View {
     let model: GameModel
     let game: Game
     @State private var species = ""
+    @State private var name = ""
 
     var body: some View {
         let s = game.pet.state
-        let installed = PetSpecies.all.filter { SpritePet.installedSpecies().contains($0.id) }
         VStack(alignment: .leading, spacing: 10) {
             Label(tr("{0} จากไปแล้ว", s.name), systemImage: "heart.slash.fill").font(.headline)
             Text(tr("{0} {1} ตอนอายุ {2} วัน", s.deathCause.map { tr("จากไปเพราะ{0}", $0.label) } ?? "",
@@ -298,14 +299,9 @@ private struct RebirthCard: View {
                 .font(.callout).foregroundStyle(.secondary)
             Text(tr("เหรียญ ของในคลัง เควส และความสำเร็จของคุณยังอยู่ครบ ฟักไข่ใหม่เพื่อเริ่มต้นอีกครั้ง"))
                 .font(.caption).foregroundStyle(.secondary)
-            if installed.count > 1 {
-                Picker(tr("ตัวใหม่"), selection: $species) {
-                    ForEach(installed) { Text($0.label).tag($0.id) }
-                }
-                .pickerStyle(.segmented)
-            }
+            EggChoiceView(species: $species, name: $name)
             Button {
-                model.perform { $0.hatchNewEgg(at: Date(), species: species.isEmpty ? nil : species); return [] }
+                model.perform { $0.hatchNewEgg(at: Date(), species: species.isEmpty ? nil : species, name: name); return [] }
             } label: { Label(tr("ฟักไข่ใหม่"), systemImage: "egg.fill") }
                 .buttonStyle(.borderedProminent)
         }
@@ -314,10 +310,57 @@ private struct RebirthCard: View {
     }
 }
 
+/// Before the first egg is started: choose which friend it is. After that this never shows again.
+private struct FirstEggChoice: View {
+    let model: GameModel
+    let game: Game
+    @State private var species = ""
+    @State private var name = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            EggChoiceView(species: $species, name: $name)
+            Button {
+                model.perform { $0.chooseEgg(species: species.isEmpty ? game.species : species, name: name); return [] }
+            } label: { Label(tr("เริ่มอุ่นไข่"), systemImage: "egg.fill") }
+                .buttonStyle(.borderedProminent)
+        }
+        .padding(.vertical, 6)
+        .onAppear { species = game.species }
+    }
+}
+
+/// The kind of pet (fixed) and its name (editable).
+private struct PetNameRow: View {
+    let model: GameModel
+    let game: Game
+    @State private var name = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        HStack {
+            TextField(tr("ชื่อ"), text: $name)
+                .textFieldStyle(.roundedBorder).focused($focused)
+                .onSubmit { commit() }
+                .onChange(of: name) { _, new in if new.count > PetName.maxLength { name = String(new.prefix(PetName.maxLength)) } }
+                .onChange(of: focused) { _, now in if !now { commit() } }
+            Text(PetSpecies.named(game.species)?.label ?? game.species).font(.callout).foregroundStyle(.secondary)
+        }
+        .onAppear { name = game.pet.state.name }
+        .onChange(of: game.pet.state.name) { _, new in if !focused { name = new } }
+    }
+
+    private func commit() {
+        model.perform { $0.renamePet(name); return [] }
+        name = model.game.pet.state.name
+    }
+}
+
 private struct PetTab: View {
     let model: GameModel
     let game: Game
     let router: HubRouter
+    @State private var newEgg = false
 
     var body: some View {
         let s = game.pet.state
@@ -331,15 +374,12 @@ private struct PetTab: View {
                         .foregroundStyle(.orange)
                 }
             }
+            if !game.speciesLocked, !s.isDead {
+                Section(tr("เลือกเพื่อนของคุณ")) { FirstEggChoice(model: model, game: game) }
+            }
             Section {
-                let installed = SpritePet.installedSpecies()
-                if installed.count > 1, !s.isDead {
-                    Picker(tr("หน้าตา"), selection: Binding(
-                        get: { game.species },
-                        set: { id in model.perform { $0.setSpecies(id); return [] } })) {
-                            ForEach(PetSpecies.all.filter { installed.contains($0.id) }) { Text($0.label).tag($0.id) }
-                        }
-                        .pickerStyle(.segmented)
+                if game.speciesLocked, !s.isDead {
+                    PetNameRow(model: model, game: game)
                 }
                 HStack {
                     Spacer()
@@ -382,6 +422,12 @@ private struct PetTab: View {
                     Label(tr("ผูกพัน {0}", Int(s.bond)), systemImage: "heart.fill").font(.callout)
                 }
             }
+            if !s.isDead {
+                Section(tr("เริ่มไข่ใหม่")) {
+                    Button { newEgg = true } label: { Label(tr("เริ่มไข่ใหม่…"), systemImage: "egg") }
+                    Text(tr("เปลี่ยนพันธุ์ได้เฉพาะตอนเริ่มไข่ใหม่ ตัวเดิมจะถูกเก็บไว้ในที่ระลึก")).font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Section(tr("การดูแล")) {
                 Toggle(tr("ให้สัตว์เลี้ยงจากไปได้ถ้าถูกปล่อยปละละเลย"), isOn: Binding(
                     get: { game.care.mortal }, set: { v in model.perform { $0.setCare { $0.mortal = v }; return [] } }))
@@ -392,10 +438,11 @@ private struct PetTab: View {
                 Section(tr("ที่ระลึก")) {
                     ForEach(game.memorials) { m in
                         HStack {
-                            Image(systemName: "heart.slash").foregroundStyle(.secondary)
+                            Image(systemName: m.wasReleased ? "arrow.uturn.backward.circle" : "heart.slash").foregroundStyle(.secondary)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("\(m.name) · \(m.stage.displayName)").fontWeight(.medium)
-                                Text(tr("อยู่ด้วยกัน {0} วัน · จากไปเพราะ{1}", m.daysLived, m.cause?.label ?? "-"))
+                                Text(m.wasReleased ? tr("อยู่ด้วยกัน {0} วัน · ปล่อยไปเริ่มไข่ใหม่", m.daysLived)
+                                                   : tr("อยู่ด้วยกัน {0} วัน · จากไปเพราะ{1}", m.daysLived, m.cause?.label ?? "-"))
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                         }
@@ -428,6 +475,7 @@ private struct PetTab: View {
                 }
             }
         }
+        .sheet(isPresented: $newEgg) { NewEggSheet(model: model, game: game) { newEgg = false } }
     }
 
     private func bar(_ title: String, _ value: Double, _ total: Double, symbol: String? = nil) -> some View {

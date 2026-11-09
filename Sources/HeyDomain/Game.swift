@@ -35,13 +35,15 @@ public struct SaveData: Codable, Equatable, Sendable {
     public var achievements: [String: Date] = [:]
     public var guide = GuideState()
     public var care = PetCareSettings()
+    /// True once the player has chosen which friend this egg is (see `Game.chooseEgg`). Saves from before this existed count as chosen.
+    public var speciesLocked = false
     public var memorials: [PetMemorial] = []
 
     public init(pet: PetState) { self.pet = pet }
 
     // Hand-written so a file saved by an older build (missing newer keys) still loads.
     private enum CodingKeys: String, CodingKey {
-        case version, pet, coins, inventory, quests, questDay, streak, reminders, notes, vault, vaultSettings, playlists, music, media, capture, power, gestures, species, reactions, motion, radialMenu, shelf, files, stats, achievements, guide, care, memorials
+        case version, pet, coins, inventory, quests, questDay, streak, reminders, notes, vault, vaultSettings, playlists, music, media, capture, power, gestures, species, reactions, motion, radialMenu, shelf, files, stats, achievements, guide, care, speciesLocked, memorials
     }
 
     public init(from decoder: Decoder) throws {
@@ -80,6 +82,7 @@ public struct SaveData: Codable, Equatable, Sendable {
         achievements = value([String: Date].self, .achievements, default: [:])
         guide = value(GuideState.self, .guide, default: GuideState())
         care = value(PetCareSettings.self, .care, default: PetCareSettings())
+        speciesLocked = value(Bool.self, .speciesLocked, default: true)
         memorials = list(PetMemorial.self, .memorials)
         let saved = (try? c.decodeIfPresent(String.self, forKey: .species)) ?? nil
         // v2 restores Hei Hei. Keep custom names and unknown species intact.
@@ -155,6 +158,8 @@ public struct Game: Sendable {
     public private(set) var achievements: [String: Date]
     public private(set) var guide: GuideState
     public private(set) var care: PetCareSettings
+    /// The kind of pet cannot change until a new egg is started.
+    public private(set) var speciesLocked: Bool
     public private(set) var memorials: [PetMemorial]
 
     private var calendar: Calendar
@@ -192,6 +197,7 @@ public struct Game: Sendable {
         achievements = save.achievements
         guide = save.guide
         care = save.care
+        speciesLocked = save.speciesLocked
         memorials = save.memorials
         pet.mortal = save.care.mortal
         self.calendar = calendar
@@ -225,6 +231,7 @@ public struct Game: Sendable {
         s.achievements = achievements
         s.guide = guide
         s.care = care
+        s.speciesLocked = speciesLocked
         s.memorials = memorials
         return s
     }
@@ -617,30 +624,66 @@ public struct Game: Sendable {
 
     public mutating func setReactions(_ change: (inout ReactionSettings) -> Void) { change(&reactions) }
     public mutating func setRadialMenu(_ change: (inout RadialMenuSettings) -> Void) { change(&radialMenu) }
-    public mutating func renamePet(_ name: String) { pet.rename(name) }
+    /// Renames the pet; a name with nothing usable in it is ignored. Returns whether it changed.
+    @discardableResult
+    public mutating func renamePet(_ name: String) -> Bool {
+        guard let clean = PetName.clean(name), clean != pet.state.name else { return false }
+        pet.rename(clean)
+        return true
+    }
 
-    /// Switches the art set. A name still at the old species' default follows along; a name the user chose stays.
-    public mutating func setSpecies(_ id: String) {
-        guard id != species, let next = PetSpecies.named(id) else { return }
+    /// Switches the art set, but only while the player has not yet chosen (a fresh game). After that the kind is fixed until a new
+    /// egg is started with `hatchNewEgg` or `releasePet`. A name still at the old species' default follows along.
+    @discardableResult
+    public mutating func setSpecies(_ id: String) -> Bool {
+        guard !speciesLocked, id != species, let next = PetSpecies.named(id) else { return false }
         if pet.state.name == PetSpecies.named(species)?.defaultName { pet.rename(next.defaultName) }
         species = id
+        return true
     }
+
+    /// The player's first choice: which friend, and what it is called. Locks the kind. Only works once, on a fresh game.
+    @discardableResult
+    public mutating func chooseEgg(species id: String, name: String?) -> Bool {
+        guard !speciesLocked, PetSpecies.named(id) != nil else { return false }
+        species = id
+        pet.rename(PetName.clean(name ?? "") ?? PetSpecies.named(id)?.defaultName ?? "Hei Hei")
+        speciesLocked = true
+        return true
+    }
+
     public mutating func setCare(_ change: (inout PetCareSettings) -> Void) {
         change(&care)
         pet.mortal = care.mortal
     }
 
-    /// After a death: the pet goes into the memorial list and a new egg takes its place (the same kind unless another is chosen).
-    /// The player's coins, stock, quests and achievements are kept.
+    /// After a death: the pet goes into the memorial list and a new egg takes its place. The player picks the kind and the name
+    /// (the same kind and its default name if left out). Coins, stock, quests and achievements are kept.
     @discardableResult
-    public mutating func hatchNewEgg(at now: Date, species newSpecies: String? = nil) -> Bool {
+    public mutating func hatchNewEgg(at now: Date, species newSpecies: String? = nil, name: String? = nil) -> Bool {
         guard pet.state.isDead else { return false }
+        return replacePet(at: now, species: newSpecies, name: name, released: false)
+    }
+
+    /// The player lets a living pet go to start a fresh egg (a chance to pick another kind). The old pet is kept in the memorial list
+    /// as released, not as dead. An egg that never hatched leaves no memorial.
+    @discardableResult
+    public mutating func releasePet(at now: Date, species newSpecies: String? = nil, name: String? = nil) -> Bool {
+        guard !pet.state.isDead else { return false }
+        return replacePet(at: now, species: newSpecies, name: name, released: true)
+    }
+
+    private mutating func replacePet(at now: Date, species newSpecies: String?, name: String?, released: Bool) -> Bool {
         let s = pet.state
-        memorials.insert(PetMemorial(name: s.name, species: species, stage: s.stage, bornAt: s.bornAt, diedAt: s.diedAt ?? now,
-                                     cause: s.deathCause, xp: s.xp), at: 0)
-        if memorials.count > PetCareSettings.maxMemorials { memorials.removeLast(memorials.count - PetCareSettings.maxMemorials) }
+        if s.stage != .egg || s.isDead {
+            memorials.insert(PetMemorial(name: s.name, species: species, stage: s.stage, bornAt: s.bornAt, diedAt: s.diedAt ?? now,
+                                         cause: s.deathCause, xp: s.xp, released: released ? true : nil), at: 0)
+            if memorials.count > PetCareSettings.maxMemorials { memorials.removeLast(memorials.count - PetCareSettings.maxMemorials) }
+        }
         if let id = newSpecies, PetSpecies.named(id) != nil { species = id }
-        pet.startOver(at: now, name: PetSpecies.named(species)?.defaultName ?? "Hei Hei")
+        let fallback = PetSpecies.named(species)?.defaultName ?? "Hei Hei"
+        pet.startOver(at: now, name: PetName.clean(name ?? "") ?? fallback)
+        speciesLocked = true
         return true
     }
 

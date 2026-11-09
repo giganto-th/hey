@@ -118,6 +118,10 @@ public struct PetMemorial: Codable, Equatable, Sendable, Identifiable {
     public var diedAt: Date
     public var cause: PetNeed?
     public var xp: Double
+    /// Set when the player let this pet go and started a new egg (it did not die).
+    public var released: Bool?
+
+    public var wasReleased: Bool { released == true }
 
     public var daysLived: Int { max(Int(diedAt.timeIntervalSince(bornAt) / 86_400), 0) }
 }

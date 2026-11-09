@@ -10,6 +10,7 @@ struct WelcomeView: View {
     @State private var step = 0
     @State private var language = AppLanguage.choice
     @State private var species: String
+    @State private var petName = ""
 
     init(model: GameModel, finish: @escaping () -> Void) {
         self.model = model
@@ -34,7 +35,10 @@ struct WelcomeView: View {
                     Spacer()
                     if step > 0 { Button(tr("ย้อนกลับ")) { step -= 1 } }
                     if step < 2 {
-                        Button(tr("ถัดไป")) { step += 1 }.buttonStyle(PillButtonStyle()).keyboardShortcut(.defaultAction)
+                        Button(tr("ถัดไป")) {
+                            if step == 1 { model.perform { $0.chooseEgg(species: species, name: petName); return [] } }      // the choice is made once, here
+                            step += 1
+                        }.buttonStyle(PillButtonStyle()).keyboardShortcut(.defaultAction)
                     } else {
                         Button(tr("เริ่มเลย")) { finish() }.buttonStyle(PillButtonStyle()).keyboardShortcut(.defaultAction)
                     }
@@ -68,24 +72,8 @@ struct WelcomeView: View {
     private var petStep: some View {
         VStack(spacing: 16) {
             Text(tr("เลือกเพื่อนของคุณ")).font(.title.weight(.bold))
-            Text(tr("เปลี่ยนทีหลังได้ที่ Hub › สัตว์เลี้ยง")).font(.callout).foregroundStyle(.secondary)
-            HStack(spacing: 14) {
-                ForEach(PetSpecies.all.filter { SpritePet.installedSpecies().contains($0.id) }) { sp in
-                    Button {
-                        species = sp.id
-                        model.perform { $0.setSpecies(sp.id); return [] }
-                    } label: {
-                        VStack(spacing: 8) {
-                            if let image = WelcomeWindow.preview(sp.id) { Image(nsImage: image).resizable().scaledToFit().frame(height: 130) }
-                            Text(sp.defaultName).font(.headline)
-                        }
-                        .frame(maxWidth: .infinity).padding(.vertical, 14)
-                        .background(species == sp.id ? Color.accentColor.opacity(0.28) : Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
-                        .overlay(RoundedRectangle(cornerRadius: 18).stroke(species == sp.id ? Color.accentColor : .clear, lineWidth: 2))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
+            Text(tr("ตั้งชื่อให้เพื่อนด้วย เลือกแล้วเปลี่ยนพันธุ์ไม่ได้ จนกว่าจะเริ่มไข่ใหม่")).font(.callout).foregroundStyle(.secondary)
+            EggChoiceView(species: $species, name: $petName, locked: model.game.speciesLocked, note: tr("ชื่อเปลี่ยนทีหลังได้ที่ Hub › สัตว์เลี้ยง"))
         }
     }
 
