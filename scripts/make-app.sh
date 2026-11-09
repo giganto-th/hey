@@ -12,8 +12,13 @@ out="${1:-$root/build}"
 app="$out/Hey.app"
 
 cd "$root"
-swift build -c release
-bin="$(swift build -c release --show-bin-path)/Hey"
+# One app for both Apple Silicon and Intel Macs. HEY_ARCHS="arm64" builds just for this machine (faster while developing).
+archs=(${HEY_ARCHS:-arm64 x86_64})
+archflags=()
+for a in "${archs[@]}"; do archflags+=(--arch "$a"); done
+swift build -c release "${archflags[@]}"
+binpath="$(swift build -c release "${archflags[@]}" --show-bin-path)"
+bin="$binpath/Hey"
 
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
@@ -21,7 +26,7 @@ cp "$bin" "$app/Contents/MacOS/Hey"
 cp Sources/Hey/Info.plist "$app/Contents/Info.plist"
 [ -f Resources/AppIcon.icns ] && cp Resources/AppIcon.icns "$app/Contents/Resources/AppIcon.icns"
 mkdir -p "$app/Contents/Frameworks"
-cp "$(swift build -c release --show-bin-path)/libheynp.dylib" "$app/Contents/Frameworks/libheynp.dylib"
+cp "$binpath/libheynp.dylib" "$app/Contents/Frameworks/libheynp.dylib"
 [ -d Resources/Icons ] && rsync -a Resources/Icons/ "$app/Contents/Resources/Icons/"
 [ -d Resources/Logo ] && rsync -a Resources/Logo/ "$app/Contents/Resources/Logo/"
 [ -d Resources/Localization ] && rsync -a Resources/Localization/ "$app/Contents/Resources/Localization/"
@@ -42,4 +47,4 @@ if [ ${#flags[@]} -gt 0 ]; then
 else
   codesign --force --deep --sign "${HEY_SIGN_IDENTITY:--}" "$app"
 fi
-echo "Built $app (signed with ${HEY_SIGN_IDENTITY:-ad-hoc})"
+echo "Built $app [$(lipo -archs "$app/Contents/MacOS/Hey")] (signed with ${HEY_SIGN_IDENTITY:-ad-hoc})"
