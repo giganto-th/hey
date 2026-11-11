@@ -41,6 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var context = ContextEngine()
     private var appFocus = AppFocusEngine()
     private let calendar = CalendarService()
+    private lazy var meetingToast = MeetingToastController(calendar: calendar)
     private var pendingCorner: Corner?
     private var cornerWork: DispatchWorkItem?
     private var cornerArmed = true
@@ -469,8 +470,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: context
 
     private func announceCalendar() {
+        let now = Date()
+        let due = calendar.dueEvents(now: now)
+        // The join card matters even when the pet is not drawn; the bubble only when it is.
+        if let meeting = due.last(where: { $0.meetingURL != nil }) { meetingToast.show(meeting) }
         guard power.decision.tier.rendersPet else { return }
-        for line in calendar.dueLines() { scene.announce(line, symbol: "calendar") }
+        for event in due { scene.announce(CalendarHeadsUp.line(for: event, now: now), symbol: "calendar") }
     }
 
     private func reactToContext() {
@@ -963,10 +968,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             mode: tr("โหมด{0}{1}", power.decision.tier.label, power.decision.reason.isEmpty ? "" : " · \(power.decision.reason)"),
             nowPlaying: music.nowPlaying.map { String($0.title.prefix(40)) })))
 
+        // 1b. the next appointment today
+        let now = Date()
+        let agenda = calendar.agenda(now: now)
+        if let next = agenda.next {
+            section(tr("ปฏิทิน"))
+            card(CalendarMenuCard(next: next, laterCount: agenda.upcoming.count - 1, now: now))
+            if let meeting = agenda.joinable(now: now) {
+                let item = action(tr("เข้าประชุม: {0}", String(meeting.displayTitle.prefix(30))), "video.fill", #selector(joinMeeting(_:)))
+                item.representedObject = meeting.meetingURL
+            }
+            action(tr("ดูนัดวันนี้…"), "calendar", #selector(openTodayPage))
+        }
+
         // 2. AI quota, one row per account
         let accounts = AIProvider.allCases.flatMap { aiUsage.rows(for: $0) }.compactMap { row -> AIUsageCardData.Item? in
             guard let usage = row.usage else { return nil }
-            let now = Date()
             let windows = usage.windows.prefix(2).map { (label: $0.id.count <= 3 ? $0.id : String($0.id.prefix(10)), percent: $0.effectivePercent(at: now)) }
             return AIUsageCardData.Item(id: row.id, provider: row.provider, name: row.name, windows: Array(windows))
         }
@@ -1071,6 +1088,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func openPetPage() { showHub(section: .pet) }
+    @objc private func openTodayPage() { showHub(section: .today) }
+    @objc private func joinMeeting(_ sender: NSMenuItem) {
+        if let url = sender.representedObject as? URL { NSWorkspace.shared.open(url) }
+    }
     @objc private func openUpdates() { showHub(section: .settings) }
 
     @objc private func spreadWindows() { windowSpread.show() }
@@ -1090,7 +1111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if let size = ProcessInfo.processInfo.environment["HEY_DEV_HUB_SIZE"]?.split(separator: "x").compactMap({ Double($0) }),
                size.count == 2, devMode { w.setContentSize(NSSize(width: size[0], height: size[1])) }       // see a long page in one capture
             w.isReleasedWhenClosed = false
-            w.contentView = NSHostingView(rootView: HubView(model: model, pomodoro: pomodoro, clipboard: clipboard, vault: vault, shelf: shelf, music: music, capture: capture, camera: camera, power: power, gestureLog: gestureLog, detector: detector, aiUsage: aiUsage, updates: updates, machineLog: machineLog, router: router))
+            w.contentView = NSHostingView(rootView: HubView(model: model, pomodoro: pomodoro, clipboard: clipboard, vault: vault, shelf: shelf, music: music, capture: capture, camera: camera, power: power, gestureLog: gestureLog, detector: detector, aiUsage: aiUsage, updates: updates, machineLog: machineLog, calendar: calendar, router: router))
             w.center()
             hubWindow = w
         }

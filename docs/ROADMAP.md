@@ -36,6 +36,7 @@ Add the new actions to `RadialAction` so they are pinnable in the existing custo
 
 - Shortcuts: built (2026-11-04) as `hey://` links (`HeyURL`), usable from Shortcuts' "Open URLs": `focus/start`, `focus/stop`, `note?text=`, `clip?n=0`, `hub?page=`. Real App Intents were skipped: they need Xcode metadata extraction, which the SwiftPM build does not run.
 - Calendar next-event heads-up through EventKit (read-only): built (2026-11-04), `CalendarHeadsUp` + `CalendarService`, opt-in toggle in Hub → ตั้งค่า → ปฏิทิน, asks for calendar access only when turned on.
+  Extended (2026-11-10): `CalendarAgenda` + `MeetingLink` + `CalendarFilter` (HeyDomain, tested). Hub › Today has a calendar card (next event with countdown, the rest of today, all-day chips); the menu-bar menu shows the next event and a "join" item; a join card (`MeetingToastController`) appears at the heads-up time when the event has a Zoom/Meet/Teams/Webex link. Settings: lead time 5/10/15 min, which calendars to show, skip declined invitations. Location and notes are read only to find the link (usage text updated). Not yet checked in the running app with real events.
 - Frontmost-app awareness: built (2026-11-04) as `AppFocusEngine` (bundle id only, one speech bubble per long stay: coding 40 min, reading 30, gaming 45, 1 h cooldown). Idle-pose changes per app still need art.
 - Dress-up items in the shop; rare idle poses.
 
