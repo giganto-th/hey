@@ -79,7 +79,7 @@ nav .btn{padding:10px 22px}
 .tab small{display:block;font-weight:400;font-size:.85rem}
 .tab.on,.tab:hover{background:linear-gradient(160deg,rgba(111,180,255,.3),rgba(183,155,255,.14));color:#fff;border-color:rgba(255,255,255,.35)}
 .frame{padding:14px;border-radius:30px}
-.frame img{width:100%;border-radius:20px;display:block;aspect-ratio:960/680;object-fit:cover}
+.frame img{width:100%;border-radius:20px;display:block;aspect-ratio:1100/760;object-fit:cover}
 
 /* growth */
 .stages{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-top:50px;padding:40px 30px 26px;flex-wrap:wrap}
@@ -162,7 +162,7 @@ footer a{color:var(--blue)}
       <a class="btn primary" href="https://github.com/giganto-th/hey/releases/latest">Download for Mac</a>
       <a class="btn ghost" href="#video">Watch the intro video</a>
     </div>
-    <small>Version 1.4.0 · requires macOS 15 (Sequoia) or later · runs on Apple Silicon and Intel Macs</small>
+    <small>Version 1.7.0 · requires macOS 15 (Sequoia) or later · runs on Apple Silicon and Intel Macs</small>
   </div>
   <div class="stage">
     <div class="orb"></div><div class="floor"></div>
@@ -193,15 +193,14 @@ footer a{color:var(--blue)}
   <div class="hub rv">
     <div class="tabs" id="tabs">
       <button class="tab on" data-img="today">Today<small>Your day and work at a glance</small></button>
-      <button class="tab" data-img="pet">Pet<small>Status, hunger, mood</small></button>
+      <button class="tab" data-img="features">Features<small>Every tool in one place</small></button>
+      <button class="tab" data-img="calendar_week">Calendar<small>Your week and month at a glance</small></button>
+      <button class="tab" data-img="ai_credits">AI credits<small>Claude, Codex, Antigravity quotas</small></button>
+      <button class="tab" data-img="my_mac">My Mac<small>CPU, memory, disk, temperature</small></button>
       <button class="tab" data-img="quests">Quests<small>Do them to earn coins</small></button>
       <button class="tab" data-img="shop">Shop<small>Food and supplies</small></button>
-      <button class="tab" data-img="focus">Focus & reminders<small>Pomodoro</small></button>
-      <button class="tab" data-img="clipboard">Files & notes<small>Clipboard, notes, file shelf</small></button>
-      <button class="tab" data-img="music">Music<small>Dance to the music</small></button>
-      <button class="tab" data-img="usage">AI credits<small>Claude, Codex, Antigravity quotas</small></button>
     </div>
-    <div class="frame glass"><img id="hubShot" src="../assets/shot_today.png" alt="Hey Hub screen"></div>
+    <div class="frame glass"><img id="hubShot" src="../assets/hub_today.png" alt="Hey Hub screen"></div>
   </div>
 </div></section>
 
@@ -235,7 +234,7 @@ footer a{color:var(--blue)}
 <section id="install"><div class="wrap">
   <div class="rv"><div class="kick">Install</div><h2>Three steps, <span class="grad">ready to use</span></h2></div>
   <div class="steps">
-    <div class="step glass rv"><h3>Download</h3><p>Download <code>Hey-1.4.0.dmg</code> from the Releases page, then double-click to open</p></div>
+    <div class="step glass rv"><h3>Download</h3><p>Download <code>Hey-1.7.0.dmg</code> from the Releases page, then double-click to open</p></div>
     <div class="step glass rv"><h3>Drag to Applications</h3><p>Drag the Hey icon onto the Applications folder in the same window</p></div>
     <div class="step glass rv"><h3>first launch</h3><p>The app is not notarized by Apple; see how to allow it below, once is enough</p></div>
   </div>
@@ -271,11 +270,11 @@ const poses=['hei_dance','hei_happy','hei_idle','hei_type','hei_walk'];
 let pi=0;
 if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
   setInterval(()=>{pi=(pi+1)%poses.length;heroHei.src='../assets/'+poses[pi]+'.webp'},4200);
-}else{heroHei.src='assets/hei_idle.webp'}
+}else{heroHei.src='../assets/hei_idle.webp'}
 const shot=document.getElementById('hubShot');
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');
-  shot.style.opacity=.2;setTimeout(()=>{shot.src='assets/shot_'+b.dataset.img+'.png';shot.style.opacity=1},140);
+  shot.style.opacity=.2;setTimeout(()=>{shot.src='../assets/hub_'+b.dataset.img+'.png';shot.style.opacity=1},140);
 }));
 shot.style.transition='opacity .25s';
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');if(e.target.id==='stages')e.target.classList.add('go');io.unobserve(e.target)}}),{threshold:.15});

@@ -79,7 +79,7 @@ nav .btn{padding:10px 22px}
 .tab small{display:block;font-weight:400;font-size:.85rem}
 .tab.on,.tab:hover{background:linear-gradient(160deg,rgba(111,180,255,.3),rgba(183,155,255,.14));color:#fff;border-color:rgba(255,255,255,.35)}
 .frame{padding:14px;border-radius:30px}
-.frame img{width:100%;border-radius:20px;display:block;aspect-ratio:960/680;object-fit:cover}
+.frame img{width:100%;border-radius:20px;display:block;aspect-ratio:1100/760;object-fit:cover}
 
 /* growth */
 .stages{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-top:50px;padding:40px 30px 26px;flex-wrap:wrap}
@@ -162,7 +162,7 @@ footer a{color:var(--blue)}
       <a class="btn primary" href="https://github.com/giganto-th/hey/releases/latest">ดาวน์โหลดสำหรับ Mac</a>
       <a class="btn ghost" href="#video">ดูวิดีโอแนะนำ</a>
     </div>
-    <small>เวอร์ชัน 1.4.0 · ต้องใช้ macOS 15 (Sequoia) ขึ้นไป · รองรับทั้ง Apple Silicon และ Intel</small>
+    <small>เวอร์ชัน 1.7.0 · ต้องใช้ macOS 15 (Sequoia) ขึ้นไป · รองรับทั้ง Apple Silicon และ Intel</small>
   </div>
   <div class="stage">
     <div class="orb"></div><div class="floor"></div>
@@ -193,15 +193,14 @@ footer a{color:var(--blue)}
   <div class="hub rv">
     <div class="tabs" id="tabs">
       <button class="tab on" data-img="today">วันนี้<small>สรุปวันและงานของคุณ</small></button>
-      <button class="tab" data-img="pet">สัตว์เลี้ยง<small>สถานะ ความหิว อารมณ์</small></button>
+      <button class="tab" data-img="features">ฟีเจอร์<small>เครื่องมือทั้งหมดในที่เดียว</small></button>
+      <button class="tab" data-img="calendar">ปฏิทิน<small>ตารางนัดรายสัปดาห์และรายเดือน</small></button>
+      <button class="tab" data-img="ai_credits">เครดิต AI<small>โควตา Claude Codex Antigravity</small></button>
+      <button class="tab" data-img="my_mac">เครื่องของฉัน<small>CPU หน่วยความจำ ดิสก์ ความร้อน</small></button>
       <button class="tab" data-img="quests">ภารกิจ<small>ทำเพื่อรับเหรียญ</small></button>
       <button class="tab" data-img="shop">ร้านค้า<small>อาหารและของใช้</small></button>
-      <button class="tab" data-img="focus">โฟกัสและเตือน<small>Pomodoro</small></button>
-      <button class="tab" data-img="clipboard">ไฟล์และโน้ต<small>คลิปบอร์ด โน้ต ถาดไฟล์</small></button>
-      <button class="tab" data-img="music">เพลง<small>ให้ตัวเต้นตามเพลง</small></button>
-      <button class="tab" data-img="usage">เครดิต AI<small>โควตา Claude Codex Antigravity</small></button>
     </div>
-    <div class="frame glass"><img id="hubShot" src="assets/shot_today.png" alt="หน้าจอ Hey Hub"></div>
+    <div class="frame glass"><img id="hubShot" src="assets/th_today.png" alt="หน้าจอ Hey Hub"></div>
   </div>
 </div></section>
 
@@ -235,7 +234,7 @@ footer a{color:var(--blue)}
 <section id="install"><div class="wrap">
   <div class="rv"><div class="kick">ติดตั้ง</div><h2>สามขั้นตอน <span class="grad">เปิดใช้ได้เลย</span></h2></div>
   <div class="steps">
-    <div class="step glass rv"><h3>ดาวน์โหลด</h3><p>โหลดไฟล์ <code>Hey-1.4.0.dmg</code> จากหน้า Releases แล้วดับเบิลคลิกเพื่อเปิด</p></div>
+    <div class="step glass rv"><h3>ดาวน์โหลด</h3><p>โหลดไฟล์ <code>Hey-1.7.0.dmg</code> จากหน้า Releases แล้วดับเบิลคลิกเพื่อเปิด</p></div>
     <div class="step glass rv"><h3>ลากไปที่ Applications</h3><p>ลากไอคอน Hey ไปวางบนโฟลเดอร์ Applications ในหน้าต่างเดียวกัน</p></div>
     <div class="step glass rv"><h3>เปิดครั้งแรก</h3><p>แอปไม่ได้ผ่านการรับรองจาก Apple ดูวิธีอนุญาตด้านล่าง ครั้งเดียวก็พอ</p></div>
   </div>
@@ -275,7 +274,7 @@ if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
 const shot=document.getElementById('hubShot');
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');
-  shot.style.opacity=.2;setTimeout(()=>{shot.src='assets/shot_'+b.dataset.img+'.png';shot.style.opacity=1},140);
+  shot.style.opacity=.2;setTimeout(()=>{shot.src='assets/th_'+b.dataset.img+'.png';shot.style.opacity=1},140);
 }));
 shot.style.transition='opacity .25s';
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');if(e.target.id==='stages')e.target.classList.add('go');io.unobserve(e.target)}}),{threshold:.15});
