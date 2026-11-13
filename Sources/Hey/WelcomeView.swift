@@ -20,7 +20,7 @@ struct WelcomeView: View {
 
     var body: some View {
         ZStack {
-            HubBackdrop(opacity: 1)
+            Color(red: 0.10, green: 0.14, blue: 0.32).ignoresSafeArea()
             VStack(spacing: 18) {
                 Group {
                     switch step {

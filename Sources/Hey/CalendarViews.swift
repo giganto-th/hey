@@ -13,7 +13,7 @@ struct CalendarTodayCard: View {
     let router: HubRouter
 
     var body: some View {
-        HubCard(title: tr("ปฏิทินวันนี้"), symbol: "calendar", tint: .red) {
+        HubCard(title: tr("ปฏิทินวันนี้"), symbol: "calendar", tint: HeyLook.glow) {
             switch calendar.access {
             case .off:
                 prompt(tr("เปิดเพื่อดูนัดของวันนี้และเข้าห้องประชุมได้ในคลิกเดียว"), button: tr("เปิดใช้ปฏิทิน")) {
@@ -40,17 +40,17 @@ struct CalendarTodayCard: View {
                 nextRow(next, joinable: agenda.joinable(now: now)?.id == next.id, now: now)
                 let rest = agenda.upcoming.dropFirst()
                 if !rest.isEmpty {
-                    Divider().overlay(.white.opacity(0.1))
+                    Divider().overlay(.primary.opacity(0.1))
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(Array(rest.prefix(4))) { e in laterRow(e) }
                         if rest.count > 4 {
-                            Text(tr("และอีก {0} นัด", rest.count - 4)).font(.caption).foregroundStyle(.white.opacity(0.55))
+                            Text(tr("และอีก {0} นัด", rest.count - 4)).font(.caption).foregroundStyle(.primary.opacity(0.55))
                         }
                     }
                 }
             } else {
                 Label(tr("ไม่มีนัดที่เหลือแล้ววันนี้"), systemImage: "checkmark.circle")
-                    .font(.callout).foregroundStyle(.white.opacity(0.7))
+                    .font(.callout).foregroundStyle(.primary.opacity(0.7))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -62,7 +62,7 @@ struct CalendarTodayCard: View {
                 Text(CalendarAgenda.countdown(e, now: now))
                     .font(.caption.weight(.semibold)).foregroundStyle(e.isOngoing(at: now) ? .green : .orange)
                 Text(e.displayTitle).font(.headline).lineLimit(2)
-                Text(rangeText(e)).font(.footnote).monospacedDigit().foregroundStyle(.white.opacity(0.6))
+                Text(rangeText(e)).font(.footnote).monospacedDigit().foregroundStyle(.primary.opacity(0.6))
             }
             Spacer(minLength: 8)
             if e.meetingURL != nil {
@@ -81,7 +81,7 @@ struct CalendarTodayCard: View {
 
     private func laterRow(_ e: CalendarEventInfo) -> some View {
         HStack(spacing: 10) {
-            Text(timeText(e.start)).font(.footnote.weight(.medium)).monospacedDigit().foregroundStyle(.white.opacity(0.6))
+            Text(timeText(e.start)).font(.footnote.weight(.medium)).monospacedDigit().foregroundStyle(.primary.opacity(0.6))
                 .frame(minWidth: 48, alignment: .leading)
             Text(e.displayTitle).font(.callout).lineLimit(1)
             Spacer(minLength: 4)
@@ -96,7 +96,7 @@ struct CalendarTodayCard: View {
 
     private func prompt(_ text: String, button: String, action: @escaping () -> Void) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(text).font(.callout).foregroundStyle(.white.opacity(0.7)).fixedSize(horizontal: false, vertical: true)
+            Text(text).font(.callout).foregroundStyle(.primary.opacity(0.7)).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) {
                 Button(button, action: action).buttonStyle(PillButtonStyle())
                 Button(tr("ตั้งค่าปฏิทิน")) { withAnimation(.snappy) { router.section = .settings } }
@@ -119,7 +119,7 @@ private struct FlowChips: View {
         ForEach(Array(items.enumerated()), id: \.offset) { _, title in
             Label(title, systemImage: "sun.max").font(.caption).lineLimit(1)
                 .padding(.horizontal, 8).padding(.vertical, 3)
-                .background(.white.opacity(0.1), in: Capsule())
+                .background(.primary.opacity(0.07), in: Capsule())
         }
     }
 }

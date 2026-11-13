@@ -33,23 +33,23 @@ struct TodayView: View {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 250), spacing: 14)], spacing: 14) {
                     HubTile(symbol: "timer", title: tr("โฟกัส"),
                             value: pomodoro.timer.isRunning ? "\(pomodoro.remainingText) · \(pomodoro.timer.phase == .focus ? tr("โฟกัส") : tr("พัก"))" : tr("พร้อมเริ่ม"),
-                            tint: .orange, action: { withAnimation(.snappy) { router.section = .focus } }) {
+                            tint: HeyLook.glow, action: { withAnimation(.snappy) { router.section = .focus } }) {
                         roundButton(pomodoro.timer.isRunning ? "pause.fill" : "play.fill", pomodoro.timer.isRunning ? tr("หยุดชั่วคราว") : tr("เริ่มโฟกัส")) { pomodoro.toggle() }
                     }
                     HubTile(symbol: "music.note", title: tr("เพลง"),
                             value: music.nowPlaying?.title ?? tr("ยังไม่เล่น"),
-                            tint: .pink, action: { withAnimation(.snappy) { router.section = .music } }) {
+                            tint: HeyLook.glow, action: { withAnimation(.snappy) { router.section = .music } }) {
                         if music.nowPlaying != nil {
                             roundButton(music.isPlaying ? "pause.fill" : "play.fill", music.isPlaying ? tr("หยุดเพลง") : tr("เล่นต่อ")) { music.toggle() }
                         }
                     }
-                    HubTile(symbol: "bell", title: tr("เตือน"), value: nextReminder, tint: .yellow,
+                    HubTile(symbol: "bell", title: tr("เตือน"), value: nextReminder, tint: HeyLook.glow,
                             action: { withAnimation(.snappy) { router.section = .reminders } })
-                    HubTile(symbol: "tray.full", title: tr("ฝากไฟล์"), value: tr("ฝากไฟล์ {0} ชิ้น", game.vault.count), tint: .mint,
+                    HubTile(symbol: "tray.full", title: tr("ฝากไฟล์"), value: tr("ฝากไฟล์ {0} ชิ้น", game.vault.count), tint: HeyLook.glow,
                             action: { withAnimation(.snappy) { router.section = .vault } })
-                    HubTile(symbol: "note.text", title: tr("โน้ต"), value: tr("โน้ต {0} ใบ", game.notes.count), tint: HeyLook.accent,
+                    HubTile(symbol: "note.text", title: tr("โน้ต"), value: tr("โน้ต {0} ใบ", game.notes.count), tint: HeyLook.glow,
                             action: { withAnimation(.snappy) { router.section = .notes } })
-                    HubTile(symbol: "gauge.with.dots.needle.67percent", title: tr("เครดิต AI"), value: tr("ดูโควตาที่เหลือ"), tint: .cyan,
+                    HubTile(symbol: "gauge.with.dots.needle.67percent", title: tr("เครดิต AI"), value: tr("ดูโควตาที่เหลือ"), tint: HeyLook.glow,
                             action: { withAnimation(.snappy) { router.section = .usage } })
                 }
             }
@@ -63,7 +63,7 @@ struct TodayView: View {
             HStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 10) {
                     Label(part.greeting, systemImage: part.symbol)
-                        .font(.callout).foregroundStyle(.white.opacity(0.7))
+                        .font(.callout).foregroundStyle(.primary.opacity(0.7))
                     Text(s.name).font(.system(size: 30, weight: .bold, design: .rounded)).lineLimit(1).minimumScaleFactor(0.6)
                     Button(tr("ดูแล {0}", s.name), systemImage: "heart") {
                         withAnimation(.snappy) { router.section = .pet }
@@ -72,7 +72,7 @@ struct TodayView: View {
                 }
                 Spacer(minLength: 0)
                 ZStack {
-                    Circle().fill(RadialGradient(colors: [moodColor.opacity(0.35), .clear], center: .center, startRadius: 6, endRadius: 90))
+                    Circle().fill(moodColor.opacity(0.13))
                         .frame(width: 180, height: 180)
                     CompanionPreview(stage: s.stage, mode: previewMode, settings: game.motion, species: game.species,
                                      size: CGSize(width: 168, height: 147))
@@ -106,7 +106,7 @@ struct TodayView: View {
         Button(action: action) {
             Image(systemName: symbol).font(.system(size: 13, weight: .semibold))
                 .frame(width: 34, height: 34)
-                .background(.white.opacity(0.14), in: Circle())
+                .background(HeyLook.surface.opacity(0.6), in: Circle())
                 .contentTransition(.symbolEffect(.replace))
         }
         .buttonStyle(.plain)

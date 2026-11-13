@@ -69,7 +69,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self?.scene.announce(text, symbol: "gauge.with.dots.needle.67percent")
             self?.aiUsage.postSystemNotification(text)
         }
+        aiUsage.onReset = { [weak self] resets in
+            guard let self else { return }
+            let weekly = resets.contains(where: \.isWeekly)
+            let providers = Array(Set(resets.map(\.provider))).sorted { $0.rawValue < $1.rawValue }.map(\.label).joined(separator: ", ")
+            let text = weekly ? tr("โควตารายสัปดาห์ของ {0} รีเซ็ตแล้ว!", providers) : tr("โควตา 5 ชั่วโมงของ {0} รีเซ็ตแล้ว!", providers)
+            self.scene.celebrate(text, shells: weekly ? 5 : 3)
+        }
         aiUsage.start()
+        if ProcessInfo.processInfo.environment["HEY_DEV"] != nil, let n = ProcessInfo.processInfo.environment["HEY_DEV_FIREWORKS"].flatMap(Int.init) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in        // dev only: preview the show
+                self?.scene.celebrate(tr("โควตา 5 ชั่วโมงของ {0} รีเซ็ตแล้ว!", "Claude"), shells: n)
+            }
+        }
         if WelcomeWindow.shouldShow { DispatchQueue.main.async { [weak self] in if let self { WelcomeWindow.show(model: self.model) } } }
         updates.onAvailable = { [weak self] info in
             guard let self else { return }
@@ -613,7 +625,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     let title = NSMutableAttributedString()
                     var details: [String] = []
                     for usage in usages {
-                        guard let window = usage.windows.first(where: { $0.id == settings.windowID }) else { continue }
+                        guard let window = settings.window(in: usage, now: now) else { continue }
                         if title.length > 0 { title.append(NSAttributedString(string: "   ")) }
                         if let icon = ProviderLogo.menuBarImage(usage.provider) {
                             let attachment = NSTextAttachment()

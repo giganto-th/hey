@@ -219,6 +219,14 @@ final class PetScene: SKScene {
     /// A small celebration, e.g. a finished focus round.
     func cheer() { fsm.send(.cheered) }
 
+    /// A quota started over: the pet cheers and sends fireworks up from its head (more of them for the weekly one).
+    func celebrate(_ text: String, shells: Int) {
+        fsm.send(.cheered)
+        say(text, symbol: "sparkles")
+        guard tier.rendersPet, !model.game.pet.state.isDead, let frame = window?.frame else { return }
+        Fireworks.launch(from: NSPoint(x: frame.midX, y: frame.minY + headTop), shells: shells)
+    }
+
     func yawn() { fsm.send(.wake); say(tr("ฮ้าว~ ตื่นแล้ว"), symbol: "moon.zzz.fill") }
 
     /// Visual reaction only (e.g. a file was dropped on the pet).

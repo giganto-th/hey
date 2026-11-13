@@ -39,15 +39,8 @@ enum DayPart {
         }
     }
 
-    /// The top and bottom of the backdrop gradient.
-    var colors: (top: Color, bottom: Color, glow: Color) {
-        switch self {
-        case .morning: (Color(red: 0.04, green: 0.14, blue: 0.34), Color(red: 0.10, green: 0.45, blue: 0.72), Color(red: 0.55, green: 0.80, blue: 1.0))
-        case .afternoon: (HeyLook.deep, HeyLook.sky, HeyLook.glow)
-        case .evening: (Color(red: 0.09, green: 0.07, blue: 0.28), Color(red: 0.45, green: 0.28, blue: 0.62), Color(red: 1.0, green: 0.62, blue: 0.55))
-        case .night: (Color(red: 0.01, green: 0.04, blue: 0.16), Color(red: 0.07, green: 0.16, blue: 0.40), Color(red: 0.50, green: 0.55, blue: 1.0))
-        }
-    }
+    /// One flat, very pale cool tint laid over the blurred backdrop (the time of day no longer changes the colour).
+    var tint: Color { Color(red: 0.94, green: 0.96, blue: 1.0) }
 }
 
 // MARK: card
@@ -69,7 +62,7 @@ struct HubCard<Content: View>: View {
                     Text(title)
                 }
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.secondary)
             }
             content()
         }
@@ -102,7 +95,7 @@ struct HubTile<Trailing: View>: View {
                         .background(tint.opacity(0.16), in: Circle())
                     VStack(alignment: .leading, spacing: 2) {
                         Text(title).font(.subheadline.weight(.semibold))
-                        Text(value).font(.footnote).foregroundStyle(.white.opacity(0.65)).lineLimit(1)
+                        Text(value).font(.footnote).foregroundStyle(.secondary).lineLimit(1)
                     }
                     Spacer(minLength: 0)
                 }
@@ -153,13 +146,12 @@ struct StatRing: View {
     var body: some View {
         VStack(spacing: 8) {
             ZStack {
-                Circle().stroke(.white.opacity(0.10), lineWidth: lineWidth)
+                Circle().stroke(.primary.opacity(0.08), lineWidth: lineWidth)
                 Circle().trim(from: 0, to: shown ? fraction : 0)
                     .stroke(color.opacity(0.22), style: StrokeStyle(lineWidth: lineWidth + 6, lineCap: .round))      // a soft glow without a blur pass
                     .rotationEffect(.degrees(-90))
                 Circle().trim(from: 0, to: shown ? fraction : 0)
-                    .stroke(LinearGradient(colors: [color.opacity(0.6), color], startPoint: .topLeading, endPoint: .bottomTrailing),
-                            style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                    .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 VStack(spacing: 1) {
                     Image(systemName: symbol)
@@ -171,7 +163,7 @@ struct StatRing: View {
                 }
             }
             .frame(width: diameter, height: diameter)
-            Text(title).font(.footnote).foregroundStyle(.white.opacity(0.7))
+            Text(title).font(.footnote).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .animation(animated ? .spring(response: 0.6, dampingFraction: 0.8) : nil, value: fraction)
@@ -193,8 +185,8 @@ struct SlimBar: View {
         GeometryReader { proxy in
             let fraction = total > 0 ? min(max(value / total, 0), 1) : 0
             ZStack(alignment: .leading) {
-                Capsule().fill(.white.opacity(0.10))
-                Capsule().fill(LinearGradient(colors: [tint.opacity(0.7), tint], startPoint: .leading, endPoint: .trailing))
+                Capsule().fill(.primary.opacity(0.08))
+                Capsule().fill(tint)
                     .frame(width: max(shown ? proxy.size.width * fraction : 0, fraction > 0 ? 6 : 0))
             }
         }
@@ -220,13 +212,12 @@ struct HubChips<Item: Hashable & Identifiable>: View {
                 Button { withAnimation(.snappy(duration: 0.25)) { selection = item } } label: {
                     Text(title(item))
                         .font(.callout.weight(on ? .semibold : .regular))
-                        .foregroundStyle(.white.opacity(on ? 1 : 0.7))
+                        .foregroundStyle(on ? AnyShapeStyle(.white) : AnyShapeStyle(.primary.opacity(0.6)))
                         .padding(.horizontal, 14).padding(.vertical, 6)
                         .background {
                             if on {
-                                Capsule().fill(LinearGradient(colors: [HeyLook.glow.opacity(0.5), HeyLook.accent.opacity(0.4)],
-                                                              startPoint: .leading, endPoint: .trailing))
-                                    .overlay(Capsule().strokeBorder(.white.opacity(0.3), lineWidth: 1))
+                                Capsule().fill(HeyLook.accent)
+                                    .shadow(color: HeyLook.accent.opacity(0.28), radius: 6, y: 2)
                                     .matchedGeometryEffect(id: "chip", in: space)
                             }
                         }
@@ -236,7 +227,7 @@ struct HubChips<Item: Hashable & Identifiable>: View {
             }
         }
         .padding(4)
-        .background(.white.opacity(0.08), in: Capsule())
+        .background(HeyLook.surface.opacity(0.5), in: Capsule())
     }
 }
 
@@ -254,11 +245,23 @@ extension View {
 extension View {
     /// A flat, softly lit card on the Hub's glass panel (glass on glass would look muddy, and is dearer to draw).
     func hubSurface(hovering: Bool = false, tint: Color? = nil) -> some View {
-        background {
-            RoundedRectangle(cornerRadius: 20)
-                .fill(LinearGradient(colors: [.white.opacity(hovering ? 0.12 : 0.08), (tint ?? .white).opacity(tint == nil ? 0.04 : 0.10)],
-                                     startPoint: .top, endPoint: .bottom))
-        }
-        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(.white.opacity(hovering ? 0.24 : 0.10), lineWidth: 1))
+        modifier(HubSurface(hovering: hovering, tint: tint))
+    }
+}
+
+private struct HubSurface: ViewModifier {
+    let hovering: Bool
+    let tint: Color?
+    @Environment(\.hubOpacity) private var opacity
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(HeyLook.surface.opacity((hovering ? 0.42 : 0.30) + 0.5 * opacity))
+                    .overlay { if let tint { RoundedRectangle(cornerRadius: 20).fill(tint.opacity(0.12)) } }
+                    .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
+            }
+            .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(HeyLook.edge, lineWidth: 1))
     }
 }

@@ -45,9 +45,17 @@ public struct UsageMenuBarSettings: Codable, Equatable, Sendable {
         try values.encode(showReset, forKey: .showReset)
     }
 
+    /// The quota window to show for one account. Claude and Codex have named periods ("5h", "7d"), so the chosen one is used.
+    /// Antigravity has one quota per model instead and no such periods, so for it the fullest (most limiting) model is shown.
+    public func window(in usage: ProviderUsage, now: Date = Date()) -> UsageWindow? {
+        if let match = usage.windows.first(where: { $0.id == windowID }) { return match }
+        guard usage.provider == .antigravity else { return nil }
+        return usage.windows.max { $0.effectivePercent(at: now) < $1.effectivePercent(at: now) }
+    }
+
     /// Keep selection order; never replace an unavailable selected account with another account.
     public func usages(from accounts: [ProviderUsage]) -> [ProviderUsage] {
-        let available = accounts.filter { $0.windows.contains { $0.id == windowID } }
+        let available = accounts.filter { window(in: $0) != nil }
         if accountIDs.isEmpty { return Array(available.prefix(1)) }
         var seen = Set<String>()
         return accountIDs.filter { seen.insert($0).inserted }.compactMap { id in available.first { $0.accountID == id } }

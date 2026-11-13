@@ -90,10 +90,10 @@ struct CompanionPreview: View {
     var size = CGSize(width: 224, height: 196)
     @State private var scene = CompanionPreviewScene()
     @State private var visible = false
-    @State private var appActive = NSApp?.isActive ?? true      // a preview nobody is looking at (another app in front) stops drawing
+    @State private var appActive = NSApp?.isActive ?? true      // another app in front: the preview slows right down rather than stopping (a stopped one shows a grey box)
 
     var body: some View {
-        SpriteView(scene: scene, isPaused: !(visible && appActive), preferredFramesPerSecond: settings.level == .reduced ? 6 : 15, options: [.allowsTransparency])
+        SpriteView(scene: scene, isPaused: !visible, preferredFramesPerSecond: settings.level == .reduced ? 6 : appActive ? 15 : 4, options: [.allowsTransparency])
             .frame(width: size.width, height: size.height)
             .accessibilityLabel(stage == .egg ? tr("ไข่ของสัตว์เลี้ยง") : tr("สัตว์เลี้ยง · {0}", mode.title))
             .onAppear { configure(); visible = true }

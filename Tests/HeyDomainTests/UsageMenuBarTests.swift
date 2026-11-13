@@ -58,10 +58,10 @@ import Testing
         let codex = ProviderUsage(provider: .codex, accountID: "d", windows: [UsageWindow(id: "5h", usedPercent: 60, resetsAt: nil)], asOf: now)
         let accounts = [model, first, second, codex]
         var settings = UsageMenuBarSettings()
-        #expect(settings.usages(from: accounts) == [first])
+        #expect(settings.usages(from: accounts) == [model])      // Antigravity has no named periods, so it always qualifies
         settings.accountIDs = ["c", "b", "d", "c", "missing", "a"]
-        #expect(settings.usages(from: accounts) == [second, first, codex])
-        #expect(settings.usages(from: [model, first]) == [first])
+        #expect(settings.usages(from: accounts) == [second, first, codex, model])
+        #expect(settings.usages(from: [model, first]) == [first, model])
         settings.accountIDs = ["missing"]
         #expect(settings.usages(from: accounts).isEmpty)
         settings.windowID = "7d"
@@ -88,5 +88,29 @@ import Testing
         #expect(settings.enabled)
         #expect(settings.percentMode == .remaining)
         #expect(settings.showReset)
+    }
+
+    private func usage(_ provider: AIProvider, id: String, _ windows: [UsageWindow]) -> ProviderUsage {
+        ProviderUsage(provider: provider, accountID: id, accountLabel: nil, plan: nil, windows: windows, asOf: now)
+    }
+
+    @Test func antigravityShowsItsFullestModelQuotaWhateverPeriodIsChosen() {
+        var settings = UsageMenuBarSettings()
+        settings.enabled = true
+        let agy = usage(.antigravity, id: "antigravity:a@b.c", [
+            UsageWindow(id: "Gemini 3.8 Flash +5", usedPercent: 18, resetsAt: nil),
+            UsageWindow(id: "Claude Sonnet", usedPercent: 64, resetsAt: nil),
+        ])
+        #expect(settings.window(in: agy, now: now)?.id == "Claude Sonnet")
+        #expect(settings.usages(from: [agy]).count == 1)
+    }
+
+    @Test func namedPeriodsStillMatchExactlyForClaudeAndCodex() {
+        var settings = UsageMenuBarSettings()
+        let claude = usage(.claude, id: "c", [UsageWindow(id: "5h", usedPercent: 10, resetsAt: nil), UsageWindow(id: "7d", usedPercent: 50, resetsAt: nil)])
+        #expect(settings.window(in: claude, now: now)?.id == "5h")
+        settings.windowID = "30d"
+        #expect(settings.window(in: claude, now: now) == nil)      // no fallback to another period for these
+        #expect(settings.usages(from: [claude]).isEmpty)
     }
 }

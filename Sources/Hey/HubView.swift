@@ -5,13 +5,14 @@ import HeyDomain
 
 enum HubSection: String, CaseIterable, Identifiable {
     case today, pet, quests, shop, achievements, game
-    case vault, music, capture, reminders, focus, notes, clipboard, usage, system
+    case features
+    case calendar, vault, music, capture, reminders, focus, notes, clipboard, usage, system
     case gestures, settings
 
     /// The sidebar's groups, so twelve-plus pages stay easy to scan.
     static let groups: [(title: String, sections: [HubSection])] = [
         (tr("สัตว์เลี้ยง"), [.pet, .quests, .shop, .achievements, .game]),
-        (tr("เครื่องมือ"), [.vault, .clipboard, .music, .capture, .reminders, .focus, .notes, .usage, .system]),
+        (tr("ฟีเจอร์"), [.features, .calendar, .vault, .clipboard, .music, .capture, .reminders, .focus, .notes, .usage, .system]),
         (tr("ตั้งค่า"), [.gestures, .settings]),
     ]
 
@@ -20,6 +21,8 @@ enum HubSection: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .today: tr("วันนี้")
+        case .features: tr("ฟีเจอร์")
+        case .calendar: tr("ปฏิทิน")
         case .quests: tr("ภารกิจ")
         case .shop: tr("ร้านค้า")
         case .vault: tr("ฝากไฟล์")
@@ -42,6 +45,8 @@ enum HubSection: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .today: "sun.max"
+        case .features: "square.grid.2x2"
+        case .calendar: "calendar"
         case .quests: "checklist"
         case .shop: "bag"
         case .vault: "tray.full"
@@ -63,41 +68,30 @@ enum HubSection: String, CaseIterable, Identifiable {
 }
 
 enum HubDestination: String, CaseIterable, Identifiable {
-    case today, music, files, productivity, usage, system, pet, settings
+    case today, pet, features, settings
     var id: Self { self }
     var sections: [HubSection] {
         switch self {
         case .today: [.today]
-        case .music: [.music]
-        case .files: [.vault, .clipboard, .notes]
-        case .productivity: [.focus, .reminders]
-        case .usage: [.usage]
-        case .system: [.system]
         case .pet: [.pet, .quests, .shop, .achievements, .game]
-        case .settings: [.settings, .gestures, .capture]
+        // everything that is not about the pet: a home page of tiles, and the pages behind them
+        case .features: [.features, .calendar, .focus, .reminders, .notes, .vault, .clipboard, .capture, .music, .usage, .system]
+        case .settings: [.settings, .gestures]
         }
     }
     var title: String {
         switch self {
         case .today: tr("วันนี้")
-        case .music: tr("เพลง")
-        case .files: tr("ไฟล์และโน้ต")
-        case .productivity: tr("โฟกัสและเตือน")
-        case .usage: tr("เครดิต AI")
-        case .system: tr("เครื่องของฉัน")
         case .pet: "Hei Hei"
+        case .features: tr("ฟีเจอร์")
         case .settings: tr("การตั้งค่า")
         }
     }
     var icon: String {
         switch self {
         case .today: "sun.max"
-        case .music: "music.note"
-        case .files: "square.stack.3d.up"
-        case .productivity: "timer"
-        case .usage: "gauge.with.dots.needle.67percent"
-        case .system: "cpu"
         case .pet: "bird"
+        case .features: "square.grid.2x2"
         case .settings: "slider.horizontal.3"
         }
     }
@@ -105,12 +99,8 @@ enum HubDestination: String, CaseIterable, Identifiable {
     var railTitle: String {
         switch self {
         case .today: tr("วันนี้")
-        case .music: tr("เพลง")
-        case .files: tr("ไฟล์")
-        case .productivity: tr("โฟกัส")
-        case .usage: tr("เครดิต AI")
-        case .system: tr("เครื่อง")
         case .pet: "Hei Hei"
+        case .features: tr("ฟีเจอร์")
         case .settings: tr("ตั้งค่า")
         }
     }
@@ -140,31 +130,18 @@ struct HubView: View {
     let machineLog: MachineLog
     let calendar: CalendarService
     @Bindable var router: HubRouter
-    @AppStorage("hubOpacity") private var hubOpacity = 0.8
+    @AppStorage("hubGlass") private var hubOpacity = 0.35
+    @AppStorage("hubAppearance") private var appearance = HubAppearance.system
     @Namespace private var railSpace
     @State private var dayPart = DayPart.now
 
     var body: some View {
         let game = model.game
         let current = HubDestination.containing(router.section ?? .today)
-        HStack(spacing: 14) {
-            VStack(spacing: 2) {
-                ForEach(HubDestination.allCases.filter { $0 != .settings }) { destination in
-                    RailButton(symbol: destination.icon,
-                               title: destination == .pet ? game.pet.state.name : destination.railTitle,
-                               selected: current == destination, space: railSpace) {
-                        withAnimation(.snappy(duration: 0.28)) { router.section = destination.sections.first }
-                    }
-                }
-                Spacer()
-                RailButton(symbol: HubDestination.settings.icon, title: HubDestination.settings.railTitle,
-                           selected: current == .settings, space: railSpace) {
-                    withAnimation(.snappy(duration: 0.28)) { router.section = HubDestination.settings.sections.first }
-                }
-            }
-            .padding(.vertical, 10)
-            .frame(width: 88)
-            .heyPanel(cornerRadius: 30)
+        HStack(spacing: 0) {
+            HubSidebar(router: router, petName: game.pet.state.name, greeting: dayPart.greeting)
+                .frame(width: 224)
+            Rectangle().fill(HeyLook.edge).frame(width: 1)
 
             VStack(spacing: 0) {
                 header(game)
@@ -172,17 +149,19 @@ struct HubView: View {
                     UpdateBanner(updates: updates, router: router).padding(.horizontal, 8).padding(.bottom, 10)
                 }
                 let sections = current.sections
-                if sections.count > 1 {
+                if sections.count > 1, current != .features {
                     HStack {
                         HubChips(items: sections, title: { $0.title },
                                  selection: Binding<HubSection>(get: { router.section ?? .today }, set: { router.section = $0 }))
                         Spacer()
                     }
-                    .padding(.horizontal, 4).padding(.bottom, 12)
+                    .padding(.horizontal, 16).padding(.bottom, 8)
                 }
                 Group {
                     switch router.section ?? .today {
                     case .today: TodayView(model: model, music: music, pomodoro: pomodoro, calendar: calendar, router: router)
+                    case .features: FeaturesHome(model: model, music: music, pomodoro: pomodoro, router: router)
+                    case .calendar: CalendarMonthTab(calendar: calendar, router: router)
                     case .quests: QuestsTab(game: game)
                     case .shop: ShopTab(model: model, game: game)
                     case .vault: FilesTab(model: model, game: game, vault: vault, shelf: shelf)
@@ -205,16 +184,24 @@ struct HubView: View {
                 .transition(.opacity)
                 .formStyle(.grouped)
                 .scrollContentBackground(.hidden)
-                .heyPanel()
             }
         }
-        .padding(.top, 38).padding([.horizontal, .bottom], 16)
+        .padding(.top, 0)
         .background(HubBackdrop(opacity: hubOpacity, part: dayPart))
-        .preferredColorScheme(.dark)
+        .environment(\.hubOpacity, hubOpacity)
+        .preferredColorScheme(appearance.scheme)
         .tint(HeyLook.glow)
         .frame(minWidth: 760, minHeight: 560)
         .animation(.easeInOut(duration: 0.2), value: router.section)
         .onAppear { dayPart = .now }
+    }
+
+    @Environment(\.colorScheme) private var colorScheme
+    private var isDark: Bool { colorScheme == .dark }
+
+    /// The header's sun/moon: switch to the other look (from "follow the system" it picks the opposite of what is showing).
+    private func toggleAppearance() {
+        withAnimation(.easeInOut(duration: 0.25)) { appearance = isDark ? .light : .dark }
     }
 
     private func isInstalling(_ state: UpdateService.State) -> Bool {
@@ -223,22 +210,34 @@ struct HubView: View {
 
     private func header(_ game: Game) -> some View {
         HStack(spacing: 10) {
-            let destination = HubDestination.containing(router.section ?? .today)
-            Text(destination == .pet ? game.pet.state.name : destination.title)
+            let section = router.section ?? .today
+            let destination = HubDestination.containing(section)
+            Text(destination == .pet ? game.pet.state.name : destination == .features ? section.title : destination.title)
                 .font(.system(size: 26, weight: .bold, design: .rounded))
                 .contentTransition(.interpolate)
             Spacer()
+            Button { toggleAppearance() } label: {
+                Image(systemName: isDark ? "sun.max.fill" : "moon.fill")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(width: 34, height: 34)
+                    .background(HeyLook.surface.opacity(0.6), in: Circle())
+                    .overlay(Circle().strokeBorder(HeyLook.edge, lineWidth: 1))
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(.plain)
+            .help(isDark ? tr("โหมดสว่าง") : tr("โหมดมืด"))
+            .accessibilityLabel(isDark ? tr("โหมดสว่าง") : tr("โหมดมืด"))
             Label(tr("{0} เหรียญ", game.coins), systemImage: "circle.hexagongrid.fill")
                 .contentTransition(.numericText())
                 .symbolEffect(.bounce, value: game.coins)
-                .glassPill()
+                .hubPill()
             Label(tr("{0} วัน", game.streak.current), systemImage: "flame")
                 .symbolEffect(.bounce, value: game.streak.current)
-                .glassPill()
+                .hubPill()
         }
         .font(.callout)
         .animation(.snappy, value: game.coins)
-        .padding(.horizontal, 6).padding(.bottom, 12).padding(.top, 2)
+        .padding(.horizontal, 20).padding(.bottom, 12).padding(.top, 34)
     }
 }
 
@@ -256,11 +255,11 @@ private struct QuestsTab: View {
                         HStack(spacing: 10) {
                             Image(systemName: quest.done ? "checkmark.circle.fill" : "circle")
                                 .font(.title3)
-                                .foregroundStyle(quest.done ? Color.green : .white.opacity(0.5))
+                                .foregroundStyle(quest.done ? Color.green : .primary.opacity(0.3))
                                 .contentTransition(.symbolEffect(.replace))
                             Text(quest.title).strikethrough(quest.done).foregroundStyle(quest.done ? .secondary : .primary)
                             Spacer()
-                            Text(reward(quest)).chipLabel(.yellow)
+                            Text(reward(quest)).chipLabel(HeyLook.glow)
                         }
                         HStack(spacing: 10) {
                             SlimBar(value: min(quest.progress, quest.target), total: quest.target, tint: quest.done ? .green : HeyLook.glow)
@@ -374,10 +373,10 @@ private struct PetNameRow: View {
                 .onSubmit { commit() }
                 .onChange(of: name) { _, new in if new.count > PetName.maxLength { name = String(new.prefix(PetName.maxLength)) } }
                 .onChange(of: focused) { _, now in if !now { commit() } }
-            Image(systemName: "pencil").foregroundStyle(.white.opacity(focused ? 0.9 : 0.4))
+            Image(systemName: "pencil").foregroundStyle(.primary.opacity(focused ? 0.9 : 0.4))
         }
         .padding(.horizontal, 10).padding(.vertical, 4)
-        .background(.white.opacity(focused ? 0.10 : 0.04), in: RoundedRectangle(cornerRadius: 10))
+        .background(HeyLook.surface.opacity(focused ? 0.7 : 0.35), in: RoundedRectangle(cornerRadius: 10))
         .animation(.easeOut(duration: 0.15), value: focused)
         .onAppear { name = game.pet.state.name }
         .onChange(of: game.pet.state.name) { _, new in if !focused { name = new } }
@@ -437,7 +436,7 @@ private struct PetTab: View {
         HubCard(padding: 18) {
             HStack(spacing: 18) {
                 ZStack {
-                    Circle().fill(RadialGradient(colors: [moodColor.opacity(0.35), .clear], center: .center, startRadius: 6, endRadius: 100))
+                    Circle().fill(moodColor.opacity(0.13))
                         .frame(width: 200, height: 200)
                     CompanionPreview(stage: s.stage, mode: .idle, settings: game.motion, species: game.species,
                                      size: CGSize(width: 200, height: 175))
@@ -449,7 +448,7 @@ private struct PetTab: View {
                     HStack(spacing: 8) {
                         Text(PetSpecies.named(game.species)?.label ?? game.species).chipLabel(HeyLook.accent)
                         Text(s.stage.displayName).chipLabel()
-                        if s.stage != .egg { Label("\(Int(s.bond))", systemImage: "heart.fill").chipLabel(.pink) }
+                        if s.stage != .egg { Label("\(Int(s.bond))", systemImage: "heart.fill").chipLabel(HeyLook.glow) }
                     }
                     if !s.isDead { progress(s) }
                 }
@@ -505,10 +504,10 @@ private struct PetTab: View {
                             }
                             Text(food.name).font(.footnote.weight(.semibold)).lineLimit(1)
                             Text(stock <= 0 ? tr("ซื้อ") : wait > 0 ? DurationText.wait(wait) : food.price > 0 ? "×\(stock)" : "")
-                                .font(.caption).foregroundStyle(.white.opacity(0.6)).frame(height: 14)
+                                .font(.caption).foregroundStyle(.primary.opacity(0.6)).frame(height: 14)
                         }
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(.white.opacity(ready ? 0.10 : 0.04), in: RoundedRectangle(cornerRadius: 14))
+                        .background(HeyLook.surface.opacity(ready ? 0.7 : 0.3), in: RoundedRectangle(cornerRadius: 14))
                         .opacity(ready || stock <= 0 ? 1 : 0.6)
                         .contentShape(Rectangle())
                     }
@@ -533,7 +532,7 @@ private struct PetTab: View {
                 Button { model.perform { $0.setGestures { $0.petScale = 1.0 }; return [] } } label: {
                     Image(systemName: "arrow.counterclockwise")
                 }
-                .buttonStyle(.plain).foregroundStyle(.white.opacity(scale == 1.0 ? 0.25 : 0.8))
+                .buttonStyle(.plain).foregroundStyle(.primary.opacity(scale == 1.0 ? 0.25 : 0.8))
                 .disabled(scale == 1.0)
                 .help(tr("ค่าเริ่มต้น"))
             }
@@ -1788,7 +1787,8 @@ private struct SettingsTab: View {
     let calendar: CalendarService
     @State private var loginMessage = ""
     @State private var loginOn = LoginItem.isEnabled
-    @AppStorage("hubOpacity") private var hubOpacity = 0.8
+    @AppStorage("hubGlass") private var hubOpacity = 0.35
+    @AppStorage("hubAppearance") private var appearance = HubAppearance.system
 
     var body: some View {
         Form {
@@ -1825,9 +1825,13 @@ private struct SettingsTab: View {
                 BackupSetting(model: model)
             }
             Section(tr("หน้าตา Hub")) {
+                Picker(tr("โหมดสี"), selection: $appearance) {
+                    ForEach(HubAppearance.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
                 LabeledContent(tr("ความทึบของพื้นหลัง")) {
                     HStack {
-                        Slider(value: $hubOpacity, in: 0.2...1)
+                        Slider(value: $hubOpacity, in: 0...1)
                         Text("\(Int(hubOpacity * 100))%").monospacedDigit().foregroundStyle(.secondary).frame(width: 44, alignment: .trailing)
                     }.frame(maxWidth: 260)
                 }

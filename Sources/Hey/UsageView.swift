@@ -193,7 +193,7 @@ private struct UsageMenuBarSection: View {
                     if !selectedUsages.isEmpty {
                         Text(tr("ตัวอย่าง")).font(.subheadline)
                         ForEach(selectedUsages, id: \.accountID) { usage in
-                            if let window = usage.windows.first(where: { $0.id == service.menuBarSettings.windowID }) {
+                            if let window = service.menuBarSettings.window(in: usage, now: context.date) {
                                 HStack(spacing: 5) {
                                     if let icon = ProviderLogo.menuBarImage(usage.provider) {
                                         Image(nsImage: icon).accessibilityLabel(usage.provider.label)
@@ -253,7 +253,9 @@ private struct AccountCard: View {
                     ForEach(usage.windows) { window in WindowRow(window: window, now: now).id("\(row.id).\(window.id)") }
                     if let note = usage.creditsNote { Text(note).font(.caption).foregroundStyle(.secondary) }
                     if row.stale || row.provider == .codex {
-                        Text(row.stale ? tr("ค่าล่าสุดเมื่อ {0} (ไม่ได้เปิดอยู่)", usage.asOf.formatted(date: .abbreviated, time: .shortened))
+                        Text(row.stale && row.provider == .claude
+                             ? tr("ค่าล่าสุดเมื่อ {0} · อัปเดตเองเมื่อใช้คำสั่ง claude ครั้งถัดไป", usage.asOf.formatted(date: .abbreviated, time: .shortened))
+                             : row.stale ? tr("ค่าล่าสุดเมื่อ {0} (ไม่ได้เปิดอยู่)", usage.asOf.formatted(date: .abbreviated, time: .shortened))
                                        : tr("ค่าล่าสุดที่ Codex บันทึกไว้เมื่อ {0}", usage.asOf.formatted(date: .abbreviated, time: .shortened)))
                             .font(.caption2).foregroundStyle(.secondary)
                     }

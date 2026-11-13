@@ -1,4 +1,5 @@
 import AppKit
+import CryptoKit
 import Observation
 import Security
 import UserNotifications
@@ -19,6 +20,8 @@ final class AIUsageService {
     static let connectedKey = "aiUsageConnected"
     static let codexHomesKey = "aiUsageCodexHomes"
     static let antigravityCacheKey = "aiUsageAntigravityCache"
+    static let claudeCacheKey = "aiUsageClaudeCache"
+    static let claudeLabelsKey = "aiUsageClaudeLabels"
     static let hiddenAccountsKey = "aiUsageHiddenAccounts"
     static let menuBarKey = "aiUsageMenuBar"
     static let keychainService = "Hey! AI accounts"
@@ -57,7 +60,13 @@ final class AIUsageService {
     @ObservationIgnored var onChange: (() -> Void)?
     @ObservationIgnored private lazy var alerts = UsageAlerts(thresholds: thresholds)
     @ObservationIgnored private var timer: Timer?
-    @ObservationIgnored private var labels: [String: String] = [:]          // Claude login id -> email, remembered for the session
+    @ObservationIgnored private var labels: [String: String] =             // Claude login id -> email, remembered across launches
+        (UserDefaults.standard.dictionary(forKey: claudeLabelsKey) as? [String: String]) ?? [:]
+    @ObservationIgnored private var renewAttempts: [String: Date] = [:]  // Claude login id -> when Hey! last asked `claude` to renew it
+    /// A 5-hour or weekly quota just started over (the pet sets off fireworks).
+    @ObservationIgnored var onReset: (([UsageReset]) -> Void)?
+    @ObservationIgnored private var resets = UsageResets()
+    @ObservationIgnored private var resetTimer: Timer?
 
     private(set) var hiddenAccountIDs = Set(UserDefaults.standard.stringArray(forKey: hiddenAccountsKey) ?? []) {
         didSet { onChange?() }
@@ -193,6 +202,24 @@ final class AIUsageService {
         if isEnabled(.codex) { rows[.codex] = await refreshCodex() }
         if isEnabled(.claude) { rows[.claude] = await refreshClaude() }
         if isEnabled(.antigravity) { rows[.antigravity] = await refreshAntigravity() }
+        checkResets()
+    }
+
+    /// Celebrates resets that came due, then sets one timer for the next, so the show starts on the minute rather than at the next refresh.
+    private func checkResets() {
+        let usages = rows.values.flatMap { $0 }.filter { !hiddenAccountIDs.contains($0.id) }.compactMap(\.usage)
+        let now = Date()
+        let due = resets.due(in: usages, now: now)
+        if !due.isEmpty { onReset?(due) }
+        resetTimer?.invalidate()
+        resetTimer = nil
+        guard let next = resets.next(in: usages, now: now) else { return }
+        let timer = Timer(fire: next.addingTimeInterval(1), interval: 0, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.checkResets() }
+        }
+        timer.tolerance = 5
+        RunLoop.main.add(timer, forMode: .common)
+        resetTimer = timer
     }
 
     private func notify(_ usage: ProviderUsage) {
@@ -223,38 +250,81 @@ final class AIUsageService {
         return result
     }
 
+    /// Claude Code's access token lasts about 8 hours and only Claude Code itself renews it. When one has run out, Hey! asks the `claude`
+    /// command to renew it (`claude auth status` for that login's config folder: about a second, no chat, no session files), then reads
+    /// the Keychain again. Hey! never touches the renewal token itself. If that fails, it shows the last reading, marked as such; a login
+    /// whose renewal token has also run out (it will never come back without signing in again) is left out.
     private func refreshClaude() async -> [AccountRow] {
         var logins = await Task.detached(operation: { Self.keychainLogins() }).value
+        let now0 = Date()
+        let toRenew = logins.filter { login in
+            guard !login.removable, !hiddenAccountIDs.contains(login.id),
+                  let expires = login.expiresAt, expires < now0.addingTimeInterval(60),
+                  login.refreshExpiresAt.map({ $0 > now0 }) ?? true else { return false }
+            return renewAttempts[login.id].map { now0.timeIntervalSince($0) > 600 } ?? true      // one try per login every 10 minutes
+        }
+        if !toRenew.isEmpty {
+            for login in toRenew { renewAttempts[login.id] = now0 }
+            let services = toRenew.map { String($0.id.dropFirst("keychain:".count)) }
+            let renewed = await Task.detached(operation: { services.map(Self.renewClaude).contains(true) }).value
+            if renewed { logins = await Task.detached(operation: { Self.keychainLogins() }).value }
+        }
         for account in connected {
             if let token = Self.token(forConnected: account.id) {
-                logins.append(Login(id: account.id, token: token, plan: nil, expiresAt: nil, name: account.name, removable: true))
+                logins.append(Login(id: account.id, token: token, plan: nil, expiresAt: nil, refreshExpiresAt: nil, name: account.name, removable: true))
             }
         }
+        var cache = loadClaudeCache()
+        let now = Date()
         var result: [AccountRow] = []
         var seenEmails = Set<String>()
         for login in logins {
             guard !hiddenAccountIDs.contains(login.id) else { continue }
+            if let dead = login.refreshExpiresAt, dead < now, login.expiresAt.map({ $0 < now }) ?? true { continue }
             var row = AccountRow(id: login.id, provider: .claude, name: login.name ?? labels[login.id] ?? tr("บัญชี Claude"),
                                  usage: nil, error: nil, removable: login.removable)
-            if let expires = login.expiresAt, expires < Date() {
-                row.error = tr("การเข้าสู่ระบบหมดอายุ — เปิด Claude Code ด้วยบัญชีนี้สักครั้งเพื่อต่ออายุ")
-                result.append(row); continue
-            }
-            if labels[login.id] == nil, let email = try? await Self.fetchEmail(token: login.token) { labels[login.id] = email }
             if let email = labels[login.id] {
                 if !login.removable, !seenEmails.insert(email).inserted { continue }          // the same account found twice
                 if login.name == nil { row.name = email }
             }
-            do {
-                let usage = try await Self.fetchClaude(login: login, label: row.name)
-                row.usage = usage
-                notify(usage)
-            } catch {
-                row.error = (error as? UsageError)?.message ?? error.localizedDescription
+            let expired = login.expiresAt.map { $0 < now } ?? false
+            if !expired {
+                if labels[login.id] == nil, let email = try? await Self.fetchEmail(token: login.token) {
+                    labels[login.id] = email
+                    UserDefaults.standard.set(labels, forKey: Self.claudeLabelsKey)
+                    if login.name == nil { row.name = email }
+                }
+                do {
+                    let usage = try await Self.fetchClaude(login: login, label: row.name)
+                    row.usage = usage
+                    cache[login.id] = usage
+                    notify(usage)
+                    result.append(row); continue
+                } catch let error as UsageError where !error.expired {
+                    row.error = error.message
+                    result.append(row); continue
+                } catch {}
+            }
+            // expired (by date or by the server): the last reading, or a quiet note when there is none yet
+            if let last = cache[login.id] {
+                row.usage = last; row.stale = true
+            } else {
+                row.error = login.removable ? tr("โทเคนใช้ไม่ได้ (หมดอายุ หรือไม่มีสิทธิ์อ่านโควตา)")
+                                            : tr("รอต่ออายุ — จะอัปเดตเองเมื่อใช้คำสั่ง claude ด้วยบัญชีนี้ครั้งถัดไป")
             }
             result.append(row)
         }
+        saveClaudeCache(cache)
         return result
+    }
+
+    private func loadClaudeCache() -> [String: ProviderUsage] {
+        guard let data = UserDefaults.standard.data(forKey: Self.claudeCacheKey) else { return [:] }
+        return (try? JSONDecoder().decode([String: ProviderUsage].self, from: data)) ?? [:]
+    }
+
+    private func saveClaudeCache(_ cache: [String: ProviderUsage]) {
+        UserDefaults.standard.set(try? JSONEncoder().encode(cache), forKey: Self.claudeCacheKey)
     }
 
     private func refreshAntigravity() async -> [AccountRow] {
@@ -307,7 +377,7 @@ final class AIUsageService {
         guard !cleaned.isEmpty else { return tr("ยังไม่ได้ใส่โทเคน") }
         let account = ConnectedAccount(name: name.trimmingCharacters(in: .whitespaces).isEmpty ? tr("บัญชี Claude") : name)
         do {
-            _ = try await Self.fetchClaude(login: Login(id: account.id, token: cleaned, plan: nil, expiresAt: nil, name: account.name, removable: true), label: account.name)
+            _ = try await Self.fetchClaude(login: Login(id: account.id, token: cleaned, plan: nil, expiresAt: nil, refreshExpiresAt: nil, name: account.name, removable: true), label: account.name)
         } catch {
             return (error as? UsageError)?.message ?? error.localizedDescription
         }
@@ -410,13 +480,17 @@ final class AIUsageService {
 
     // MARK: Claude
 
-    struct UsageError: Error { let message: String }
+    struct UsageError: Error {
+        let message: String
+        var expired = false
+    }
 
     struct Login: Sendable {
         let id: String
         let token: String
         let plan: String?
         let expiresAt: Date?
+        var refreshExpiresAt: Date? = nil
         let name: String?
         let removable: Bool
     }
@@ -439,22 +513,91 @@ final class AIUsageService {
                   let oauth = root["claudeAiOauth"] as? [String: Any],
                   let token = oauth["accessToken"] as? String else { continue }
             let expires = (oauth["expiresAt"] as? NSNumber).map { Date(timeIntervalSince1970: $0.doubleValue / 1000) }
+            let renewal = (oauth["refreshTokenExpiresAt"] as? NSNumber).map { Date(timeIntervalSince1970: $0.doubleValue / 1000) }
             logins.append(Login(id: "keychain:\(service)", token: token, plan: oauth["subscriptionType"] as? String,
-                                expiresAt: expires, name: nil, removable: false))
+                                expiresAt: expires, refreshExpiresAt: renewal, name: nil, removable: false))
         }
         return logins
     }
 
-    nonisolated private static func run(_ path: String, _ args: [String]) -> String? {
+    /// Asks Claude Code to renew the login kept under this Keychain service. `Claude Code-credentials` is the default config folder
+    /// (~/.claude); `Claude Code-credentials-<hash>` belongs to the folder whose path hashes (SHA-256, first 8 hex digits) to that suffix.
+    nonisolated private static func renewClaude(service: String) -> Bool {
+        let fm = FileManager.default
+        let home = NSHomeDirectory()
+        guard let binary = ["\(home)/.local/bin/claude", "\(home)/.claude/local/claude", "/opt/homebrew/bin/claude", "/usr/local/bin/claude"]
+            .first(where: fm.isExecutableFile(atPath:)) else { return false }
+        // A clean environment, so an inherited token or config variable can't make `claude` skip the Keychain login.
+        let inherited = ProcessInfo.processInfo.environment
+        var env = ["HOME": home, "USER": inherited["USER"] ?? NSUserName(), "TERM": "xterm-256color",
+                   "LANG": inherited["LANG"] ?? "en_US.UTF-8", "PATH": "\(home)/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"]
+        let prefix = "Claude Code-credentials-"
+        if service.hasPrefix(prefix) {
+            let suffix = String(service.dropFirst(prefix.count))
+            var candidates = ((try? fm.contentsOfDirectory(atPath: home)) ?? []).filter { $0.hasPrefix(".claude") }.map { "\(home)/\($0)" }
+            candidates.append("\(home)/.config/claude")
+            guard let dir = candidates.first(where: { path in
+                SHA256.hash(data: Data(path.utf8)).map { String(format: "%02x", $0) }.joined().prefix(8) == suffix
+            }) else { return false }
+            env["CLAUDE_CONFIG_DIR"] = dir
+        }
+        // 1. The cheap way: `claude auth status` renews the token when it re-reads the profile (about a second).
+        _ = run(binary, ["auth", "status", "--json"], environment: env, timeout: 20)
+        if renewed(service) { return true }
+        // 2. As CodexBar does: open `claude` in a pseudo-terminal (`script`), ask for `/status`, wait for the Keychain item to
+        //    change, then close it. No tools, no prompt sent, so no chat or session file is made. About six seconds.
+        let probe = URL(fileURLWithPath: home + "/Library/Application Support/Hey/ClaudeProbe")
+        try? fm.createDirectory(at: probe, withIntermediateDirectories: true)
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/script")
+        task.arguments = ["-q", "/dev/null", binary, "--allowed-tools", ""]
+        task.environment = env
+        task.currentDirectoryURL = probe
+        let input = Pipe()
+        task.standardInput = input
+        task.standardOutput = FileHandle.nullDevice
+        task.standardError = FileHandle.nullDevice
+        guard (try? task.run()) != nil else { return false }
+        defer {
+            try? input.fileHandleForWriting.close()
+            if task.isRunning { task.terminate() }
+        }
+        Thread.sleep(forTimeInterval: 5)
+        input.fileHandleForWriting.write(Data("\r".utf8))                 // past a first-run "trust this folder" question
+        Thread.sleep(forTimeInterval: 1)
+        input.fileHandleForWriting.write(Data("/status\r".utf8))
+        for _ in 0..<10 {
+            Thread.sleep(forTimeInterval: 1)
+            if renewed(service) { return true }
+        }
+        return false
+    }
+
+    /// The Keychain item's access token is good for at least another minute.
+    nonisolated private static func renewed(_ service: String) -> Bool {
+        guard let json = run("/usr/bin/security", ["find-generic-password", "-s", service, "-w"]),
+              let root = try? JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any],
+              let oauth = root["claudeAiOauth"] as? [String: Any],
+              let ms = (oauth["expiresAt"] as? NSNumber)?.doubleValue else { return false }
+        return Date(timeIntervalSince1970: ms / 1000) > Date().addingTimeInterval(60)
+    }
+
+    nonisolated private static func run(_ path: String, _ args: [String], environment: [String: String]? = nil, timeout: TimeInterval = 30) -> String? {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: path)
         task.arguments = args
+        if let environment { task.environment = environment }
+        task.currentDirectoryURL = FileManager.default.temporaryDirectory
         let out = Pipe()
         task.standardOutput = out
-        task.standardError = Pipe()
+        task.standardError = FileHandle.nullDevice
+        task.standardInput = FileHandle.nullDevice
         guard (try? task.run()) != nil else { return nil }
+        let stop = DispatchWorkItem { if task.isRunning { task.terminate() } }
+        DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: stop)
         let data = out.fileHandleForReading.readDataToEndOfFile()
         task.waitUntilExit()
+        stop.cancel()
         return task.terminationStatus == 0 ? String(data: data, encoding: .utf8) : nil
     }
 
@@ -475,9 +618,7 @@ final class AIUsageService {
         let (data, response) = try await URLSession.shared.data(for: request("usage", token: login.token))
         guard let http = response as? HTTPURLResponse else { throw UsageError(message: tr("อ่านข้อมูลไม่สำเร็จ")) }
         if http.statusCode == 401 || http.statusCode == 403 {
-            throw UsageError(message: login.removable
-                ? tr("โทเคนใช้ไม่ได้ (หมดอายุ หรือไม่มีสิทธิ์อ่านโควตา)")
-                : tr("การเข้าสู่ระบบหมดอายุ — เปิด Claude Code ด้วยบัญชีนี้สักครั้งเพื่อต่ออายุ"))
+            throw UsageError(message: tr("โทเคนใช้ไม่ได้ (หมดอายุ หรือไม่มีสิทธิ์อ่านโควตา)"), expired: true)
         }
         guard http.statusCode == 200 else { throw UsageError(message: tr("Claude ตอบกลับผิดปกติ (รหัส {0})", http.statusCode)) }
         guard let usage = UsageParsers.claude(json: data, plan: login.plan, accountID: login.id, accountLabel: label, now: Date()) else {

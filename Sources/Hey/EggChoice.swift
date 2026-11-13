@@ -19,7 +19,7 @@ struct EggChoiceView: View {
                             Text(sp.defaultName).font(.headline)
                         }
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(species == sp.id ? Color.accentColor.opacity(0.28) : Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16))
+                        .background(species == sp.id ? Color.accentColor.opacity(0.28) : HeyLook.surface.opacity(0.45), in: RoundedRectangle(cornerRadius: 16))
                         .overlay(RoundedRectangle(cornerRadius: 16).stroke(species == sp.id ? Color.accentColor : .clear, lineWidth: 2))
                     }
                     .buttonStyle(.plain)
