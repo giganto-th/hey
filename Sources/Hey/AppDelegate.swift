@@ -82,6 +82,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 self?.scene.celebrate(tr("โควตา 5 ชั่วโมงของ {0} รีเซ็ตแล้ว!", "Claude"), shells: n)
             }
         }
+        if ProcessInfo.processInfo.environment["HEY_DEV"] != nil, ProcessInfo.processInfo.environment["HEY_DEV_NO_PET"] != nil {
+            DispatchQueue.main.async { [weak self] in self?.window.orderOut(nil) }      // dev only: screenshots without the pet in front
+        }
         if WelcomeWindow.shouldShow { DispatchQueue.main.async { [weak self] in if let self { WelcomeWindow.show(model: self.model) } } }
         updates.onAvailable = { [weak self] info in
             guard let self else { return }

@@ -23,6 +23,8 @@ final class AIUsageService {
     static let claudeCacheKey = "aiUsageClaudeCache"
     static let claudeLabelsKey = "aiUsageClaudeLabels"
     static let hiddenAccountsKey = "aiUsageHiddenAccounts"
+    /// Screenshots with made-up accounts (`HEY_DEV_USAGE_DEMO=1`): nothing real is shown, and nothing is saved.
+    static let isDemo = ProcessInfo.processInfo.environment["HEY_DEV_USAGE_DEMO"] != nil
     static let menuBarKey = "aiUsageMenuBar"
     static let keychainService = "Hey! AI accounts"
 
@@ -42,12 +44,13 @@ final class AIUsageService {
         didSet { onChange?() }
     }
     var menuBarSettings: UsageMenuBarSettings = {
+        if isDemo { var demo = UsageMenuBarSettings(); demo.enabled = true; demo.accountIDs = ["d1"]; return demo }
         guard let data = UserDefaults.standard.data(forKey: menuBarKey),
               let settings = try? JSONDecoder().decode(UsageMenuBarSettings.self, from: data) else { return UsageMenuBarSettings() }
         return settings
     }() {
         didSet {
-            UserDefaults.standard.set(try? JSONEncoder().encode(menuBarSettings), forKey: Self.menuBarKey)
+            if !Self.isDemo { UserDefaults.standard.set(try? JSONEncoder().encode(menuBarSettings), forKey: Self.menuBarKey) }
             onChange?()
         }
     }
@@ -195,7 +198,7 @@ final class AIUsageService {
     // MARK: refreshing
 
     func refresh() async {
-        if ProcessInfo.processInfo.environment["HEY_DEV_USAGE_DEMO"] != nil { loadDemo(); return }          // screenshots with made-up accounts
+        if Self.isDemo { loadDemo(); return }          // screenshots with made-up accounts
         guard !refreshing else { return }
         refreshing = true
         defer { lastRefresh = Date(); refreshing = false }

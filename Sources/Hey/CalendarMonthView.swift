@@ -220,7 +220,11 @@ private struct WeekGrid: View {
                     .frame(height: hourHeight * 24)
                 }
                 .frame(height: 520)
-                .onAppear { proxy.scrollTo(max(Calendar.current.component(.hour, from: Date()) - 2, 7), anchor: .top) }
+                .onAppear {
+                    // Open on the working day, or a couple of hours before now when that is later (dev demo: always 8 o'clock).
+                    let demo = ProcessInfo.processInfo.environment["HEY_DEV_CALENDAR_DEMO"] != nil
+                    proxy.scrollTo(demo ? 8 : max(Calendar.current.component(.hour, from: Date()) - 2, 7), anchor: .top)
+                }
             }
         }
     }
@@ -277,7 +281,7 @@ private struct WeekGrid: View {
         VStack(spacing: 0) {
             ForEach(0..<24, id: \.self) { h in
                 HStack(alignment: .top, spacing: 4) {
-                    Text(h == 0 ? "" : String(format: "%02d:00", h)).font(.system(size: 9)).monospacedDigit().foregroundStyle(.secondary)
+                    Text(h == 0 ? "" : hourLabel(h)).font(.system(size: 9)).monospacedDigit().foregroundStyle(.secondary)
                         .frame(width: gutter - 4, alignment: .trailing).offset(y: -6)
                     Rectangle().fill(.primary.opacity(0.08)).frame(height: 1)
                 }
@@ -285,6 +289,12 @@ private struct WeekGrid: View {
                 .id(h)
             }
         }
+    }
+
+    /// "13:00" or "1 PM", whichever the Mac's clock uses.
+    private func hourLabel(_ h: Int) -> String {
+        let date = Calendar.current.date(bySettingHour: h, minute: 0, second: 0, of: Date()) ?? Date()
+        return date.formatted(.dateTime.hour())
     }
 
     private func column(_ day: Date) -> some View {

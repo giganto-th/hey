@@ -170,7 +170,7 @@ final class CalendarService {
 
     private static func demoEvents(_ around: Date) -> [CalendarEventInfo] {
         let cal = Calendar.current
-        let week = MonthGrid.week(containing: around)
+        let week = MonthGrid.week(containing: Date())                 // always this week, so both views show them
         func at(_ d: Int, _ h: Double, _ len: Double, _ title: String, _ id: String, allDay: Bool = false) -> CalendarEventInfo {
             let s = week[d].addingTimeInterval(h * 3600)
             return CalendarEventInfo(id: "\(title)\(d)", title: title, start: allDay ? week[d] : s,

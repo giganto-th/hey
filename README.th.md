@@ -9,12 +9,12 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="ดาวน์โหลด" src="https://img.shields.io/badge/ดาวน์โหลด-v1.4.0-6f8cff?style=for-the-badge"></a>
+  <a href="https://github.com/giganto-th/hey/releases/latest"><img alt="ดาวน์โหลด" src="https://img.shields.io/github/v/release/giganto-th/hey?label=ดาวน์โหลด&color=6f8cff&style=for-the-badge"></a>
   <a href="https://giganto-th.github.io/hey/"><img alt="เว็บไซต์" src="https://img.shields.io/badge/เว็บไซต์-Hey!-b79bff?style=for-the-badge"></a>
   <a href="https://www.youtube.com/watch?v=JBi-y-_I9jk"><img alt="วิดีโอ" src="https://img.shields.io/badge/ดูวิดีโอ-YouTube-ff6f91?style=for-the-badge"></a>
 </p>
 
-<p align="center"><a href="README.en.md">English</a> · ภาษาไทย</p>
+<p align="center"><a href="README.md">English</a> · ภาษาไทย</p>
 
 <p align="center">
   <img alt="macOS 15+" src="https://img.shields.io/badge/macOS-15%2B-0d1b4d?logo=apple&logoColor=white">
@@ -79,7 +79,7 @@ curl -fsSL https://raw.githubusercontent.com/giganto-th/hey/main/scripts/install
 
 **หรือโหลดเอง:**
 
-1. โหลด `Hey-1.4.0.dmg` จากหน้า [Releases](https://github.com/giganto-th/hey/releases/latest)
+1. โหลดไฟล์ `.dmg` เวอร์ชันล่าสุดจากหน้า [Releases](https://github.com/giganto-th/hey/releases/latest)
 2. ลาก **Hey** ไปวางบน **Applications**
 3. เปิดแอป
 

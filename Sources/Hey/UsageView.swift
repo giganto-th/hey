@@ -88,7 +88,6 @@ struct UsageTab: View {
                         .buttonStyle(.borderedProminent)
                 }
             }
-            UsageMenuBarSection(service: service, accounts: all)
             Section {
                 if all.isEmpty {
                     Text(service.refreshing ? tr("กำลังอ่านข้อมูล…") : tr("ยังไม่มีบัญชี — กด เพิ่มบัญชี AI เพื่อเริ่ม"))
@@ -99,6 +98,7 @@ struct UsageTab: View {
                     Button(tr("แสดงบัญชีที่ซ่อนอีกครั้ง")) { service.restoreHiddenAccounts() }
                 }
             }
+            UsageMenuBarSection(service: service, accounts: all)          // the accounts first, then how the menu bar shows them
             Section(tr("ผู้ให้บริการที่เช็ค")) {
                 ForEach(AIProvider.allCases) { provider in
                     HStack(spacing: 10) {

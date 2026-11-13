@@ -103,7 +103,7 @@ private final class FireworksScene: SKScene {
 
     private func burst(at point: CGPoint, colors: [NSColor]) {
         // a flash, then a ring of sparks that fall and fade, then a crackle of small glints
-        let flash = SKSpriteNode(texture: Self.dot, size: CGSize(width: 70, height: 70))
+        let flash = SKSpriteNode(texture: Self.dot, size: CGSize(width: 110, height: 110))
         flash.position = point; flash.blendMode = .add; flash.color = colors[1]; flash.colorBlendFactor = 0.5
         addChild(flash)
         flash.run(.sequence([.group([.scale(to: 1.6, duration: 0.25), .fadeOut(withDuration: 0.25)]), .removeFromParent()]))
@@ -111,17 +111,17 @@ private final class FireworksScene: SKScene {
         let sparks = SKEmitterNode()
         sparks.particleTexture = Self.dot
         sparks.position = point
-        sparks.numParticlesToEmit = 140
+        sparks.numParticlesToEmit = 260
         sparks.particleBirthRate = 4000
-        sparks.particleLifetime = 1.4; sparks.particleLifetimeRange = 0.5
-        sparks.particleSpeed = 140; sparks.particleSpeedRange = 110            // a filled sphere, not just a ring
+        sparks.particleLifetime = 1.7; sparks.particleLifetimeRange = 0.5
+        sparks.particleSpeed = 175; sparks.particleSpeedRange = 120            // a filled sphere, not just a ring
         sparks.emissionAngleRange = .pi * 2
         sparks.xAcceleration = 0; sparks.yAcceleration = -90
-        sparks.particleScale = 0.45; sparks.particleScaleRange = 0.15; sparks.particleScaleSpeed = -0.25
-        sparks.particleAlphaSpeed = -0.7
+        sparks.particleScale = 0.8; sparks.particleScaleRange = 0.25; sparks.particleScaleSpeed = -0.35
+        sparks.particleAlphaSpeed = -0.55
         sparks.particleBlendMode = .add
         sparks.particleColorBlendFactor = 1
-        let seq = SKKeyframeSequence(keyframeValues: [colors[1], colors[0], colors[0]], times: [0, 0.25, 1])
+        let seq = SKKeyframeSequence(keyframeValues: [NSColor.white, colors[1], colors[0], colors[0]], times: [0, 0.08, 0.35, 1])   // a white-hot start
         sparks.particleColorSequence = seq
         sparks.targetNode = self
         addChild(sparks)
@@ -129,11 +129,11 @@ private final class FireworksScene: SKScene {
         let glints = SKEmitterNode()
         glints.particleTexture = Self.dot
         glints.position = point
-        glints.numParticlesToEmit = 40
+        glints.numParticlesToEmit = 70
         glints.particleBirthRate = 60
         glints.particleLifetime = 0.5
         glints.particlePositionRange = CGVector(dx: 170, dy: 170)
-        glints.particleScale = 0.25
+        glints.particleScale = 0.45
         glints.particleAlpha = 0; glints.particleAlphaSequence = SKKeyframeSequence(keyframeValues: [0, 1, 0], times: [0, 0.3, 1])
         glints.particleColor = .white; glints.particleColorBlendFactor = 1
         glints.particleBlendMode = .add
