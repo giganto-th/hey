@@ -5,6 +5,7 @@ struct TodayView: View {
     let model: GameModel
     let music: MusicPlayer
     let pomodoro: PomodoroModel
+    let calendar: CalendarService
     let router: HubRouter
     @State private var part = DayPart.now
 
@@ -26,6 +27,8 @@ struct TodayView: View {
                     HStack(alignment: .top, spacing: 14) { hero(s); rings(s).frame(width: 300) }
                     VStack(spacing: 14) { hero(s); rings(s) }
                 }
+
+                CalendarTodayCard(calendar: calendar, router: router)
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 250), spacing: 14)], spacing: 14) {
                     HubTile(symbol: "timer", title: tr("โฟกัส"),

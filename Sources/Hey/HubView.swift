@@ -138,6 +138,7 @@ struct HubView: View {
     let aiUsage: AIUsageService
     let updates: UpdateService
     let machineLog: MachineLog
+    let calendar: CalendarService
     @Bindable var router: HubRouter
     @AppStorage("hubOpacity") private var hubOpacity = 0.8
     @Namespace private var railSpace
@@ -181,7 +182,7 @@ struct HubView: View {
                 }
                 Group {
                     switch router.section ?? .today {
-                    case .today: TodayView(model: model, music: music, pomodoro: pomodoro, router: router)
+                    case .today: TodayView(model: model, music: music, pomodoro: pomodoro, calendar: calendar, router: router)
                     case .quests: QuestsTab(game: game)
                     case .shop: ShopTab(model: model, game: game)
                     case .vault: FilesTab(model: model, game: game, vault: vault, shelf: shelf)
@@ -197,7 +198,7 @@ struct HubView: View {
                     case .achievements: AchievementsTab(game: game)
                     case .gestures: GesturesTab(model: model, game: game, log: gestureLog)
                     case .pet: PetTab(model: model, game: game, router: router)
-                    case .settings: SettingsTab(model: model, game: game, power: power, detector: detector, updates: updates)
+                    case .settings: SettingsTab(model: model, game: game, power: power, detector: detector, updates: updates, calendar: calendar)
                     }
                 }
                 .id(router.section ?? .today)
@@ -1784,9 +1785,9 @@ private struct SettingsTab: View {
     let power: PowerMonitor
     let detector: MusicDetector
     let updates: UpdateService
+    let calendar: CalendarService
     @State private var loginMessage = ""
     @State private var loginOn = LoginItem.isEnabled
-    @State private var calendarOn = CalendarService.isEnabled
     @AppStorage("hubOpacity") private var hubOpacity = 0.8
 
     var body: some View {
@@ -1831,18 +1832,7 @@ private struct SettingsTab: View {
                     }.frame(maxWidth: 260)
                 }
             }
-            Section(tr("ปฏิทิน")) {
-                Toggle(tr("เตือนก่อนนัดหมายถึง 10 นาที"), isOn: Binding(
-                    get: { calendarOn },
-                    set: { v in
-                        calendarOn = v
-                        UserDefaults.standard.set(v, forKey: CalendarService.enabledKey)
-                        if v { Task { if await !CalendarService.requestAccess() {
-                            calendarOn = false
-                            UserDefaults.standard.set(false, forKey: CalendarService.enabledKey)
-                        } } }
-                    }))
-            }
+            CalendarSettingsSection(calendar: calendar)
             Section(tr("ประหยัดพลังงาน")) {
                 let d = power.decision
                 LabeledContent(tr("ตอนนี้")) {
