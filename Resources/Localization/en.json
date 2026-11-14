@@ -767,7 +767,7 @@
  "แสดง": "Show",
  "แสดงชื่อเพลงวิ่งบนแถบเมนูขณะเล่น": "Show the song title scrolling in the menu bar while playing",
  "แสดงบัญชีที่ซ่อนอีกครั้ง": "Restore hidden accounts",
- "แสดงพร้อมไอคอนผู้ให้บริการ โดยสถานะอัดหน้าจอและ Pomodoro จะแสดงก่อน · ↻ คือเวลาที่เหลือจนรีเซ็ตของช่วงที่เลือก": "Shown with the provider icon; recording and Pomodoro take priority · ↻ is the time until the selected window resets",
+ "แสดงพร้อมไอคอนผู้ให้บริการ โดยสถานะอัดหน้าจอและ Pomodoro จะแสดงก่อน · เวลาเช่น 6d4h12m คือเวลาที่เหลือจนรีเซ็ตของช่วงที่เลือก": "Shown with the provider icon; recording and Pomodoro take priority · a time like 6d4h12m is how long until the selected window resets",
  "แสดงเวลานับถอยหลังจนรีเซ็ต": "Show reset countdown",
  "แสดงโควตา AI บนแถบเมนู": "Show AI quota in the menu bar",
  "แสดงใน Finder": "Show in Finder",

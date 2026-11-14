@@ -68,9 +68,18 @@ public struct UsageMenuBarSettings: Codable, Equatable, Sendable {
             if window.isExpired(at: now) { text += " · \(tr("รีเซ็ตแล้ว"))" }
             else {
                 let minutes = Int((reset.timeIntervalSince(now) / 60).rounded(.up))
-                text += String(format: " · ↻ %d:%02d", minutes / 60, minutes % 60)
+                text += " · " + Self.countdown(minutes: minutes)
             }
         }
         return text
+    }
+
+    /// "6d4h12m", "1h31m" or "45m": no symbol, the biggest unit first, leading empty units left out.
+    public static func countdown(minutes total: Int) -> String {
+        let total = max(total, 0)
+        let d = total / 1440, h = total % 1440 / 60, m = total % 60
+        if d > 0 { return "\(d)d\(h)h\(m)m" }
+        if h > 0 { return "\(h)h\(m)m" }
+        return "\(m)m"
     }
 }

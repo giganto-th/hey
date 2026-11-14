@@ -18,14 +18,91 @@ enum ProviderLogo {
     static func menuBarImage(_ provider: AIProvider) -> NSImage? {
         if let hit = menuBarCache[provider] { return hit }
         let icon: NSImage?
-        if let installed = image(provider) {
-            icon = installed.copy() as? NSImage
+        if let mark = mark(provider) {
+            icon = mark.image.copy() as? NSImage
+            icon?.isTemplate = mark.monochrome                     // a grey mark follows the menu bar's own colour
         } else {
             icon = NSImage(systemSymbolName: fallbackSymbol(provider), accessibilityDescription: provider.label)
         }
         icon?.size = NSSize(width: 16, height: 16)
         menuBarCache[provider] = icon
         return icon
+    }
+
+    /// Just the mark of an app icon, without its tile: the background colour, the tile's edge and its shadow cut away.
+    struct Mark {
+        let image: NSImage
+        /// A white, grey or black mark (ChatGPT's knot): drawn in the text colour so it shows in light and dark mode.
+        let monochrome: Bool
+    }
+    private static var markCache: [AIProvider: Mark?] = [:]
+
+    static func mark(_ provider: AIProvider) -> Mark? {
+        if let hit = markCache[provider] { return hit }
+        let found = image(provider).flatMap(cutOut)
+        markCache[provider] = found
+        return found
+    }
+
+    /// Draws the icon at 256 px, takes the tile colour from just inside its left, right, top and bottom edges, keeps the pixels in the
+    /// middle that differ from it (with a soft edge), and crops to what is left.
+    private static func cutOut(_ icon: NSImage) -> Mark? {
+        let side = 256
+        guard let src = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: side, pixelsHigh: side, bitsPerSample: 8, samplesPerPixel: 4,
+                                         hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: side * 4, bitsPerPixel: 32),
+              let out = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: side, pixelsHigh: side, bitsPerSample: 8, samplesPerPixel: 4,
+                                         hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: side * 4, bitsPerPixel: 32),
+              let s = src.bitmapData, let o = out.bitmapData else { return nil }
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: src)
+        icon.draw(in: NSRect(x: 0, y: 0, width: side, height: side))
+        NSGraphicsContext.restoreGraphicsState()
+
+        func px(_ x: Int, _ y: Int) -> (Double, Double, Double, Double) {
+            let i = (y * side + x) * 4
+            return (Double(s[i]), Double(s[i + 1]), Double(s[i + 2]), Double(s[i + 3]))
+        }
+        // the tile colour: the most agreed-upon of four samples just inside the tile's edges
+        let samples = [px(40, side / 2), px(side - 41, side / 2), px(side / 2, 40), px(side / 2, side - 41)].filter { $0.3 > 200 }
+        guard !samples.isEmpty else { return nil }
+        func dist(_ a: (Double, Double, Double, Double), _ b: (Double, Double, Double, Double)) -> Double {
+            ((a.0 - b.0) * (a.0 - b.0) + (a.1 - b.1) * (a.1 - b.1) + (a.2 - b.2) * (a.2 - b.2)).squareRoot()
+        }
+        let bg = samples.min { a, b in samples.reduce(0) { $0 + dist(a, $1) } < samples.reduce(0) { $0 + dist(b, $1) } }!
+
+        let inset = side * 15 / 100                     // the tile's edge, highlight and shadow live outside this
+        var minX = side, minY = side, maxX = -1, maxY = -1
+        var satSum = 0.0, weight = 0.0
+        memset(o, 0, side * side * 4)
+        for y in inset..<(side - inset) {
+            for x in inset..<(side - inset) {
+                // a circle, not the square: the inset square's corners reach past the tile's rounded corners, into its edge
+                let dx = Double(x - side / 2), dy = Double(y - side / 2)
+                guard dx * dx + dy * dy < Double(side * 40 / 100) * Double(side * 40 / 100) else { continue }
+                let p = px(x, y)
+                let keep = min(max((dist(p, bg) - 28) / 50, 0), 1) * p.3 / 255
+                guard keep > 0.02 else { continue }
+                let i = (y * side + x) * 4
+                // premultiplied: the source is opaque inside the tile, so scale by the new alpha
+                o[i] = UInt8(p.0 * keep); o[i + 1] = UInt8(p.1 * keep); o[i + 2] = UInt8(p.2 * keep); o[i + 3] = UInt8(255 * keep)
+                if keep > 0.5 { minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y) }
+                let hi = max(p.0, p.1, p.2), lo = min(p.0, p.1, p.2)
+                satSum += (hi > 0 ? (hi - lo) / hi : 0) * keep; weight += keep
+            }
+        }
+        guard maxX > minX, maxY > minY else { return nil }
+        // faint specks of the tile's edge can survive near the inset line: clear everything outside the mark's own box
+        for y in 0..<side where y < minY - 3 || y > maxY + 3 { memset(o + y * side * 4, 0, side * 4) }
+        for y in max(minY - 3, 0)...min(maxY + 3, side - 1) {
+            for x in 0..<side where x < minX - 3 || x > maxX + 3 { let i = (y * side + x) * 4; o[i] = 0; o[i + 1] = 0; o[i + 2] = 0; o[i + 3] = 0 }
+        }
+        guard let cg = out.cgImage else { return nil }
+        // a square crop around the mark, with a little air
+        let w = maxX - minX + 1, h = maxY - minY + 1, box = Int(Double(max(w, h)) * 1.06)
+        let cx = (minX + maxX) / 2, cy = (minY + maxY) / 2
+        let rect = CGRect(x: cx - box / 2, y: cy - box / 2, width: box, height: box)
+        guard let cropped = cg.cropping(to: rect) else { return nil }
+        return Mark(image: NSImage(cgImage: cropped, size: NSSize(width: box, height: box)), monochrome: weight > 0 && satSum / weight < 0.15)
     }
 
     private static func candidates(_ provider: AIProvider) -> [String] {
@@ -53,7 +130,14 @@ struct ProviderLogoView: View {
 
     var body: some View {
         Group {
-            if let image = ProviderLogo.image(provider) {
+            if let mark = ProviderLogo.mark(provider) {
+                // the mark alone, no app-icon tile: brand colours kept, a grey mark takes the text colour
+                if mark.monochrome {
+                    Image(nsImage: mark.image).renderingMode(.template).resizable().scaledToFit().foregroundStyle(.primary)
+                } else {
+                    Image(nsImage: mark.image).resizable().scaledToFit()
+                }
+            } else if let image = ProviderLogo.image(provider) {
                 Image(nsImage: image).resizable().scaledToFit()
             } else {
                 Image(systemName: ProviderLogo.fallbackSymbol(provider))
@@ -219,7 +303,7 @@ private struct UsageMenuBarSection: View {
                     }
                 }
             }
-            Text(tr("แสดงพร้อมไอคอนผู้ให้บริการ โดยสถานะอัดหน้าจอและ Pomodoro จะแสดงก่อน · ↻ คือเวลาที่เหลือจนรีเซ็ตของช่วงที่เลือก"))
+            Text(tr("แสดงพร้อมไอคอนผู้ให้บริการ โดยสถานะอัดหน้าจอและ Pomodoro จะแสดงก่อน · เวลาเช่น 6d4h12m คือเวลาที่เหลือจนรีเซ็ตของช่วงที่เลือก"))
                 .font(.caption2).foregroundStyle(.secondary)
         }
     }

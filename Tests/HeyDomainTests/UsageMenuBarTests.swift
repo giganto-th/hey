@@ -28,9 +28,17 @@ import Testing
         let window = UsageWindow(id: "5h", usedPercent: 43, resetsAt: now.addingTimeInterval(5_401))
         #expect(settings.text(for: window, now: now) == "43%")
         settings.showReset = true
-        #expect(settings.text(for: window, now: now) == "43% · ↻ 1:31")
-        #expect(settings.text(for: window, now: now.addingTimeInterval(1)) == "43% · ↻ 1:30")
-        #expect(settings.text(for: window, now: now.addingTimeInterval(5_400)) == "43% · ↻ 0:01")
+        #expect(settings.text(for: window, now: now) == "43% · 1h31m")
+        #expect(settings.text(for: window, now: now.addingTimeInterval(1)) == "43% · 1h30m")
+        #expect(settings.text(for: window, now: now.addingTimeInterval(5_400)) == "43% · 1m")
+    }
+
+    @Test func countdownLeavesOutEmptyLeadingUnits() {
+        #expect(UsageMenuBarSettings.countdown(minutes: 6 * 1440 + 4 * 60 + 12) == "6d4h12m")
+        #expect(UsageMenuBarSettings.countdown(minutes: 1440 + 5) == "1d0h5m")
+        #expect(UsageMenuBarSettings.countdown(minutes: 61) == "1h1m")
+        #expect(UsageMenuBarSettings.countdown(minutes: 45) == "45m")
+        #expect(UsageMenuBarSettings.countdown(minutes: -3) == "0m")
     }
 
     @Test func expiredAndMissingResetsUseExistingQuotaRules() {

@@ -44,7 +44,7 @@ final class AIUsageService {
         didSet { onChange?() }
     }
     var menuBarSettings: UsageMenuBarSettings = {
-        if isDemo { var demo = UsageMenuBarSettings(); demo.enabled = true; demo.accountIDs = ["d1"]; return demo }
+        if isDemo { var demo = UsageMenuBarSettings(); demo.enabled = true; demo.accountIDs = ["d1", "d3"]; demo.windowID = "7d"; demo.showReset = true; return demo }
         guard let data = UserDefaults.standard.data(forKey: menuBarKey),
               let settings = try? JSONDecoder().decode(UsageMenuBarSettings.self, from: data) else { return UsageMenuBarSettings() }
         return settings
