@@ -603,22 +603,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     /// Recording wins, then Pomodoro, then the optional AI quota, then the plain logo.
+    /// What the menu bar item shows, worked out first so it is only touched when something actually changed: every change makes
+    /// macOS redraw the item for each menu bar copy, and doing that every few seconds for nothing cost a lot of CPU.
+    private struct StatusContent: Equatable {
+        var symbol: String?                 // an SF Symbol, or nil for the logo / no image
+        var logo = false
+        var title = ""
+        var usageTitle: NSAttributedString?
+        /// The usage title as plain text with its providers: two titles with the same text and logos look the same.
+        var usageKey = ""
+        var tooltip = "Hey!"
+        var accessibility = "Hey!"
+
+        static func == (a: StatusContent, b: StatusContent) -> Bool {
+            // icon attachments are new objects each time, so compare what they show, not the attributed strings
+            a.symbol == b.symbol && a.logo == b.logo && a.title == b.title && (a.usageTitle == nil) == (b.usageTitle == nil)
+                && a.usageKey == b.usageKey && a.tooltip == b.tooltip && a.accessibility == b.accessibility
+        }
+    }
+    private var shownStatus: StatusContent?
+
     private func updateStatusTitle() {
         guard statusItem != nil else { return }
-        statusItem.button?.attributedTitle = NSAttributedString(string: "")
-        statusItem.button?.toolTip = "Hey!"
-        statusItem.button?.setAccessibilityLabel("Hey!")
-        func symbol(_ name: String) -> NSImage? { NSImage(systemSymbolName: name, accessibilityDescription: nil) }
+        var content = StatusContent()
         if capture.isRecording {
             let s = Int(capture.elapsed)
-            statusItem.button?.image = symbol("record.circle.fill")
-            statusItem.button?.title = String(format: " %d:%02d", s / 60, s % 60)
+            content.symbol = "record.circle.fill"
+            content.title = String(format: " %d:%02d", s / 60, s % 60)
         } else if pomodoro.timer.isRunning {
-            statusItem.button?.image = symbol(pomodoro.timer.phase == .focus ? "timer" : "cup.and.saucer.fill")
-            statusItem.button?.title = " \(pomodoro.remainingText)"
+            content.symbol = pomodoro.timer.phase == .focus ? "timer" : "cup.and.saucer.fill"
+            content.title = " \(pomodoro.remainingText)"
         } else {
-            statusItem.button?.image = LogoArt.menuBarImage()
-            statusItem.button?.title = ""
+            content.logo = true
             let settings = aiUsage.menuBarSettings
             if settings.enabled {
                 let accounts = AIProvider.allCases.flatMap { aiUsage.rows(for: $0) }
@@ -647,19 +663,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                         details.append(detail)
                     }
                     title.addAttribute(.font, value: NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize(for: .small), weight: .regular), range: NSRange(location: 0, length: title.length))
-                    statusItem.button?.image = nil
-                    statusItem.button?.attributedTitle = title
-                    let detail = details.joined(separator: "\n\n")
-                    statusItem.button?.toolTip = detail
-                    statusItem.button?.setAccessibilityLabel("Hey! · \(detail)")
+                    content.logo = false
+                    content.usageTitle = title
+                    content.usageKey = usages.map(\.provider.rawValue).joined(separator: ",") + "|" + title.string
+                    content.tooltip = details.joined(separator: "\n\n")
+                    content.accessibility = "Hey! · \(content.tooltip)"
                 } else {
                     let message = aiUsage.refreshing ? tr("กำลังอ่านข้อมูล…") : tr("ยังไม่มีข้อมูลของบัญชีหรือช่วงโควตาที่เลือก — เลือกบัญชีอื่นหรือกดรีเฟรช")
-                    statusItem.button?.title = " AI —"
-                    statusItem.button?.toolTip = message
-                    statusItem.button?.setAccessibilityLabel("Hey! · \(message)")
+                    content.title = " AI —"
+                    content.tooltip = message
+                    content.accessibility = "Hey! · \(message)"
                 }
             }
         }
+        guard content != shownStatus, let button = statusItem.button else { return }
+        shownStatus = content
+        if let usageTitle = content.usageTitle {
+            button.image = nil
+            button.attributedTitle = usageTitle
+        } else {
+            button.attributedTitle = NSAttributedString(string: "")
+            button.image = content.logo ? LogoArt.menuBarImage() : content.symbol.flatMap { NSImage(systemSymbolName: $0, accessibilityDescription: nil) }
+            button.title = content.title
+        }
+        button.toolTip = content.tooltip
+        button.setAccessibilityLabel(content.accessibility)
     }
 
     // MARK: hotkeys (⌃⌥ + key)

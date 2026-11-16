@@ -565,10 +565,16 @@ final class AIUsageService {
             try? input.fileHandleForWriting.close()
             if task.isRunning { task.terminate() }
         }
+        // `claude` may already have quit (an error, a login it cannot renew): then the pipe is closed and a write would fail.
+        // Only type while it runs, and with the throwing write, so a closed pipe is an error here, never the end of Hey.
+        func type(_ text: String) -> Bool {
+            guard task.isRunning else { return false }
+            return (try? input.fileHandleForWriting.write(contentsOf: Data(text.utf8))) != nil
+        }
         Thread.sleep(forTimeInterval: 5)
-        input.fileHandleForWriting.write(Data("\r".utf8))                 // past a first-run "trust this folder" question
+        guard type("\r") else { return renewed(service) }                  // past a first-run "trust this folder" question
         Thread.sleep(forTimeInterval: 1)
-        input.fileHandleForWriting.write(Data("/status\r".utf8))
+        guard type("/status\r") else { return renewed(service) }
         for _ in 0..<10 {
             Thread.sleep(forTimeInterval: 1)
             if renewed(service) { return true }

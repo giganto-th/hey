@@ -1,6 +1,9 @@
 import AppKit
 
 setvbuf(stdout, nil, _IOLBF, 0)   // keep dev logs visible when redirected
+// A write to a pipe whose reader has gone (a helper like `claude` that quit early) must be an error, not the end of the app:
+// by default the system kills the writer with SIGPIPE, silently and without a crash report.
+signal(SIGPIPE, SIG_IGN)
 
 // The language is fixed for the whole run (changing it relaunches), so set it before anything builds a string.
 AppLanguage.configure()
